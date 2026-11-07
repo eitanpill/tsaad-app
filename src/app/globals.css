@@ -1,0 +1,42 @@
+:root {
+  --cream: #FAF8F4;
+  --sky: #EDF5FD;
+  --sand: #F0E8E1;
+  --sage: #D2DCD1;
+  --olive: #D6DBBD;
+  --terracotta: #BB6F51;
+  --terracotta-text: #8A4A33;
+  --forest: #123021;
+  --water: #6F8A6E;
+  --maroon: #2E0808;
+  --muted: #6B4B45;
+  --stone-done: #D9C7B8;
+  --line: #E8DDD3;
+  --radius-tile: 26px;
+  --radius-btn: 16px;
+  --gap: 10px;
+}
+
+/* White text on --terracotta only at 19px bold or larger (contrast 3.6:1). */
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--maroon);
+  font-family: var(--font-body), Rubik, Arial, sans-serif;
+}
+
+h1,
+h2,
+h3,
+b,
+strong {
+  font-family: var(--font-heading), 'Noto Sans Hebrew', sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
