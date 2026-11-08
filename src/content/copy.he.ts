@@ -28,7 +28,7 @@ export const copy = {
     pauseMotion: "עצירת אנימציה",
     retry: "לנסות שוב",
     cancel: "ביטול",
-    undo: "ביטול",
+    undo: "ביטול הסימון",
     close: "סגירה",
     back: "חזרה",
     save: "שמירה",
@@ -175,7 +175,7 @@ export const copy = {
     },
     android: {
       heading: "באנדרואיד",
-      body: "יופיע כפתור “התקנה”. לוחצים, וזהו.",
+      body: "אם מופיע כפתור “התקנה”, לוחצים עליו. אם לא, פותחים את תפריט הדפדפן ובוחרים “התקנת אפליקציה” או “הוספה למסך הבית”.",
       installButton: "התקנה",
     },
     why: {
@@ -302,7 +302,7 @@ export const copy = {
     },
     success: {
       saved: "נשמר. הכוס עלתה.",
-      undo: "ביטול",
+      undo: "ביטול הסימון",
       undone: "הסימון בוטל.",
     },
   },
@@ -450,8 +450,8 @@ export const copy = {
         title: "פגישת זום אישית",
         detail: "45 דקות עם אביטל.",
         price: "271 ₪",
-        breakdown: "350 ₪ פחות 79 ₪ ההרשמה לאתגר.",
         scope: "המחיר הזה תקף לכל מי שהשתתפו באתגר.",
+        // מוצג רק אם הוגדרה מגבלת מקומות אמיתית בקונפיג. בלי מגבלה, השורה לא מופיעה.
         spots: "{spots} מקומות.",
         cta: "לקביעת הפגישה",
         ctaTarget: "[MORNING_URL_SESSION_271]",
@@ -470,7 +470,7 @@ export const copy = {
       heading: "יסודות היוגה",
       lead: "מסלול נפרד למי שהשלימו את האתגר.",
       price: "1,265 ₪",
-      priceNote: "מחיר קבוע.",
+      priceNote: "מחיר למשלימי האתגר.",
       expiry: "המחיר הזה תקף עד [YESODOT_OFFER_EXPIRY].",
       cta: "להרשמה ליסודות היוגה",
       ctaTarget: "[MORNING_URL_YESODOT_1265]",

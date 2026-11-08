@@ -240,7 +240,7 @@ describe("copy deck", () => {
       path.join(process.cwd(), "docs/content/COPY.md"),
       "utf8",
     );
-    const section = md.split("## שאלות לפית")[1] ?? "";
+    const section = md.split("## שאלות פתוחות לאישור")[1] ?? "";
     const count = section.split("\n").filter((l) => /^\d+\. /.test(l)).length;
     expect(count).toBeGreaterThan(0);
     expect(count).toBeLessThanOrEqual(6);
