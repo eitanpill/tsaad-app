@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "test:db": "scripts/test-db.sh run -- vitest run",
+    "test:db": "scripts/test-db.sh run -- vitest run --no-file-parallelism",
     "test:e2e": "scripts/test-db.sh run -- playwright test",
     "dev:create-user": "NODE_ENV=development tsx scripts/create-dev-user.ts"
   },
@@ -25,6 +25,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "0.0.1",
+    "web-push": "4.0.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
@@ -37,6 +38,7 @@
     "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/web-push": "3.6.4",
     "@vitejs/plugin-react": "6.2.1",
     "drizzle-kit": "0.31.11",
     "eslint": "9.39.5",

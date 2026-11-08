@@ -74,15 +74,26 @@ export async function deleteAllSessions(db: Pick<Db, "execute">, userId: string)
   await db.execute(sql`delete from sessions where user_id = ${userId}`);
 }
 
-/** ניקוי תקופתי (ייקרא מ־cron בשלב 6): התחברויות שפגו, קישורים ישנים וניסיונות ישנים. */
-export async function purgeExpired(db: Pick<Db, "execute">): Promise<void> {
-  await db.execute(
+const deleted = (res: unknown) => (res as { rowCount?: number | null } | null)?.rowCount ?? 0;
+
+/** ניקוי תקופתי (נקרא מ־api/cron/cleanup): התחברויות שפגו, קישורים ישנים וניסיונות ישנים. מחזיר ספירות. */
+export async function purgeExpired(
+  db: Pick<Db, "execute">,
+): Promise<{ sessions: number; activationTokens: number; loginAttempts: number }> {
+  const sessions = await db.execute(
     sql`delete from sessions
         where expires_at <= now() or last_seen_at <= now() - make_interval(days => ${SESSION_POLICY.idleDays})`,
   );
-  await db.execute(
+  const activationTokens = await db.execute(
     sql`delete from activation_tokens
         where expires_at < now() - interval '7 days' or used_at < now() - interval '7 days'`,
   );
-  await db.execute(sql`delete from login_attempts where attempted_at < now() - interval '1 day'`);
+  const loginAttempts = await db.execute(
+    sql`delete from login_attempts where attempted_at < now() - interval '1 day'`,
+  );
+  return {
+    sessions: deleted(sessions),
+    activationTokens: deleted(activationTokens),
+    loginAttempts: deleted(loginAttempts),
+  };
 }

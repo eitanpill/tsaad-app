@@ -175,7 +175,8 @@ export const pushSubscriptions = pgTable(
   (t) => [index("push_subscriptions_user_idx").on(t.userId)],
 );
 
-export const REMINDER_STATUSES = ["dry_run", "sent", "failed"] as const;
+/** pending: נקבע לפני השליחה (מונע כפל); נשאר כך אם התהליך קרס באמצע. */
+export const REMINDER_STATUSES = ["pending", "dry_run", "sent", "failed"] as const;
 
 export const reminderLog = pgTable(
   "reminder_log",
@@ -189,11 +190,15 @@ export const reminderLog = pgTable(
   },
   (t) => [
     unique("reminder_log_user_date").on(t.userId, t.date),
-    check("reminder_log_status", sql`${t.status} in ('dry_run','sent','failed')`),
+    check("reminder_log_status", sql`${t.status} in ('pending','dry_run','sent','failed')`),
   ],
 );
 
-export const SYNC_STATUSES = ["pending", "sent", "failed"] as const;
+/**
+ * pending: ממתין (או שמור לעובד). failed: הניסיון האחרון נכשל, ינוסה שוב.
+ * sent: נשלח. dead: חרג ממספר הניסיונות, דורש בדיקה ידנית.
+ */
+export const SYNC_STATUSES = ["pending", "sent", "failed", "dead"] as const;
 
 export const syncOutbox = pgTable(
   "sync_outbox",
@@ -211,7 +216,7 @@ export const syncOutbox = pgTable(
     createdAt: ts("created_at").notNull().defaultNow(),
   },
   (t) => [
-    check("sync_outbox_status", sql`${t.status} in ('pending','sent','failed')`),
+    check("sync_outbox_status", sql`${t.status} in ('pending','sent','failed','dead')`),
     uniqueIndex("sync_outbox_dedupe_idx").on(t.dedupeKey),
     index("sync_outbox_due_idx").on(t.status, t.nextAttemptAt),
     index("sync_outbox_user_idx").on(t.userId),
