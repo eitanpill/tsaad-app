@@ -80,6 +80,16 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
   - the app shell and the Today screen
   - `api/video`, issued for unlocked days only
   - a CSP with a nonce in `proxy.ts`
+  - built:
+    - `src/proxy.ts` + `lib/security/csp.ts`: per-request nonce CSP, no `'unsafe-inline'`/`'unsafe-eval'` in `script-src` (eval only in dev). `style-src` uses the nonce too; only `style-src-attr 'unsafe-inline'` remains (React `style=` attributes). `frame-src` is `https://iframe.mediadelivery.net` only, which is the host `lib/bunny/token.ts` signs for. `next.config.ts` keeps the other headers, plus a locked-down CSP for `/api/*` (the proxy skips api).
+    - Nonce and `cacheComponents`: the Next docs say a nonce needs dynamic rendering and that PPR's static shell cannot carry it. The root layout therefore sets `instant = false` and calls `connection()`, which makes every route render per request (`ƒ` in the build output). There is no static shell any more.
+    - `app/(app)/layout.tsx` (Suspense) + `_components/{AppShell,ShellLoading,BottomNav,MotionToggle,icons}.tsx`: header with the real logo, day chip, motion pause (localStorage, try/catch, reduced-motion aware), skip link, bottom nav, logout form.
+    - `app/(app)/today/{page,TodayBoard,Cup,Ring,VideoTile,actions}.tsx|ts`: the Today screen. `TodayBoard` is a client component (useOptimistic) that recomputes cup, ring and remaining from the pure `lib/days` functions.
+    - `app/api/video/[day]/route.ts`, `lib/today/video.ts`: signed embed URL for a session and an unlocked day with a configured id. `BUNNY_VIDEO_IDS` (new env, comma-separated, days 1..14) holds the ids; none are set.
+    - `lib/today/{clock,test-clock,schedule,completions,toggle,view}.ts`: server clock, the test clock and its guard, the schedule from config (`START_DATE` unset means "before start"), `toggleActionCore` (transaction with the tracker outbox row), pure view model.
+    - `components/Logo.tsx`: the YOGIT logo path, 11KB with C2PA metadata cut to 2KB. Also used in the auth layout.
+    - `/` redirects to `/today` or `/login`.
+    - Not implemented, left to stage 9: offline queueing. Marks need a connection; a failed save shows an error with retry.
 - **Stage 8, path and locked day:** `path` and `day/[n]`.
 - **Stage 9, live, reminders and install:**
   - `live`, `reminders` and `install`
@@ -104,6 +114,7 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
 - `cacheComponents` is on. Read the session and the time inside `<Suspense>` or after `connection()`, and never cache user state or the current day.
 - Next 16 renamed `middleware.ts` to `proxy.ts`. Read `node_modules/next/dist/docs` before writing code that touches it.
 - Reminders: send once per user per day on the first cron run at or after 07:30 Jerusalem time (DST-safe); never rely on an exact-minute match.
-- The CSP still allows `'unsafe-inline'` scripts. In stage 7 it moves to a per-request nonce.
+- The CSP is set per request in `src/proxy.ts` (nonce). Stage 9's service worker must not cache HTML (the nonce is per request).
+- Test clock: `TSAAD_TEST_NOW` and the `x-tsaad-test-now` header work only under the guard in `lib/today/test-clock.ts` (never on Vercel; in production only with `TSAAD_E2E=1` and a loopback `APP_ORIGIN`).
 - Passwords and tokens never go into logs. Sending through GHL, WhatsApp or email stays off until gate G3.
 - Vercel must not be connected to this repo before a deploy gate, or every branch push creates a preview deployment.
