@@ -4,7 +4,7 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 
 ## Stack
 - Next.js 16 with the App Router, TypeScript and a `src/` directory. The UI is Hebrew and right-to-left.
-- Postgres on Neon (`@neondatabase/serverless`) in production and node-postgres (`pg`) for local development and tests, both through drizzle-orm. `src/db/index.ts` picks the driver from the host in `DATABASE_URL` (localhost means `pg`). drizzle-kit generates the migrations as SQL in `drizzle/`, and they are committed.
+- Postgres on Neon (`@neondatabase/serverless`) in production and node-postgres (`pg`) for local development and tests, both through drizzle-orm. `src/db/index.ts` picks the driver from the host in `DATABASE_URL` (localhost means `pg`; the check in `src/db/local-url.ts` also rejects `?host=`/`?hostaddr=` overrides). drizzle-kit generates the migrations as SQL in `drizzle/`, and they are committed.
 - Vercel hosts the app, and Vercel Cron runs the scheduled jobs.
 - Accounts use opaque sessions stored in the database. Passwords are hashed with argon2id (`@node-rs/argon2`).
 - `zod` validates the environment, the webhook payloads and the forms. `web-push` sends push messages, using VAPID keys.
@@ -55,8 +55,8 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
   - aria labels
   - error copy
 - **Stage 4, foundation:**
-  - configuration: `config/constants.ts`, `config/env.ts` (zod, server-only), `config/index.ts` (frozen, lazy) and `lib/logger.ts` (with redaction)
-  - database: `db/*`, `drizzle.config.ts`, `drizzle/` migrations, and `scripts/test-db.sh` (a throwaway local Postgres; DB tests skip when `DATABASE_URL` is unset)
+  - configuration: `config/constants.ts`, `config/env.ts` (zod, server-only), `config/index.ts` (frozen, lazy) and `lib/logger.ts` (server-only, with redaction of keys and free text)
+  - database: `db/*`, `drizzle.config.ts`, `drizzle/` migrations, and `scripts/test-db.sh` (a throwaway local Postgres with a random password; DB tests run only when it sets `TSAAD_TEST_DB=1` and `DATABASE_URL` is local, and skip otherwise)
   - day logic: `lib/time/*` and `lib/days/*`, pure functions with an injectable clock, tested with fake clocks including DST
   - `lib/bunny/token.ts`
   - `scripts/create-dev-user.ts`, which works in development against localhost only and prints a one-time activation link

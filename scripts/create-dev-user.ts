@@ -12,9 +12,9 @@ import { createHash, randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { isLocalDatabaseUrl } from "../src/db/local-url";
 import { activationTokens, users } from "../src/db/schema";
 
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 /** ברירת מחדל לפיתוח בלבד. בפרודקשן הערך יוגדר דרך ACTIVATION_LINK_TTL_MINUTES. */
 const DEV_DEFAULT_TTL_MINUTES = 60;
 
@@ -24,14 +24,9 @@ export function assertDevEnvironment(env: Record<string, string | undefined>): s
   }
   const url = env.DATABASE_URL;
   if (!url) throw new Error("Refusing to run: DATABASE_URL is not set.");
-  let host: string;
-  try {
-    host = new URL(url).hostname;
-  } catch {
-    throw new Error("Refusing to run: DATABASE_URL is not a valid URL.");
-  }
-  if (!LOCAL_HOSTS.has(host)) {
-    throw new Error("Refusing to run: DATABASE_URL must point to localhost.");
+  // בודק גם פרמטרים כמו ?host= שעוקפים את המארח שבכתובת.
+  if (!isLocalDatabaseUrl(url)) {
+    throw new Error("Refusing to run: DATABASE_URL must point to localhost (no host overrides).");
   }
   return url;
 }

@@ -4,6 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDb, isLocalDatabaseUrl, schema, type Db } from ".";
 
 const url = process.env.DATABASE_URL;
+// הבדיקות מוחקות את כל המשתמשים: רצות רק מול מסד זמני של scripts/test-db.sh (localhost + דגל).
+const runIntegration = !!url && process.env.TSAAD_TEST_DB === "1" && isLocalDatabaseUrl(url);
 
 describe("isLocalDatabaseUrl", () => {
   it("accepts only loopback hosts", () => {
@@ -16,7 +18,7 @@ describe("isLocalDatabaseUrl", () => {
 });
 
 // Skips cleanly when DATABASE_URL is unset. Run with: scripts/test-db.sh run -- npx vitest run
-describe.skipIf(!url)("database (integration)", () => {
+describe.skipIf(!runIntegration)("database (integration)", () => {
   let db: Db;
   let end: () => Promise<void>;
   const { users } = schema;
@@ -63,6 +65,12 @@ describe.skipIf(!url)("database (integration)", () => {
     await db.insert(c).values({ userId: u.id, day: 1, action: "move" });
     await expect(db.insert(c).values({ userId: u.id, day: 15, action: "habit" })).rejects.toThrow();
     await expect(db.insert(c).values({ userId: u.id, day: 0, action: "habit" })).rejects.toThrow();
+    // action must fit the day: live only on 7/14, move/meditate never on 7/14
+    await expect(db.insert(c).values({ userId: u.id, day: 3, action: "live" })).rejects.toThrow();
+    await expect(db.insert(c).values({ userId: u.id, day: 7, action: "move" })).rejects.toThrow();
+    await expect(db.insert(c).values({ userId: u.id, day: 14, action: "meditate" })).rejects.toThrow();
+    await db.insert(c).values({ userId: u.id, day: 7, action: "live" });
+    await db.insert(c).values({ userId: u.id, day: 7, action: "habit" });
 
     const l = schema.liveAttendance;
     await db.insert(l).values({ userId: u.id, day: 7, attended: true });

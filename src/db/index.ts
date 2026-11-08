@@ -4,19 +4,13 @@ import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { Pool as NeonPool } from "@neondatabase/serverless";
 import { Pool as PgPool } from "pg";
+import { isLocalDatabaseUrl } from "./local-url";
 import * as schema from "./schema";
 
 export { schema };
 export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 
-export function isLocalDatabaseUrl(url: string): boolean {
-  try {
-    const host = new URL(url).hostname;
-    return host === "localhost" || host === "127.0.0.1" || host === "::1" || host === "[::1]";
-  } catch {
-    return false;
-  }
-}
+export { isLocalDatabaseUrl };
 
 /**
  * מחבר למסד: node-postgres למקומי/בדיקות (localhost), Neon serverless לפרודקשן.

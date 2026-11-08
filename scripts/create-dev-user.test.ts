@@ -13,7 +13,7 @@ describe("create-dev-user guards", () => {
   it("requires a localhost DATABASE_URL", () => {
     expect(assertDevEnvironment({ NODE_ENV: "development", DATABASE_URL: local })).toBe(local);
     expect(assertDevEnvironment({ NODE_ENV: "development", DATABASE_URL: "postgres://u@localhost/x" })).toBeTruthy();
-    for (const DATABASE_URL of [undefined, "", "postgres://u@ep-x.neon.tech/x", "postgres://u@localhost.evil.com/x", "postgres://127.0.0.1@evil.com/x", "garbage"]) {
+    for (const DATABASE_URL of [undefined, "", "postgres://u@ep-x.neon.tech/x", "postgres://u@localhost.evil.com/x", "postgres://127.0.0.1@evil.com/x", "postgres://u@127.0.0.1.nip.io/x", "postgres://u@localhost/x?host=evil.com", "postgres://u@127.0.0.1/x?hostaddr=10.0.0.1", "garbage"]) {
       expect(() => assertDevEnvironment({ NODE_ENV: "development", DATABASE_URL })).toThrow(/DATABASE_URL/);
     }
   });
