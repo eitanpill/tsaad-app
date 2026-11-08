@@ -42,3 +42,5 @@ next-env.d.ts
 
 # env files: ignore real env files, keep the template
 !.env.example
+test-results/
+playwright-report/

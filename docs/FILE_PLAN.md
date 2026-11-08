@@ -13,10 +13,10 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 ## Routes
 | Route | Kind | Who can reach it |
 |---|---|---|
-| /login, /activate, /tsaad, /accessibility, /privacy, /terms | page | anyone (`/activate` needs a valid one-time link) |
+| /login, /activate, /forgot, /tsaad, /accessibility, /privacy, /terms | page | anyone (`/activate` needs a valid one-time link) |
 | /today, /path, /day/[n], /live, /reminders, /install, /offer | page | a logged-in user |
 | POST /api/webhooks/ghl/signup | handler | callers with the shared secret; replays are rejected |
-| POST /api/auth/login, /api/auth/logout | handler | login is open but rate-limited; logout needs a session |
+| login, forgot, activate, logout | server actions (`src/app/(auth)/actions.ts`) | login and forgot are open but rate-limited; every action checks `Origin` against `APP_ORIGIN`; logout deletes the session row. There are no `/api/auth/*` handlers; handlers added later use `rejectCrossOrigin` |
 | GET /api/video/[day] | handler | a session, and only once the server has unlocked that day |
 | GET /api/live/[session] | handler | a session, from 60 minutes before the live session |
 | POST/DELETE /api/push/subscribe | handler | a session |
@@ -65,6 +65,7 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
   - the one-time activation link flow, where the participant sets their own password
   - a forgot-password flow (same one-time link, purpose `reset`)
   - an Origin check on every non-GET handler
+  - built: `lib/auth/{config,crypto,password,policy,tokens,accounts,session,cookies,rate-limit,login,forgot,origin,request,dal}.ts`, `lib/messaging/sender.ts` (dry-run only), the pages under `app/(auth)/`, migration `0002` (`login_attempts.kind`), and `npm run test:e2e` (Playwright + axe)
 - **Stage 6, background layer:**
   - `lib/sync/*` with a mock adapter, `lib/push/*` and `api/cron/*`
   - each reminder is sent once per user per day, on the first run at or after 07:30 and before a cutoff
