@@ -33,6 +33,7 @@ export const copy = {
     back: "חזרה",
     save: "שמירה",
     dayLabel: "יום {n}",
+    logout: "יציאה",
     dayOfTotal: "יום {n} מתוך 14",
     countOfTotal: "{n} מתוך 14",
     actionTypes: {
@@ -68,6 +69,9 @@ export const copy = {
       action: "לסימון אתמול",
     },
     afterCompletion: "אפשר להמשיך עד יום 14.",
+    ended: "האתגר הסתיים",
+    videoPending: "הסרטון יעלה לכאן בקרוב.",
+    yesterdayDayLabel: "הפעולות של יום {n}",
     cup: {
       empty: "כוס ריקה",
       one: "חצי כוס",

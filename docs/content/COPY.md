@@ -36,6 +36,7 @@
 | `common.back` | חזרה |  |
 | `common.save` | שמירה |  |
 | `common.dayLabel` | יום {n} |  |
+| `common.logout` | יציאה |  |
 | `common.dayOfTotal` | יום {n} מתוך 14 | n מגיע מהקוד. |
 | `common.countOfTotal` | {n} מתוך 14 |  |
 | `common.actionTypes.habit` | הרגל |  |
@@ -62,6 +63,9 @@
 | `today.yesterday.prompt` | שכחת לסמן אתמול? אפשר עד חצות. |  |
 | `today.yesterday.action` | לסימון אתמול |  |
 | `today.afterCompletion` | אפשר להמשיך עד יום 14. |  |
+| `today.ended` | האתגר הסתיים |  |
+| `today.videoPending` | הסרטון יעלה לכאן בקרוב. |  |
+| `today.yesterdayDayLabel` | הפעולות של יום {n} |  |
 | `today.cup.empty` | כוס ריקה |  |
 | `today.cup.one` | חצי כוס |  |
 | `today.cup.two` | שלושה רבעים | שתי פעולות (או לייב לבד) = שלושה רבעים. אושר עם הקופי, 2026-11-08. |
@@ -472,4 +476,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 361 מחרוזות.
+סך הכול 365 מחרוזות.

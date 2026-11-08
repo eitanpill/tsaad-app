@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { copy } from "@/content/copy.he";
+import { Logo } from "@/components/Logo";
 import "./auth.css";
 
 export const metadata: Metadata = {
@@ -19,8 +20,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {copy.a11y.skipLink}
       </a>
       <header className="auth-header">
-        <span className="auth-logo" role="img" aria-label={copy.a11y.logo}>
-          YOGIT
+        <span className="auth-logo">
+          <Logo />
         </span>
         <span className="auth-byline">{copy.brand.byline}</span>
       </header>

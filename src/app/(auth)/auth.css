@@ -17,11 +17,8 @@
 }
 
 .auth-logo {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 26px;
-  letter-spacing: 0.04em;
+  display: inline-flex;
   color: var(--maroon);
-  direction: ltr;
 }
 
 .auth-byline {

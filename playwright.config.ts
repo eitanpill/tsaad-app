@@ -27,6 +27,14 @@ export default defineConfig({
       // סוד חד־פעמי לריצה הזאת בלבד; לא נשמר בשום מקום.
       SESSION_SECRET: randomBytes(32).toString("hex"),
       ACTIVATION_LINK_TTL_MINUTES: "30",
+      // Test-only values (fake; nothing real). The test clock is honoured only because of these two
+      // together (see src/lib/today/test-clock.ts); a real deployment can never satisfy both.
+      TSAAD_E2E: "1",
+      TSAAD_TEST_NOW: "2026-12-04T14:00:00+02:00",
+      START_DATE: "2026-12-01",
+      BUNNY_LIBRARY_ID: "e2e-library",
+      BUNNY_TOKEN_KEY: "e2e-not-a-real-key",
+      BUNNY_VIDEO_IDS: "e2evid1,e2evid2,e2evid3,e2evid4",
     },
   },
 });

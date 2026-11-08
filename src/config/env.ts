@@ -80,6 +80,12 @@ export const envSchema = z.object({
 
   BUNNY_LIBRARY_ID: optional(z.string().min(1)),
   BUNNY_TOKEN_KEY: optional(z.string().min(1)),
+  /** מזהי הסרטונים של ימים 1..14, מופרדים בפסיקים לפי הסדר; מקום ריק = אין עדיין סרטון ליום. */
+  BUNNY_VIDEO_IDS: optional(
+    z
+      .string()
+      .regex(/^([A-Za-z0-9_-]*,){0,13}[A-Za-z0-9_-]*$/, "up to 14 comma-separated ids"),
+  ),
 
   VAPID_PUBLIC_KEY: optional(z.string().min(1)),
   VAPID_PRIVATE_KEY: optional(z.string().min(1)),

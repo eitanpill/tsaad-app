@@ -1,39 +1,16 @@
 import type { NextConfig } from "next";
+import { API_CSP, BUNNY_EMBED_ORIGIN } from "./src/lib/security/csp";
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// Content-Security-Policy.
-// - script-src 'unsafe-inline': the App Router streams inline <script> chunks
-//   (self.__next_f). Moving to a per-request nonce (set in proxy.ts) is the
-//   follow-up once pages are dynamic anyway (auth stage).
-// - 'unsafe-eval' only in dev: React Refresh / Turbopack dev runtime needs it.
-// - next/font self-hosts the font files at build time, so font-src 'self'.
-// - frame-src: Bunny Stream player iframe (used in a later stage).
-const csp = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  `connect-src 'self'${isDev ? " ws: wss:" : ""}`,
-  "media-src 'self' blob:",
-  "frame-src https://iframe.mediadelivery.net",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  ...(isDev ? [] : ["upgrade-insecure-requests"]),
-].join("; ");
-
+// ה־Content-Security-Policy של הדפים נקבע לכל בקשה ב־src/proxy.ts (עם nonce). כאן רק ל־route handlers.
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: csp },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "DENY" },
   {
     key: "Permissions-Policy",
-    value:
-      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=(), fullscreen=(self \"https://iframe.mediadelivery.net\"), autoplay=(self \"https://iframe.mediadelivery.net\")",
+    value: `camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=(), fullscreen=(self "${BUNNY_EMBED_ORIGIN}"), autoplay=(self "${BUNNY_EMBED_ORIGIN}")`,
   },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   ...(isDev
@@ -53,6 +30,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // route handlers אינם עוברים ב־proxy (ראו matcher שם): CSP קשיחה קבועה.
+      { source: "/api/:path*", headers: [{ key: "Content-Security-Policy", value: API_CSP }] },
       // Auth pages: /activate carries a one-time token in its URL. No Referer to other
       // sites, as an HTTP header too (the layout also sets <meta name="referrer">).
       // Not no-referrer: that makes form posts without JS send "Origin: null". Last match wins.

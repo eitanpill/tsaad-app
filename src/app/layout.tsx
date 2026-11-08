@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Hebrew, Rubik } from "next/font/google";
 import "./globals.css";
+import { connection } from "next/server";
 
 const notoHebrew = Noto_Sans_Hebrew({
   weight: ["700", "800", "900"],
@@ -14,12 +15,15 @@ const rubik = Rubik({
   variable: "--font-body",
 });
 
+export const instant = false;
+
 export const metadata: Metadata = {
   title: "צעד קטן ביום",
   description: "אתגר 14 ימים של YOGIT",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  await connection();
   return (
     <html lang="he" dir="rtl" className={`${notoHebrew.variable} ${rubik.variable}`}>
       <body>{children}</body>
