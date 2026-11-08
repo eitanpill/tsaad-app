@@ -220,6 +220,8 @@
 | `activate.errors.passwordRequired` | יש לבחור סיסמה. |  |
 | `activate.errors.tooShort` | הסיסמה קצרה מדי. נדרשים לפחות 8 תווים. |  |
 | `activate.errors.noDigit` | הסיסמה צריכה לכלול לפחות ספרה אחת. |  |
+| `activate.errors.tooLong` | הסיסמה ארוכה מדי. אפשר עד 128 תווים. |  |
+| `activate.errors.sameAsUsername` | הסיסמה לא יכולה להיות זהה לשם המשתמש. |  |
 | `activate.errors.confirmRequired` | יש להקליד את הסיסמה שוב. |  |
 | `activate.errors.mismatch` | הסיסמאות לא זהות. כדאי להקליד שוב. |  |
 | `activate.errors.network` | אין חיבור כרגע. אפשר לנסות שוב כשהחיבור יחזור. |  |
@@ -470,4 +472,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 359 מחרוזות.
+סך הכול 361 מחרוזות.
