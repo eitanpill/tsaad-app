@@ -13,5 +13,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // e2e/ is Playwright (npm run test:e2e)
+    exclude: ["**/node_modules/**", "**/.next/**", "e2e/**"],
   },
 });

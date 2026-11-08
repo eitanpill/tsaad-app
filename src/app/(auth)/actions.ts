@@ -1,0 +1,136 @@
+"use server";
+
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getDb } from "@/db";
+import { logger } from "@/lib/logger";
+import { getMessageSender } from "@/lib/messaging/sender";
+import { completePasswordSetup } from "@/lib/auth/accounts";
+import {
+  FORGOT_MIN_RESPONSE_MS,
+  POST_LOGIN_PATH,
+  getActivationTtlMinutes,
+  getAppOrigin,
+  getSessionSecret,
+} from "@/lib/auth/config";
+import { clearSessionCookie, readSessionToken, setSessionCookie } from "@/lib/auth/cookies";
+import { IDENTIFIER_MAX_LENGTH, requestPasswordReset } from "@/lib/auth/forgot";
+import { authenticate } from "@/lib/auth/login";
+import { assertSameOrigin } from "@/lib/auth/origin";
+import { hashPassword, validatePassword } from "@/lib/auth/password";
+import { clientIp } from "@/lib/auth/request";
+import { createSession, deleteSession, rotateSession } from "@/lib/auth/session";
+import { peekToken } from "@/lib/auth/tokens";
+import type { ActivateState, ForgotState, LoginState } from "./state";
+
+const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** כניסה. כל כשל זהה כלפי חוץ ("שם המשתמש או הסיסמה לא נכונים"). */
+export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const h = await headers();
+  assertSameOrigin(h);
+  const username = str(formData.get("username")).trim();
+  const password = str(formData.get("password"));
+  if (!username) return { error: "usernameRequired" };
+  if (!password) return { error: "passwordRequired", username };
+
+  let result;
+  try {
+    result = await authenticate(getDb(), {
+      username,
+      password,
+      secret: getSessionSecret(),
+      ip: clientIp(h),
+    });
+  } catch (e) {
+    logger.error("login failed unexpectedly", { error: e });
+    return { error: "generic", username };
+  }
+  if (!result.ok) {
+    return { error: result.reason === "rate_limited" ? "tooMany" : "invalid", username };
+  }
+
+  // סיבוב: ההפעלה הקודמת של הדפדפן (אם יש) נמחקת, ונוצרת אחת חדשה.
+  const session = await rotateSession(getDb(), result.userId, await readSessionToken());
+  await setSessionCookie(session.token, session.expiresAt);
+  redirect(POST_LOGIN_PATH);
+}
+
+/** בחירת סיסמה מקישור חד־פעמי (הפעלה או איפוס). */
+export async function activateAction(_prev: ActivateState, formData: FormData): Promise<ActivateState> {
+  assertSameOrigin(await headers());
+  const token = str(formData.get("token"));
+  const password = str(formData.get("password"));
+  const confirm = str(formData.get("confirm"));
+
+  const db = getDb();
+  let setup;
+  try {
+    getSessionSecret();
+    const peeked = await peekToken(db, token);
+    if (!peeked) return { status: "expired" };
+
+    const issue = validatePassword(password, { username: peeked.username });
+    if (issue) {
+      return { error: { field: "password", code: issue === "required" ? "passwordRequired" : issue } };
+    }
+    if (!confirm) return { error: { field: "confirm", code: "confirmRequired" } };
+    if (confirm !== password) return { error: { field: "confirm", code: "mismatch" } };
+
+    // ה־hash (איטי במכוון) מחושב לפני הטרנזקציה; האסימון נשרף רק יחד עם שמירת הסיסמה.
+    setup = await completePasswordSetup(db, { token, passwordHash: await hashPassword(password) });
+  } catch (e) {
+    logger.error("activation failed unexpectedly", { error: e });
+    return { error: { field: "form", code: "generic" } };
+  }
+  if (!setup) return { status: "expired" };
+
+  const session = await createSession(db, setup.userId);
+  await setSessionCookie(session.token, session.expiresAt);
+  redirect(POST_LOGIN_PATH);
+}
+
+/** "שכחתי סיסמה": אותה תשובה בין אם יש חשבון ובין אם אין, ובזמן מינימלי קבוע. */
+export async function forgotAction(_prev: ForgotState, formData: FormData): Promise<ForgotState> {
+  const h = await headers();
+  assertSameOrigin(h);
+  const identifier = str(formData.get("identifier")).trim();
+  if (!identifier) return { error: "required" };
+  if (identifier.length > IDENTIFIER_MAX_LENGTH) return { status: "sent", identifier: "" };
+
+  const started = Date.now();
+  let state: ForgotState;
+  try {
+    const host = h.get("host");
+    const origin = getAppOrigin() ?? (host ? `http://${host}` : undefined);
+    if (!origin) throw new Error("no origin");
+    const result = await requestPasswordReset(getDb(), {
+      identifier,
+      secret: getSessionSecret(),
+      ip: clientIp(h),
+      ttlMinutes: getActivationTtlMinutes(),
+      sender: getMessageSender(),
+      origin,
+    });
+    state =
+      result.status === "rate_limited"
+        ? { error: "tooMany", identifier }
+        : { status: "sent", identifier, sentAt: started };
+  } catch (e) {
+    logger.error("forgot password failed unexpectedly", { error: e });
+    state = { error: "generic", identifier };
+  }
+  const wait = FORGOT_MIN_RESPONSE_MS - (Date.now() - started);
+  if (wait > 0) await sleep(wait);
+  return state;
+}
+
+/** יציאה: מוחק את שורת ההפעלה ואת העוגייה. */
+export async function logoutAction(): Promise<void> {
+  assertSameOrigin(await headers());
+  const token = await readSessionToken();
+  if (token) await deleteSession(getDb(), token);
+  await clearSessionCookie();
+  redirect("/login");
+}

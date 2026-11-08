@@ -1,0 +1,241 @@
+/* Pre-login screens: login, activate, forgot. Tokens come from globals.css. */
+.auth-shell {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 16px 12px 40px;
+  min-height: 100dvh;
+}
+
+.auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 8px 8px;
+}
+
+.auth-logo {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  color: var(--maroon);
+  direction: ltr;
+}
+
+.auth-byline {
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--maroon);
+}
+
+.auth-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.tile {
+  border-radius: var(--radius-tile);
+  padding: 20px;
+}
+.tile--sky { background: var(--sky); }
+.tile--white { background: #fff; }
+.tile--sage { background: var(--sage); color: var(--forest); }
+.tile--sand { background: var(--sand); }
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.auth-title {
+  margin: 0 0 8px;
+  font-size: 36px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: var(--maroon);
+}
+
+.auth-lead {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.note-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.note-body {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.note-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.note-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: #fff;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  border: 2px solid var(--muted);
+  border-radius: var(--radius-btn);
+  background: #fff;
+  color: var(--maroon);
+  font: inherit;
+  font-size: 18px;
+}
+
+.input[dir='ltr'] { text-align: right; }
+.input--with-icon { padding-inline-end: 56px; }
+.input--readonly { background: var(--cream); }
+.input[aria-invalid='true'] { border-color: var(--terracotta-text); }
+
+.toggle,
+.input-icon {
+  position: absolute;
+  inset-inline-end: 4px;
+  top: 4px;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--forest);
+}
+
+.toggle {
+  border: 0;
+  background: transparent;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.input-icon { pointer-events: none; }
+
+.hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.error {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--terracotta-text);
+}
+
+.error svg { flex: none; margin-top: 2px; }
+
+.requirements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.requirements li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 24px;
+  border: 2px solid var(--forest);
+  border-radius: 999px;
+  background: var(--forest);
+  color: #fff;
+  font-family: var(--font-heading), sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] { opacity: 0.7; cursor: not-allowed; }
+
+.btn--secondary {
+  min-height: 48px;
+  background: #fff;
+  color: var(--forest);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--terracotta-text);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.link:disabled,
+.link[aria-disabled='true'] { color: var(--muted); cursor: not-allowed; text-decoration: none; }
+
+.center { align-self: center; text-align: center; }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
