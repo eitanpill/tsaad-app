@@ -36,6 +36,8 @@ export function ForgotForm({ cooldownSeconds }: { cooldownSeconds: number }) {
               autoCorrect="off"
               spellCheck={false}
               maxLength={254}
+              // אחרי שגיאה הטופס מתאפס; מחזירים את מה שהוקלד, כדי שלא יצטרכו להקליד שוב.
+              defaultValue={state.error ? (state.identifier ?? "") : ""}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? "identifier-hint identifier-err" : "identifier-hint"}
             />
@@ -59,13 +61,17 @@ export function ForgotForm({ cooldownSeconds }: { cooldownSeconds: number }) {
       </section>
 
       {state.status === "sent" ? (
-        <section className="tile tile--sage" role="status">
+        // בלי role="status": הספירה לאחור שבפנים משתנה כל שנייה ואסור שתוקרא בכל פעם.
+        // ההודעה מוכרזת כי הפוקוס עובר לכותרת (גם אחרי "שליחה מחדש", בזכות ה־key).
+        <section className="tile tile--sage" aria-labelledby="forgot-sent-title">
           <div className="note-row">
             <span className="note-icon">
               <MailIcon />
             </span>
             <div>
-              <FocusHeading className="note-title">{copy.forgot.confirmation.heading}</FocusHeading>
+              <FocusHeading key={state.sentAt} id="forgot-sent-title" className="note-title">
+                {copy.forgot.confirmation.heading}
+              </FocusHeading>
               <p className="note-body">{copy.forgot.confirmation.body}</p>
               <ResendControls
                 key={state.sentAt}

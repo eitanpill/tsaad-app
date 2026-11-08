@@ -8,6 +8,8 @@
 
 .auth-header {
   display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   align-items: center;
   justify-content: space-between;
   min-height: 44px;
@@ -56,6 +58,7 @@
   line-height: 1.1;
   font-weight: 900;
   color: var(--maroon);
+  overflow-wrap: break-word;
 }
 
 .auth-lead {
@@ -131,6 +134,10 @@
 
 .input[dir='ltr'] { text-align: right; }
 .input--with-icon { padding-inline-end: 56px; }
+/* The icon/toggle sits at the wrapper's inline end (left, in RTL). An LTR input's
+   inline end is its right side, so reserve the space on its start (left) instead,
+   or long values run under the eye button / lock icon. */
+.input--with-icon[dir='ltr'] { padding-inline-start: 56px; padding-inline-end: 14px; }
 .input--readonly { background: var(--cream); }
 .input[aria-invalid='true'] { border-color: var(--terracotta-text); }
 

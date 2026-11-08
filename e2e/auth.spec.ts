@@ -160,7 +160,7 @@ test.describe("flows", () => {
       await page.goto("/forgot");
       await page.getByLabel("שם משתמש, טלפון או מייל").fill(ident);
       await page.getByRole("button", { name: "שליחת קישור" }).click();
-      const tile = page.getByRole("status");
+      const tile = page.getByRole("region", { name: "אם הפרטים נכונים, יגיע קישור" });
       await expect(tile).toBeVisible();
       texts.push((await tile.innerText()).replace(/\s+/g, " "));
     }
@@ -168,12 +168,124 @@ test.describe("flows", () => {
     expect(texts[0]).toContain("אם הפרטים נכונים, יגיע קישור");
   });
 
-  test("a forged cross-origin post does not succeed (the exact Origin rules are unit-tested)", async ({ page, request }) => {
+  test("activating in a browser already signed in as someone else ends that other session", async ({ page }) => {
+    const first = uname("first");
+    const firstId = await mkUser(first);
+    await page.goto(`/activate?token=${await mkToken(firstId)}`);
+    await page.getByLabel("בחירת סיסמה", { exact: true }).fill("first-pass-1");
+    await page.getByLabel("אימות הסיסמה", { exact: true }).fill("first-pass-1");
+    await page.getByRole("button", { name: "שמירה וכניסה" }).click();
+    await page.waitForURL("**/today");
+    const sessionsOf = async (id: string) =>
+      (await pool.query("select count(*)::int as n from sessions where user_id = $1", [id])).rows[0].n as number;
+    expect(await sessionsOf(firstId)).toBe(1);
+
+    const secondId = await mkUser(uname("second"));
+    await page.goto(`/activate?token=${await mkToken(secondId)}`);
+    await page.getByLabel("בחירת סיסמה", { exact: true }).fill("second-pass-1");
+    await page.getByLabel("אימות הסיסמה", { exact: true }).fill("second-pass-1");
+    await page.getByRole("button", { name: "שמירה וכניסה" }).click();
+    await page.waitForURL("**/today");
+    expect(await sessionsOf(firstId)).toBe(0);
+    expect(await sessionsOf(secondId)).toBe(1);
+  });
+
+  test("forgot: after a rate-limit error the typed value stays and the field is focused", async ({ page }) => {
+    const ident = uname("again");
+    await page.goto("/forgot");
+    const field = page.getByLabel("שם משתמש, טלפון או מייל");
+    for (let i = 0; i < 4; i++) {
+      await field.fill(ident);
+      await page.getByRole("button", { name: "שליחת קישור" }).click();
+      await expect(page.getByRole("button", { name: "שליחת קישור" })).toBeEnabled();
+    }
+    await expect(page.locator("#identifier-err")).toBeVisible();
+    await expect(field).toBeFocused();
+    await expect(field).toHaveValue(ident);
+  });
+
+  test("a real login action replayed with a foreign or missing Origin does not sign in", async ({ page, request }) => {
+    const username = uname("csrf");
+    const token = await mkToken(await mkUser(username));
+    await page.goto(`/activate?token=${token}`);
+    await page.getByLabel("בחירת סיסמה", { exact: true }).fill("csrf-pass-123");
+    await page.getByLabel("אימות הסיסמה", { exact: true }).fill("csrf-pass-123");
+    await page.getByRole("button", { name: "שמירה וכניסה" }).click();
+    await page.waitForURL("**/today");
+    await page.context().clearCookies();
+
+    // capture the genuine server-action request the browser sends for a correct login…
     await page.goto("/login");
-    const res = await request.post("/login", {
-      headers: { origin: "https://evil.example", "next-action": "00" },
-      form: { username: "x", password: "y" },
+    let captured: { headers: Record<string, string>; body: Buffer } | undefined;
+    await page.route("**/login", async (route) => {
+      const req = route.request();
+      if (req.method() === "POST" && !captured) {
+        captured = { headers: req.headers(), body: req.postDataBuffer()! };
+        return route.abort();
+      }
+      return route.continue();
     });
-    expect(res.status()).not.toBe(200);
+    await page.getByLabel("שם משתמש", { exact: true }).fill(username);
+    await page.getByLabel("סיסמה", { exact: true }).fill("csrf-pass-123");
+    await page.getByRole("button", { name: "כניסה", exact: true }).click();
+    await expect.poll(() => !!captured).toBe(true);
+
+    // …and replay it from "another site": same body and action id, only the Origin differs
+    const replay = async (origin: string | null) => {
+      const headers = { ...captured!.headers };
+      delete headers["content-length"];
+      delete headers.referer;
+      if (origin) headers.origin = origin;
+      else delete headers.origin;
+      return request.post("/login", { headers, data: captured!.body, maxRedirects: 0 });
+    };
+    for (const origin of ["https://evil.example", "null", null]) {
+      const res = await replay(origin);
+      expect(res.status(), String(origin)).toBe(500);
+      expect(res.headers()["set-cookie"] ?? "", String(origin)).not.toContain("tsaad_session");
+    }
+    // control: the same replay with the app's own Origin does sign in
+    const ok = await replay("http://localhost:3100");
+    expect(ok.status()).not.toBe(500);
+    expect(ok.headers()["set-cookie"] ?? "").toContain("tsaad_session");
+  });
+
+  test("without JavaScript (or before hydration) the login form still signs in", async ({ browser }) => {
+    // with Referrer-Policy no-referrer this post carried "Origin: null" and was rejected (500)
+    const username = uname("nojs");
+    const token = await mkToken(await mkUser(username));
+    const js = await browser.newContext({ locale: "he-IL" });
+    const setup = await js.newPage();
+    await setup.goto(`/activate?token=${token}`);
+    await setup.getByLabel("בחירת סיסמה", { exact: true }).fill("nojs-pass-12");
+    await setup.getByLabel("אימות הסיסמה", { exact: true }).fill("nojs-pass-12");
+    await setup.getByRole("button", { name: "שמירה וכניסה" }).click();
+    await setup.waitForURL("**/today");
+    await js.close();
+
+    const ctx = await browser.newContext({ javaScriptEnabled: false, locale: "he-IL" });
+    const page = await ctx.newPage();
+    await page.goto("/login");
+    await page.locator("#username").fill(username);
+    await page.locator('input[name="password"]').fill("nojs-pass-12");
+    const [res] = await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST"),
+      page.locator('button[type="submit"]').click(),
+    ]);
+    expect(res.request().headers().origin).toBe("http://localhost:3100");
+    expect(res.status()).toBeLessThan(500);
+    await page.waitForURL("**/today");
+    expect((await ctx.cookies()).some((c) => c.name === "__Host-tsaad_session")).toBe(true);
+    await ctx.close();
+  });
+
+  test("auth pages send no Referer off-site and /activate is never cached", async ({ request }) => {
+    for (const path of ["/login", "/forgot", "/activate?token=x"]) {
+      const res = await request.get(path);
+      expect(res.headers()["referrer-policy"], path).toBe("same-origin");
+      expect(await res.text(), path).toContain('<meta name="referrer" content="same-origin"/>');
+    }
+    const act = await request.get("/activate?token=x");
+    expect(act.headers()["cache-control"]).toContain("no-store");
   });
 });
