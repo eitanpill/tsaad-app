@@ -188,9 +188,16 @@ describe("forgot helpers", () => {
 });
 
 describe("client ip", () => {
-  it("prefers x-real-ip, then the first x-forwarded-for hop", () => {
-    expect(clientIp(headers({ "x-real-ip": "1.1.1.1", "x-forwarded-for": "2.2.2.2" }))).toBe("1.1.1.1");
-    expect(clientIp(headers({ "x-forwarded-for": "2.2.2.2, 3.3.3.3" }))).toBe("2.2.2.2");
-    expect(clientIp(headers({}))).toBeNull();
+  const vercel = { VERCEL: "1" };
+  it("on Vercel: prefers x-real-ip, then the first x-forwarded-for hop", () => {
+    expect(clientIp(headers({ "x-real-ip": "1.1.1.1", "x-forwarded-for": "2.2.2.2" }), vercel)).toBe("1.1.1.1");
+    expect(clientIp(headers({ "x-forwarded-for": "2.2.2.2, 3.3.3.3" }), vercel)).toBe("2.2.2.2");
+    expect(clientIp(headers({}), vercel)).toBeNull();
+  });
+  it("elsewhere ignores client-settable IP headers unless TRUST_PROXY_IP_HEADERS=true", () => {
+    const spoofed = headers({ "x-real-ip": "6.6.6.6", "x-forwarded-for": "7.7.7.7" });
+    expect(clientIp(spoofed, {})).toBeNull();
+    expect(clientIp(spoofed, { TRUST_PROXY_IP_HEADERS: "1" })).toBeNull();
+    expect(clientIp(spoofed, { TRUST_PROXY_IP_HEADERS: "true" })).toBe("6.6.6.6");
   });
 });

@@ -18,6 +18,8 @@ export const RATE_LIMITS = Object.freeze({
   login: Object.freeze({ windowSeconds: 15 * 60, perIdentifier: 5, perIp: 30 }),
   /** בקשות "שכחתי סיסמה" (כל בקשה נספרת). */
   forgot: Object.freeze({ windowSeconds: 60 * 60, perIdentifier: 3, perIp: 10 }),
+  /** קישורים שנשלחים לאותו חשבון, מכל המזהים יחד (נגד הצפת הודעות). */
+  forgotPerAccount: Object.freeze({ windowSeconds: 60 * 60, max: 5 }),
 });
 
 /** זמן מינימלי לתגובת "שכחתי סיסמה", כדי שהתזמון לא יגלה אם יש חשבון. */

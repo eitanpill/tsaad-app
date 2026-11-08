@@ -4,7 +4,11 @@ import "./auth.css";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
-  referrer: "no-referrer",
+  // same-origin, not no-referrer: no Referer leaves the site (so the /activate token never
+  // reaches a third party), while a form posted before hydration or without JS keeps a real
+  // Origin. With no-referrer, browsers send "Origin: null" on form navigations and the
+  // server-action origin checks reject the login.
+  referrer: "same-origin",
 };
 
 /** מעטפת המסכים שלפני ההתחברות: כותרת (לוגו ושורת שם), דילוג לתוכן ו־main. אין סרגל ניווט. */

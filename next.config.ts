@@ -51,7 +51,16 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Auth pages: /activate carries a one-time token in its URL. No Referer to other
+      // sites, as an HTTP header too (the layout also sets <meta name="referrer">).
+      // Not no-referrer: that makes form posts without JS send "Origin: null". Last match wins.
+      {
+        source: "/:page(login|activate|forgot)",
+        headers: [{ key: "Referrer-Policy", value: "same-origin" }],
+      },
+    ];
   },
 };
 

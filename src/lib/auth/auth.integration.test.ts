@@ -389,6 +389,41 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
       expect(await outcome("not-a-user")).toEqual(["ok", "ok", "ok", "rate_limited"]);
     });
 
+    it("caps links per account across differently written identifiers (no message flooding)", async () => {
+      await mkUser("flooded", { password: "pass-12345", phone: "050-765-4321" });
+      const r = recorder();
+      // each spelling of the phone is a distinct identifier, so only the per-account cap stops this
+      const spellings = ["0507654321", "050-7654321", "050 765 4321", "+972507654321", "972-50-765-4321", "(050) 765-4321", "050.765.4321"];
+      for (const [i, ident] of spellings.entries()) {
+        expect((await run(ident, r.sender, `13.0.0.${i}`)).status).toBe("ok");
+      }
+      const emails = r.sent.filter((m) => m.channel === "email");
+      expect(emails).toHaveLength(5);
+    });
+
+    it("with defer, delivery runs only when the deferred task runs (after the response)", async () => {
+      await mkUser("deferred", { password: "pass-12345" });
+      const r = recorder();
+      let task: (() => Promise<void>) | undefined;
+      const res = await requestPasswordReset(db, {
+        identifier: "deferred",
+        secret: SECRET,
+        ip: "14.0.0.1",
+        ttlMinutes: 30,
+        sender: r.sender,
+        origin: "https://app.example.com",
+        defer: (t) => {
+          task = t;
+        },
+      });
+      expect(res).toEqual({ status: "ok" });
+      expect(r.sent).toHaveLength(0);
+      expect(await count("activation_tokens")).toBe(0);
+      await task!();
+      expect(r.sent).toHaveLength(1);
+      expect(await count("activation_tokens")).toBe(1);
+    });
+
     it("a failing sender does not change the answer", async () => {
       await mkUser("broken", { password: "pass-12345" });
       const sender: MessageSender = { async send() { throw new Error("boom"); } };

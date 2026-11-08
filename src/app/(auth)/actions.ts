@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { getDb } from "@/db";
 import { logger } from "@/lib/logger";
@@ -19,7 +20,7 @@ import { authenticate } from "@/lib/auth/login";
 import { assertSameOrigin } from "@/lib/auth/origin";
 import { hashPassword, validatePassword } from "@/lib/auth/password";
 import { clientIp } from "@/lib/auth/request";
-import { createSession, deleteSession, rotateSession } from "@/lib/auth/session";
+import { deleteSession, rotateSession } from "@/lib/auth/session";
 import { peekToken } from "@/lib/auth/tokens";
 import type { ActivateState, ForgotState, LoginState } from "./state";
 
@@ -86,7 +87,8 @@ export async function activateAction(_prev: ActivateState, formData: FormData): 
   }
   if (!setup) return { status: "expired" };
 
-  const session = await createSession(db, setup.userId);
+  // התחברות חדשה; התחברות קודמת של הדפדפן הזה (גם של משתמש אחר) נמחקת.
+  const session = await rotateSession(db, setup.userId, await readSessionToken());
   await setSessionCookie(session.token, session.expiresAt);
   redirect(POST_LOGIN_PATH);
 }
@@ -112,6 +114,8 @@ export async function forgotAction(_prev: ForgotState, formData: FormData): Prom
       ttlMinutes: getActivationTtlMinutes(),
       sender: getMessageSender(),
       origin,
+      // המשלוח רץ אחרי התשובה, כך שזמן התגובה זהה עם חשבון ובלעדיו.
+      defer: after,
     });
     state =
       result.status === "rate_limited"

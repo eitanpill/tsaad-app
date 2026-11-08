@@ -75,6 +75,8 @@ export const envSchema = z.object({
 
   TRACKER_SYNC_ENABLED: literalBoolean.default(false),
   REMINDERS_ENABLED: literalBoolean.default(false),
+  /** לסמוך על x-real-ip / x-forwarded-for מחוץ ל־Vercel (רק מאחורי proxy שדורס אותן). */
+  TRUST_PROXY_IP_HEADERS: literalBoolean.default(false),
 
   BUNNY_LIBRARY_ID: optional(z.string().min(1)),
   BUNNY_TOKEN_KEY: optional(z.string().min(1)),
