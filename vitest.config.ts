@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
+      // "server-only" throws outside the react-server condition; stub it in tests.
+      "server-only": path.resolve(import.meta.dirname, "test/server-only-stub.ts"),
     },
   },
   test: {
