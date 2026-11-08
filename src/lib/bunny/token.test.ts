@@ -37,5 +37,8 @@ describe("buildBunnyEmbedUrl", () => {
     expect(() => buildBunnyEmbedUrl({ libraryId: "1/../x", videoId: "v", tokenKey: key, now })).toThrow();
     expect(() => buildBunnyEmbedUrl({ libraryId: "1", videoId: "v?x=1", tokenKey: key, now })).toThrow();
     expect(() => buildBunnyEmbedUrl({ libraryId: "1", videoId: "v", tokenKey: key, now, ttlSeconds: 0 })).toThrow();
+    expect(() => buildBunnyEmbedUrl({ libraryId: "1", videoId: "v", tokenKey: key, now, ttlSeconds: 6 * 3600 + 1 })).toThrow();
+    expect(() => buildBunnyEmbedUrl({ libraryId: "1", videoId: "v", tokenKey: key, now: new Date("x") })).toThrow();
+    expect(() => buildBunnyEmbedUrl({ libraryId: "1", videoId: "v", tokenKey: "", now })).toThrow();
   });
 });

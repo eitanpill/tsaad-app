@@ -131,6 +131,11 @@ export const actionCompletions = pgTable(
       "action_completions_action",
       sql`${t.action} in ('habit','move','meditate','live')`,
     ),
+    // הגנה בשכבת המסד: לייב רק בימי לייב, תנועה/מדיטציה רק בימים רגילים.
+    check(
+      "action_completions_action_day",
+      sql`${t.action} = 'habit' or (${t.action} = 'live') = (${t.day} in (7, 14))`,
+    ),
     index("action_completions_user_day_idx").on(t.userId, t.day),
   ],
 );

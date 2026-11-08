@@ -207,3 +207,29 @@ describe("reminderDue", () => {
     expect(reminderDue({ ...base, now: at("2026-12-01T22:30:00Z"), alreadyHandledDates: [] })).toEqual({ due: false, reason: "too_early" });
   });
 });
+
+describe("marking invariants (security review sweep, every 10 minutes incl. DST)", () => {
+  for (const [name, s] of [["winter", winter], ["spring", spring], ["autumn", autumn]] as const) {
+    it(`${name}: never a future/locked day, never older than yesterday, at most two open`, () => {
+      const startMs = unlockInstant(1, s).getTime() - 2 * 86_400_000;
+      const endMs = unlockInstant(14, s).getTime() + 3 * 86_400_000;
+      for (let t = startMs; t <= endMs; t += 10 * 60_000) {
+        const now = new Date(t);
+        const st = dayStatusAt(now, s);
+        const open: number[] = [];
+        for (let d = 1; d <= 14; d++) {
+          if (!canMark(d, now, s)) continue;
+          open.push(d);
+          expect(now.getTime()).toBeGreaterThanOrEqual(unlockInstant(d, s).getTime());
+          expect(now.getTime()).toBeLessThan(markDeadline(d, s).getTime());
+        }
+        expect(open.length).toBeLessThanOrEqual(2);
+        if (st.phase === "before_start") expect(open).toEqual([]);
+        if (st.phase === "active") {
+          for (const d of open) expect([st.day, st.day - 1]).toContain(d);
+        }
+        if (st.phase === "ended") for (const d of open) expect(d).toBe(14);
+      }
+    });
+  }
+});

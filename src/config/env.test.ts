@@ -44,6 +44,11 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ APP_ORIGIN: "https://x.example/" })).toThrow(/APP_ORIGIN/);
     expect(parseEnv({ APP_ORIGIN: "https://x.example" }).APP_ORIGIN).toBe("https://x.example");
     expect(() => parseEnv({ LIVE_URL_DAY7: "javascript:alert(1)" })).toThrow();
+    expect(() => parseEnv({ LIVE_URL_DAY7: "http://zoom.example/j/1" })).toThrow(/LIVE_URL_DAY7/);
+    expect(() => parseEnv({ GHL_WEBHOOK_URL: "http://hooks.example/x" })).toThrow(/GHL_WEBHOOK_URL/);
+    expect(parseEnv({ GHL_WEBHOOK_URL: "https://hooks.example/x" }).GHL_WEBHOOK_URL).toBe("https://hooks.example/x");
+    expect(() => parseEnv({ APP_ORIGIN: "http://x.example" })).toThrow(/APP_ORIGIN/);
+    expect(parseEnv({ APP_ORIGIN: "http://localhost:3000" }).APP_ORIGIN).toBe("http://localhost:3000");
     expect(parseEnv({ SESSION_SPOTS: "30" }).SESSION_SPOTS).toBe(30);
     expect(() => parseEnv({ ACTIVATION_LINK_TTL_MINUTES: "0" })).toThrow();
     expect(() => parseEnv({ OFFER_WINDOW_HOURS: "abc" })).toThrow();
@@ -51,10 +56,12 @@ describe("parseEnv", () => {
   });
 
   it("does not leak values in error messages", () => {
+    expect(() => parseEnv({ SESSION_SECRET: "tooshort" })).toThrow();
     try {
-      parseEnv({ SESSION_SECRET: "tooshort" });
+      parseEnv({ SESSION_SECRET: "tooshort", GHL_WEBHOOK_URL: "http://user:pw@hooks.example/secretpath" });
     } catch (e) {
       expect(String(e)).not.toContain("tooshort");
+      expect(String(e)).not.toContain("secretpath");
     }
   });
 });

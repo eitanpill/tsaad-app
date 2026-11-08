@@ -9,6 +9,8 @@ import { createHash } from "node:crypto";
  * הכתובת מקבלת את הפרמטרים token ו־expires.
  */
 export const DEFAULT_EMBED_TTL_SECONDS = 60 * 60;
+/** תקרה: קישור חתום לא יחיה יותר מ־6 שעות, גם אם מישהו יעביר ערך גדול בטעות. */
+export const MAX_EMBED_TTL_SECONDS = 6 * 60 * 60;
 const EMBED_HOST = "https://iframe.mediadelivery.net";
 
 export function bunnyEmbedToken(args: {
@@ -33,7 +35,9 @@ export function buildBunnyEmbedUrl(args: {
   ttlSeconds?: number;
 }): { url: string; expires: number } {
   const ttl = args.ttlSeconds ?? DEFAULT_EMBED_TTL_SECONDS;
-  if (!Number.isInteger(ttl) || ttl <= 0) throw new RangeError("ttlSeconds must be a positive integer");
+  if (!Number.isInteger(ttl) || ttl <= 0 || ttl > MAX_EMBED_TTL_SECONDS) {
+    throw new RangeError(`ttlSeconds must be an integer in 1..${MAX_EMBED_TTL_SECONDS}`);
+  }
   // מזהים מגיעים מהתצורה/תוכן, אך מוודאים שאין בהם תווים שישברו את הנתיב.
   if (!/^[A-Za-z0-9_-]+$/.test(args.libraryId)) throw new RangeError("bad library id");
   if (!/^[A-Za-z0-9_-]+$/.test(args.videoId)) throw new RangeError("bad video id");

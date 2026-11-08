@@ -43,13 +43,23 @@ const timeZone = z.string().refine((tz) => {
   }
 }, "unknown IANA time zone");
 
+/** https בלבד: כתובות webhook ולייב לא נשלחות בטקסט גלוי. */
 const httpsUrl = z
   .url()
-  .refine((u) => /^https?:\/\//.test(u), "expected http(s) URL");
+  .refine((u) => /^https:\/\//i.test(u), "expected https URL");
 
-const origin = httpsUrl.refine((u) => new URL(u).origin === u, {
-  message: "expected an origin without path or trailing slash",
-});
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/** https, או http רק ל־localhost (פיתוח מקומי). */
+const origin = z
+  .url()
+  .refine((u) => {
+    const p = new URL(u);
+    return p.protocol === "https:" || (p.protocol === "http:" && LOOPBACK.has(p.hostname));
+  }, "expected https origin (http allowed only for localhost)")
+  .refine((u) => new URL(u).origin === u, {
+    message: "expected an origin without path or trailing slash",
+  });
 
 const posInt = z.coerce.number().int().positive();
 

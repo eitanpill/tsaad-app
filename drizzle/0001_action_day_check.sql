@@ -1,0 +1,1 @@
+ALTER TABLE "action_completions" ADD CONSTRAINT "action_completions_action_day" CHECK ("action_completions"."action" = 'habit' or ("action_completions"."action" = 'live') = ("action_completions"."day" in (7, 14)));
