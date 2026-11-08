@@ -13,10 +13,12 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "test:db": "scripts/test-db.sh run -- vitest run",
+    "test:e2e": "scripts/test-db.sh run -- playwright test",
     "dev:create-user": "NODE_ENV=development tsx scripts/create-dev-user.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
+    "@node-rs/argon2": "2.0.2",
     "drizzle-orm": "0.45.4",
     "next": "16.4.5",
     "pg": "8.23.1",
@@ -26,6 +28,8 @@
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.3",
+    "@playwright/test": "1.63.0",
     "@testing-library/dom": "10.4.2",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.3",
@@ -48,6 +52,9 @@
     },
     "@esbuild-kit/core-utils": {
       "esbuild": "0.28.2"
+    },
+    "@axe-core/playwright": {
+      "playwright-core": "1.63.0"
     }
   }
 }
