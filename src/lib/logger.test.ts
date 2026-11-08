@@ -84,3 +84,73 @@ describe("logger", () => {
     expect(rec.requestToken).toBe(REDACTED);
   });
 });
+
+describe("redaction hardening (security review)", () => {
+  it("scrubs PII and secrets inside free-text string values, not only keys", () => {
+    const out = JSON.stringify(
+      redact({
+        note: "contact dana@example.test or +972-50-123-4567 / 050-1234567",
+        db: "connect postgres://u:pw@localhost/db failed",
+        hdr: "Bearer abc.def-123",
+        jwt: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.sig",
+        list: ["https://hook.example/x?k=1", { inner: "e@x.co" }],
+      }),
+    );
+    for (const s of ["dana@example.test", "123-4567", "1234567", "pw@localhost", "abc.def-123", "eyJhbGci", "hook.example", "e@x.co"]) {
+      expect(out).not.toContain(s);
+    }
+  });
+
+  it("keeps ordinary ids, dates and numbers readable", () => {
+    const out = redact({
+      reqId: "123e4567-e89b-12d3-a456-426614174000",
+      date: "2026-11-08",
+      count: 1234567890,
+      day: 7,
+    });
+    expect(out).toEqual({ reqId: "123e4567-e89b-12d3-a456-426614174000", date: "2026-11-08", count: 1234567890, day: 7 });
+  });
+
+  it("redacts more sensitive key names (api keys, ip, auth, endpoint, names)", () => {
+    const out = redact({
+      apiKey: "k", BUNNY_TOKEN_KEY: "k", key: "k", ip: "1.2.3.4", "x-forwarded-for": "1.2.3.4",
+      p256dh: "k", auth: "a", endpoint: "https://push", passwordHash: "h", displayName: "דנה",
+      databaseUrl: "postgres://x", description: "ok", tip: "ok",
+    }) as Record<string, unknown>;
+    for (const k of ["apiKey", "BUNNY_TOKEN_KEY", "key", "ip", "x-forwarded-for", "p256dh", "auth", "endpoint", "passwordHash", "displayName", "databaseUrl"]) {
+      expect(out[k], k).toBe(REDACTED);
+    }
+    expect(out.description).toBe("ok");
+    expect(out.tip).toBe("ok");
+  });
+
+  it("does not copy extra error fields (e.g. pg detail) and follows cause safely", () => {
+    const pgErr = Object.assign(new Error("duplicate key"), { detail: "Key (email)=(a@b.co) exists", code: "23505" });
+    const top = new Error("insert failed", { cause: pgErr });
+    (pgErr as Error & { cause?: unknown }).cause = top; // cycle
+    const out = JSON.stringify(redact({ err: top }));
+    expect(out).not.toContain("a@b.co");
+    expect(out).toContain("duplicate key");
+    expect(out).toContain("[Circular]");
+  });
+
+  it("handles arrays of errors, Maps, Sets, buffers, functions and deep nesting", () => {
+    let deep: Record<string, unknown> = { password: "x" };
+    for (let i = 0; i < 20; i++) deep = { d: deep };
+    const out = JSON.stringify(
+      redact({ errs: [new Error("x a@b.co")], m: new Map([["email", "a@b.co"]]), s: new Set(["a@b.co"]), b: Buffer.from("secret"), f: () => 1, deep }),
+    );
+    expect(out).not.toContain("a@b.co");
+    expect(out).not.toContain("secret");
+    expect(out).toContain("[MaxDepth]");
+  });
+
+  it("does not let fields override time/level/msg, and never throws", () => {
+    const { log, lines } = capture();
+    log.info("real", { level: "debug", msg: "fake", time: "1999" });
+    expect(lines[0]).toMatchObject({ level: "info", msg: "real", time: "2026-11-08T00:00:00.000Z" });
+    const evil = Object.defineProperty({}, "boom", { enumerable: true, get() { throw new Error("getter"); } });
+    expect(() => log.warn("x", { evil })).not.toThrow();
+    expect(lines[1]).toMatchObject({ level: "warn", logError: true });
+  });
+});
