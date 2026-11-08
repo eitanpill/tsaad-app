@@ -20,7 +20,7 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 | GET /api/video/[day] | handler | a session, and only once the server has unlocked that day |
 | GET /api/live/[session] | handler | a session, from 60 minutes before the live session |
 | POST/DELETE /api/push/subscribe | handler | a session |
-| GET /api/cron/reminders, /api/cron/sync | handler | requests that carry `Bearer CRON_SECRET` |
+| GET /api/cron/reminders, /api/cron/sync, /api/cron/cleanup | handler | requests that carry `Bearer CRON_SECRET` (constant-time check; 401 if the secret is unset or shorter than 16 characters) |
 | GET /api/health | handler | anyone |
 
 Access is enforced in the data-access layer (DAL) and in each route handler, not only in `proxy.ts`. The page never receives the content of a locked day.
@@ -36,8 +36,8 @@ Access is enforced in the data-access layer (DAL) and in each route handler, not
 | `action_completions` | Completed actions (`habit`, `move`, `meditate`, `live`), unique on (user, day, action), day 1 to 14. |
 | `live_attendance` | One attended or not-attended mark per user per live day (7 or 14), unique on (user, day). |
 | `push_subscriptions` | Browser push subscriptions, endpoint unique. |
-| `reminder_log` | Reminders, unique on (user, date), with status `dry_run`, `sent` or `failed`. |
-| `sync_outbox` | Updates waiting to be synced, with status, attempts, next attempt time and an optional unique dedupe key. |
+| `reminder_log` | Reminders, unique on (user, date), with status `pending` (written before sending), `dry_run`, `sent` or `failed`. |
+| `sync_outbox` | Updates waiting to be synced, with status (`pending`, `failed` = will retry, `sent`, `dead` = gave up), attempts, next attempt time (also used as a lease while a worker holds the row) and an optional unique dedupe key. |
 
 Every table that holds personal data references `users(id)` with `ON DELETE CASCADE`, so deleting an account removes all of its data. This is covered by an integration test.
 
@@ -70,6 +70,12 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
   - `lib/sync/*` with a mock adapter, `lib/push/*` and `api/cron/*`
   - each reminder is sent once per user per day, on the first run at or after 07:30 and before a cutoff
   - a test proves nothing is sent under the default settings
+  - built:
+    - `lib/sync/{payload,backoff,adapter,outbox,worker}.ts`: PII-free tracker payload (strict zod), outbox with dedupe, `FOR UPDATE SKIP LOCKED` claim with a lease, exponential backoff with jitter, dead after 8 attempts, mock adapter only. There is no real GHL adapter; `getSyncAdapter()` returns null (TODO gate G3), so even `TRACKER_SYNC_ENABLED=true` processes nothing.
+    - `lib/push/{endpoints,message,sender,reminders}.ts`: push endpoint allowlist (for stage 9 `api/push`), message text from `copy.push`, `PushSender` (dry-run default, `web-push` behind it, loaded lazily), reminder job (insert into `reminder_log` first, then send; 404/410 delete the subscription).
+    - `lib/cron/auth.ts`, `lib/maintenance/cleanup.ts`, `app/api/cron/{reminders,sync,cleanup}/route.ts`, `vercel.json` crons.
+    - migration `0003` (`reminder_log.status` gains `pending`; `sync_outbox.status` gains `dead`).
+    - technical constants (reminder cutoff 12:00, sync backoff/attempts/lease, retention) in `config/constants.ts`.
 - **Stage 7, Today:**
   - the app shell and the Today screen
   - `api/video`, issued for unlocked days only
