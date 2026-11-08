@@ -200,6 +200,23 @@ describe("copy", () => {
     expect(text).not.toMatch(/לא נמצא|אין חשבון|לא קיים/);
   });
 
+  it("keeps passwords out of account messages and warns not to share the link", () => {
+    const { activation, forgot } = copy.messages;
+    for (const s of [activation.whatsapp, activation.emailBody, forgot.whatsapp, forgot.emailBody]) {
+      expect(s).not.toMatch(/\{pass|סיסמה זמנית|הסיסמה שלכם:/);
+      expect(s).toContain("{link}");
+      expect(s).toContain("לא כדאי להעביר אותו");
+    }
+  });
+
+  it("gives the two show-password buttons different names", () => {
+    expect(copy.a11y.forms.showPassword).not.toBe(copy.a11y.forms.showConfirmPassword);
+  });
+
+  it("names the reminder switch with its visible row title", () => {
+    expect(copy.a11y.reminders.switchName).toBe(copy.reminders.toggleTitle);
+  });
+
   it("has a push text for each live day and a generic one", () => {
     expect(copy.push.generic).toContain("{day}");
     expect(copy.push.liveDay).toContain("{time}");
