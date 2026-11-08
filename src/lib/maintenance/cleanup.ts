@@ -17,7 +17,11 @@ export type CleanupResult = Record<
   number
 >;
 
-/** ניקוי יומי לפי RETENTION. מחזיר רק ספירות. */
+/**
+ * ניקוי יומי לפי RETENTION. מחזיר רק ספירות.
+ * ב־sync_outbox הגיל נמדד מהפעילות האחרונה ולא מ־created_at: שורה ותיקה שחזרה לתור
+ * ונשלחה (או מתה) היום לא נמחקת מיד. next_attempt_at מוזז בכל תפיסה, ולכן הוא קירוב טוב.
+ */
 export async function runCleanup(db: Pick<Db, "execute">): Promise<CleanupResult> {
   const auth = await purgeExpired(db);
   const webhookEvents = await db.execute(
@@ -25,11 +29,11 @@ export async function runCleanup(db: Pick<Db, "execute">): Promise<CleanupResult
   );
   const syncSent = await db.execute(
     sql`delete from sync_outbox where status = 'sent'
-        and created_at < now() - make_interval(days => ${RETENTION.syncSentDays})`,
+        and greatest(created_at, next_attempt_at) < now() - make_interval(days => ${RETENTION.syncSentDays})`,
   );
   const syncDead = await db.execute(
     sql`delete from sync_outbox where status = 'dead'
-        and created_at < now() - make_interval(days => ${RETENTION.syncDeadDays})`,
+        and greatest(created_at, next_attempt_at) < now() - make_interval(days => ${RETENTION.syncDeadDays})`,
   );
   const reminderLog = await db.execute(
     sql`delete from reminder_log where created_at < now() - make_interval(days => ${RETENTION.reminderLogDays})`,

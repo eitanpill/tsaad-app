@@ -1,4 +1,5 @@
 import "server-only";
+import { REMINDERS } from "@/config/constants";
 import { isAllowedPushEndpoint } from "./endpoints";
 
 export type PushSubscriptionData = { endpoint: string; p256dh: string; auth: string };
@@ -38,6 +39,7 @@ const TIMEOUT_MS = 10_000;
 export function createWebPushSender(
   vapid: VapidDetails,
   sendNotification?: SendNotification,
+  deadlineMs: number = REMINDERS.sendDeadlineMs,
 ): PushSender {
   return {
     dryRun: false,
@@ -46,11 +48,22 @@ export function createWebPushSender(
       if (!isAllowedPushEndpoint(sub.endpoint)) return { ok: false, gone: true };
       try {
         const send = sendNotification ?? ((await import("web-push")).sendNotification as SendNotification);
-        await send(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          payload,
-          { vapidDetails: vapid, TTL: TTL_SECONDS, urgency: "normal", timeout: TIMEOUT_MS },
-        );
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const deadline = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error("push deadline exceeded")), deadlineMs);
+        });
+        try {
+          await Promise.race([
+            send(
+              { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+              payload,
+              { vapidDetails: vapid, TTL: TTL_SECONDS, urgency: "normal", timeout: TIMEOUT_MS },
+            ),
+            deadline,
+          ]);
+        } finally {
+          clearTimeout(timer);
+        }
         return { ok: true };
       } catch (e) {
         const statusCode = (e as { statusCode?: unknown } | null)?.statusCode;

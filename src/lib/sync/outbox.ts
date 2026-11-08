@@ -94,11 +94,15 @@ export async function claimDue(
   return rowsOf<ClaimedRow>(res);
 }
 
-/** מסמן כנשלח, רק אם המטען לא השתנה בינתיים (אחרת השורה כבר חזרה לתור עם המצב החדש). */
+/**
+ * מסמן כנשלח, רק אם המטען לא השתנה בינתיים (אחרת השורה כבר חזרה לתור עם המצב החדש)
+ * ורק אם השורה עדיין בטיפול (לא sent/dead).
+ */
 export async function markSent(db: Exec, row: ClaimedRow): Promise<boolean> {
   const res = await db.execute(
     sql`update sync_outbox set status = 'sent', last_error = null
         where id = ${row.id} and attempts = ${row.attempts}
+          and status in ('pending','failed')
           and payload = ${JSON.stringify(row.payload)}::jsonb
         returning id`,
   );
@@ -108,6 +112,8 @@ export async function markSent(db: Exec, row: ClaimedRow): Promise<boolean> {
 /**
  * מסמן כשל: ניסיון חוזר עם backoff מעריכי + ג'יטר, או dead כשחרגנו ממספר הניסיונות
  * (או כשהכשל אינו ניתן לניסיון חוזר).
+ * אותם תנאים כמו markSent: attempts לבדו לא מספיק, כי enqueue מאפס אותו, ותוצאה ישנה
+ * של עובד אחד יכולה הייתה לדרוס תפיסה חדשה (או שורה שכבר נשלחה) של עובד אחר.
  * @returns המצב החדש, או null אם השורה כבר השתנתה.
  */
 export async function markFailed(
@@ -126,6 +132,8 @@ export async function markFailed(
                next_attempt_at = case when ${dead} then next_attempt_at
                                       else now() + make_interval(secs => ${delay}) end
          where id = ${row.id} and attempts = ${row.attempts}
+           and status in ('pending','failed')
+           and payload = ${JSON.stringify(row.payload)}::jsonb
         returning status`,
   );
   return rowsOf<{ status: "failed" | "dead" }>(res)[0]?.status ?? null;

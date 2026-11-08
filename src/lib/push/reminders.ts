@@ -38,6 +38,10 @@ const idList = (ids: string[]) => sql.join(ids.map((i) => sql`${i}`), sql`, `);
  * ורק מי ש"זכה" בשורה שולח. ריצות מקבילות לא יכולות לשלוח פעמיים. אם התהליך קורס אחרי
  * הכניסה ולפני השליחה, השורה נשארת pending והמשתמש לא יקבל תזכורת באותו יום (עדיף על כפל).
  *
+ * התפיסה בסבבים של REMINDERS.claimBatchSize, ואחרי REMINDERS.runBudgetMs לא נפתח סבב חדש:
+ * כך ריצה שנחתכת (timeout של הפונקציה) משאירה pending רק סבב אחד, ולא את כל המשתמשים,
+ * והשאר נתפסים בריצה הבאה. לכל משתמש נשלח לעד REMINDERS.maxSubscriptionsPerUser מנויים.
+ *
  * dry (REMINDERS_ENABLED כבוי): נכתבות שורות dry_run ולא נקרא ה־sender בכלל.
  * שימו לב: שורת dry_run תופסת את היום, ולכן הדלקת הדגל באמצע יום לא תשלח עד מחר.
  */
@@ -47,6 +51,9 @@ export async function runReminders(args: {
   sender: PushSender;
   now?: Date;
   log?: Logger;
+  /** לבדיקות; ברירת מחדל REMINDERS.claimBatchSize / runBudgetMs. */
+  claimBatchSize?: number;
+  runBudgetMs?: number;
 }): Promise<ReminderRunResult> {
   const { db, config, sender } = args;
   const log = args.log ?? logger;
@@ -91,62 +98,89 @@ export async function runReminders(args: {
   const live = enabled;
   const initial = live ? "pending" : "dry_run";
 
-  const claimedRes = await db.execute(
-    sql`insert into reminder_log (user_id, date, status)
-        select u.id, ${date}::date, ${initial}
-          from users u
-         where u.password_hash is not null and u.activated_at is not null
-           and exists (select 1 from push_subscriptions p where p.user_id = u.id)
-        on conflict (user_id, date) do nothing
-        returning user_id`,
-  );
-  const claimed = rowsOf<{ user_id: string }>(claimedRes).map((r) => r.user_id);
-  const result: ReminderRunResult = { ...base, mode: live ? "live" : "dry", day, claimed: claimed.length };
-  if (!live || claimed.length === 0) {
-    log.info("reminders run", { ...result });
-    return result;
-  }
-
-  const subs = rowsOf<{ user_id: string; endpoint: string; p256dh: string; auth: string }>(
-    await db.execute(
-      sql`select user_id, endpoint, p256dh, auth from push_subscriptions
-          where user_id in (${idList(claimed)})`,
-    ),
-  );
-  const byUser = new Map<string, typeof subs>();
-  for (const s of subs) byUser.set(s.user_id, [...(byUser.get(s.user_id) ?? []), s]);
-
+  const result: ReminderRunResult = { ...base, mode: live ? "live" : "dry", day };
   const message = buildReminderMessage(day, {
     7: config.env.LIVE_TIME_DAY7,
     14: config.env.LIVE_TIME_DAY14,
   });
   const payload = JSON.stringify(message);
+  const batchSize = args.claimBatchSize ?? REMINDERS.claimBatchSize;
+  const budgetMs = args.runBudgetMs ?? REMINDERS.runBudgetMs;
+  const startedAt = Date.now();
 
-  const sendForUser = async (userId: string) => {
-    let anyOk = false;
-    for (const sub of byUser.get(userId) ?? []) {
-      let r;
-      try {
-        r = await sender.send({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload);
-      } catch {
-        r = { ok: false as const, gone: false };
-      }
-      if (r.ok) anyOk = true;
-      else if (r.gone) {
-        await db.execute(sql`delete from push_subscriptions where endpoint = ${sub.endpoint}`);
-        result.removedSubscriptions++;
-      }
-    }
-    await db.execute(
-      sql`update reminder_log set status = ${anyOk ? "sent" : "failed"}
-          where user_id = ${userId} and date = ${date}::date`,
+  /**
+   * תופס עד batchSize משתמשים שעוד אין להם שורה לתאריך הזה. not exists לפני ה־limit,
+   * כדי שמשתמשים שכבר טופלו לא "יבזבזו" מקום בסבב; on conflict נשאר המנעול האמיתי מול
+   * ריצה מקבילה.
+   */
+  const claimBatch = async () =>
+    rowsOf<{ user_id: string }>(
+      await db.execute(
+        sql`insert into reminder_log (user_id, date, status)
+            select u.id, ${date}::date, ${initial}
+              from users u
+             where u.password_hash is not null and u.activated_at is not null
+               and exists (select 1 from push_subscriptions p where p.user_id = u.id)
+               and not exists (select 1 from reminder_log r where r.user_id = u.id and r.date = ${date}::date)
+             order by u.id
+             limit ${batchSize}
+            on conflict (user_id, date) do nothing
+            returning user_id`,
+      ),
+    ).map((r) => r.user_id);
+
+  const sendBatch = async (claimed: string[]) => {
+    // המנויים החדשים ביותר בלבד, עד maxSubscriptionsPerUser לכל משתמש.
+    const subs = rowsOf<{ user_id: string; endpoint: string; p256dh: string; auth: string }>(
+      await db.execute(
+        sql`select user_id, endpoint, p256dh, auth from (
+              select user_id, endpoint, p256dh, auth,
+                     row_number() over (partition by user_id order by created_at desc, id) as rn
+                from push_subscriptions
+               where user_id in (${idList(claimed)})
+            ) s where rn <= ${REMINDERS.maxSubscriptionsPerUser}`,
+      ),
     );
-    if (anyOk) result.sent++;
-    else result.failed++;
+    const byUser = new Map<string, typeof subs>();
+    for (const s of subs) byUser.set(s.user_id, [...(byUser.get(s.user_id) ?? []), s]);
+
+    const sendForUser = async (userId: string) => {
+      let anyOk = false;
+      for (const sub of byUser.get(userId) ?? []) {
+        let r;
+        try {
+          r = await sender.send({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload);
+        } catch {
+          r = { ok: false as const, gone: false };
+        }
+        if (r.ok) anyOk = true;
+        else if (r.gone) {
+          await db.execute(
+            sql`delete from push_subscriptions where endpoint = ${sub.endpoint} and user_id = ${userId}`,
+          );
+          result.removedSubscriptions++;
+        }
+      }
+      await db.execute(
+        sql`update reminder_log set status = ${anyOk ? "sent" : "failed"}
+            where user_id = ${userId} and date = ${date}::date and status = 'pending'`,
+      );
+      if (anyOk) result.sent++;
+      else result.failed++;
+    };
+
+    for (let i = 0; i < claimed.length; i += REMINDERS.sendConcurrency) {
+      await Promise.all(claimed.slice(i, i + REMINDERS.sendConcurrency).map(sendForUser));
+    }
   };
 
-  for (let i = 0; i < claimed.length; i += REMINDERS.sendConcurrency) {
-    await Promise.all(claimed.slice(i, i + REMINDERS.sendConcurrency).map(sendForUser));
+  // סבבים עד שאין עוד משתמשים או שנגמר התקציב; השאר ייתפסו בריצה הבאה (לפני ה־cutoff).
+  for (;;) {
+    const claimed = await claimBatch();
+    result.claimed += claimed.length;
+    if (claimed.length === 0) break;
+    if (live) await sendBatch(claimed);
+    if (claimed.length < batchSize || Date.now() - startedAt >= budgetMs) break;
   }
   log.info("reminders run", { ...result });
   return result;

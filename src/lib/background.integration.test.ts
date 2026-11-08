@@ -2,6 +2,7 @@
 import { sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildConfig } from "@/config";
+import { REMINDERS } from "@/config/constants";
 import { createDb, isLocalDatabaseUrl, schema, type Db } from "@/db";
 import { rowsOf } from "@/lib/auth/sql";
 import { purgeExpired } from "@/lib/auth/session";
@@ -180,6 +181,40 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
       const again = await runReminders({ db, config: live(), sender, now: d("2026-12-01T08:00:00Z") });
       expect(again.claimed).toBe(0);
       expect(sent).toHaveLength(4);
+    });
+
+    it("claims in bounded batches: one run drains all batches, concurrent runs still send once", async () => {
+      for (let i = 0; i < 7; i++) await mkUser();
+      const { sender, sent } = fakeSender();
+      const results = await Promise.all(
+        Array.from({ length: 3 }, () =>
+          runReminders({ db, config: live(), sender, now: DAY1_0730, claimBatchSize: 2 }),
+        ),
+      );
+      const leftover = await runReminders({ db, config: live(), sender, now: DAY1_0730, claimBatchSize: 2 });
+      expect(results.reduce((a, r) => a + r.claimed, 0) + leftover.claimed).toBe(7);
+      expect(sent).toHaveLength(7);
+      expect(new Set(sent.map((s) => s.sub.endpoint)).size).toBe(7);
+      expect(await count("reminder_log", sql`status = 'sent'`)).toBe(7);
+    });
+
+    it("stops claiming new batches once the run budget is spent; the next run picks up the rest", async () => {
+      for (let i = 0; i < 5; i++) await mkUser();
+      const { sender, sent } = fakeSender();
+      const first = await runReminders({ db, config: live(), sender, now: DAY1_0730, claimBatchSize: 2, runBudgetMs: 0 });
+      expect(first.claimed).toBe(2);
+      expect(await count("reminder_log", sql`status = 'pending'`)).toBe(0);
+      const later = await runReminders({ db, config: live(), sender, now: d("2026-12-01T05:45:00Z"), claimBatchSize: 2 });
+      expect(later.claimed).toBe(3);
+      expect(sent).toHaveLength(5);
+    });
+
+    it("sends to at most maxSubscriptionsPerUser (newest) subscriptions per user", async () => {
+      await mkUser({ subs: 8 });
+      const { sender, sent } = fakeSender();
+      const r = await runReminders({ db, config: live(), sender, now: DAY1_0730 });
+      expect(r.sent).toBe(1);
+      expect(sent).toHaveLength(REMINDERS.maxSubscriptionsPerUser);
     });
 
     it("sends again the next Israel date", async () => {
@@ -541,6 +576,20 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
       expect((await rowsOut())[0]).toMatchObject({ status: "pending", attempts: 0 });
     });
 
+    it("a stale failure cannot clobber a newer claim that already succeeded (attempts reset by enqueue)", async () => {
+      const u = await mkUser();
+      await enqueueTrackerSync(db, { userId: u.id, day: 1 });
+      const [a] = await claimDue(db); // עובד A, attempts=1
+      await db.execute(sql`insert into action_completions (user_id, day, action) values (${u.id}, 1, 'habit')`);
+      await enqueueTrackerSync(db, { userId: u.id, day: 1 }); // attempts חוזר ל־0, זמין מיד
+      const [b] = await claimDue(db); // עובד B, שוב attempts=1
+      expect(b.attempts).toBe(a.attempts);
+      expect(await markSent(db, b)).toBe(true);
+      expect(await markFailed(db, a, "late", { retryable: false })).toBeNull();
+      expect(await markFailed(db, b, "dup")).toBeNull(); // גם תוצאה כפולה של B לא משנה שורה שנשלחה
+      expect((await rowsOut())[0]).toMatchObject({ status: "sent", lastError: null });
+    });
+
     it("claimDue: concurrent claims never return the same row (SKIP LOCKED + lease)", async () => {
       for (let i = 0; i < 10; i++) {
         const u = await mkUser();
@@ -603,12 +652,14 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
         ('login', 'h', now() - interval '2 days'), ('login', 'h2', now())`);
       await db.execute(sql`insert into sessions (user_id, token_hash, expires_at) values
         (${u.id}, 't1', now() - interval '1 hour'), (${u.id}, 't2', now() + interval '1 day')`);
-      await db.execute(sql`insert into sync_outbox (user_id, kind, dedupe_key, status, created_at) values
-        (${u.id}, 'tracker', 'a', 'sent', now() - interval '15 days'),
-        (${u.id}, 'tracker', 'b', 'sent', now() - interval '1 day'),
-        (${u.id}, 'tracker', 'c', 'dead', now() - interval '91 days'),
-        (${u.id}, 'tracker', 'd', 'dead', now() - interval '30 days'),
-        (${u.id}, 'tracker', 'e', 'pending', now() - interval '400 days')`);
+      await db.execute(sql`insert into sync_outbox (user_id, kind, dedupe_key, status, created_at, next_attempt_at) values
+        (${u.id}, 'tracker', 'a', 'sent', now() - interval '15 days', now() - interval '15 days'),
+        (${u.id}, 'tracker', 'b', 'sent', now() - interval '1 day', now() - interval '1 day'),
+        (${u.id}, 'tracker', 'c', 'dead', now() - interval '91 days', now() - interval '91 days'),
+        (${u.id}, 'tracker', 'd', 'dead', now() - interval '30 days', now() - interval '30 days'),
+        (${u.id}, 'tracker', 'e', 'pending', now() - interval '400 days', now() - interval '400 days'),
+        (${u.id}, 'tracker', 'f', 'sent', now() - interval '400 days', now() - interval '1 hour'),
+        (${u.id}, 'tracker', 'g', 'dead', now() - interval '400 days', now() - interval '1 hour')`);
       await db.execute(sql`insert into reminder_log (user_id, date, status, created_at) values
         (${u.id}, '2026-01-01', 'sent', now() - interval '91 days'),
         (${u.id}, '2026-01-02', 'sent', now())`);
@@ -624,7 +675,8 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
       });
       expect(await count("webhook_events")).toBe(1);
       expect(await count("sessions")).toBe(1);
-      expect(await count("sync_outbox")).toBe(3);
+      // f, g: נוצרו מזמן אבל טופלו עכשיו (חזרו לתור); נשמרים לפי הפעילות האחרונה.
+      expect(await count("sync_outbox")).toBe(5);
       expect(await count("reminder_log")).toBe(1);
       expect(await purgeExpired(db)).toEqual({ sessions: 0, activationTokens: 0, loginAttempts: 0 });
     });

@@ -28,6 +28,14 @@ export const REMINDERS = Object.freeze({
   cutoffTime: "12:00",
   /** כמה שליחות במקביל בריצה אחת. */
   sendConcurrency: 10,
+  /** כמה משתמשים נתפסים (נרשמים ב־reminder_log) בכל סבב; משתמשים שלא נתפסו יטופלו בריצה הבאה. */
+  claimBatchSize: 200,
+  /** אחרי כמה זמן (מ"ש) ריצה מפסיקה לתפוס סבבים חדשים, כדי לא להיחתך באמצע סבב. */
+  runBudgetMs: 60_000,
+  /** מקסימום מנויים (החדשים ביותר) שנשלח אליהם לכל משתמש. */
+  maxSubscriptionsPerUser: 5,
+  /** תקרה כוללת לשליחה אחת (ה־timeout של web-push הוא על שקט בשקע בלבד). */
+  sendDeadlineMs: 15_000,
   /** כתובת שהתראה פותחת (יחסית, באותו origin). */
   openPath: "/today",
 });

@@ -38,6 +38,13 @@ describe("isAllowedPushEndpoint", () => {
     "https://fcm.googleapis.com/x#frag",
     "javascript:alert(1)",
     "//fcm.googleapis.com/x",
+    "https://evil.example\\@fcm.googleapis.com/x",
+    "https://fcm.googleapis.com%2F@evil.example/x",
+    "https://fcm.googleapis.com\u3002evil.example/x",
+    "https://fcm.googleapis.com.evil.example./x",
+    "https://xn--fcm-googleapis-com.example/x",
+    "https://0x7f000001/x",
+    "https://2130706433/x",
     "",
     "not a url",
   ])("rejects %s", (u) => expect(isAllowedPushEndpoint(u)).toBe(false));
@@ -101,6 +108,16 @@ describe("push senders", () => {
     expect(await fake(500).send(SUB, "p")).toEqual({ ok: false, gone: false, statusCode: 500 });
     expect(await fake(429).send(SUB, "p")).toMatchObject({ ok: false, gone: false });
     expect(calls).toHaveLength(5);
+  });
+
+  it("web-push sender gives up after the overall deadline (a hanging push service cannot stall the run)", async () => {
+    const hang = vi.fn(() => new Promise<never>(() => {}));
+    const s = createWebPushSender(VAPID, hang, 20);
+    const t0 = Date.now();
+    const r = await s.send({ endpoint: "https://fcm.googleapis.com/fcm/send/x", p256dh: "p", auth: "a" }, "{}");
+    expect(r).toEqual({ ok: false, gone: false, statusCode: undefined });
+    expect(Date.now() - t0).toBeLessThan(1000);
+    expect(hang).toHaveBeenCalledTimes(1);
   });
 
   it("web-push sender refuses endpoints outside the allowlist without sending", async () => {
