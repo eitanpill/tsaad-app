@@ -20,6 +20,10 @@ describe("csp", () => {
     expect(prod).toContain("object-src 'none'");
     expect(prod).not.toMatch(/style-src [^;]*unsafe-inline/);
   });
+  it("allows the service worker and the manifest from the same origin only", () => {
+    expect(prod).toContain("worker-src 'self'");
+    expect(prod).toContain("manifest-src 'self'");
+  });
   it("nonces are unique and base64", () => {
     const a = newNonce();
     expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/);

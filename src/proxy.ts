@@ -32,7 +32,9 @@ export const config = {
   matcher: [
     {
       // api/ ו־assets סטטיים אינם דפים. prefetch לא צריך nonce. ("api/" עם הלוכסן: דף כמו /apiary מקבל CSP.)
-      source: "/((?!api/|_next/static|_next/image|favicon.ico).*)",
+      // גם הקבצים הסטטיים של ה־PWA (sw.js, manifest, offline, אייקונים) לא עוברים כאן: ל־CSP שלהם יש כותרות קבועות ב־next.config.ts.
+      source:
+        "/((?!api/|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|offline.html|offline.css|apple-touch-icon.png|icons/).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

@@ -32,6 +32,23 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // route handlers אינם עוברים ב־proxy (ראו matcher שם): CSP קשיחה קבועה.
       { source: "/api/:path*", headers: [{ key: "Content-Security-Policy", value: API_CSP }] },
+      // service worker: תמיד טרי (בלי מטמון), ו־CSP משלו (ה־worker רק מושך מאותו origin). אסור שיישמר ב־CDN או בדפדפן.
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'" },
+        ],
+      },
+      // דף ה־offline הסטטי: בלי nonce, בלי סקריפטים, סגנון מקובץ חיצוני בלבד.
+      {
+        source: "/offline.html",
+        headers: [
+          { key: "Cache-Control", value: "no-cache" },
+          { key: "Content-Security-Policy", value: "default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" },
+        ],
+      },
       // Auth pages: /activate carries a one-time token in its URL. No Referer to other
       // sites, as an HTTP header too (the layout also sets <meta name="referrer">).
       // Not no-referrer: that makes form posts without JS send "Origin: null". Last match wins.

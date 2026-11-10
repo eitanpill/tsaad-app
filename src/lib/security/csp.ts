@@ -22,6 +22,9 @@ export function buildCsp(nonce: string, opts: { dev?: boolean } = {}): string {
     "font-src 'self' data:",
     `connect-src 'self'${dev ? " ws: wss:" : ""}`,
     "media-src 'self' blob:",
+    // רישום ה־service worker (/sw.js) וה־manifest. worker-src מפורש: עם 'strict-dynamic' ב־script-src, 'self' לא נספר שם.
+    "worker-src 'self'",
+    "manifest-src 'self'",
     `frame-src ${BUNNY_EMBED_ORIGIN}`,
     "frame-ancestors 'none'",
     "object-src 'none'",

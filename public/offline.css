@@ -1,0 +1,8 @@
+/* דף offline סטטי: בלי JS ובלי style בתוך ה־HTML, כדי שיתאים ל־CSP קשיח ולא יהיה תלוי ב־nonce. */
+body { margin: 0; background: #FAF8F4; color: #2E0808; font-family: Rubik, Arial, sans-serif; }
+main { box-sizing: border-box; max-width: 440px; min-height: 100vh; margin: 0 auto; padding: 48px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; }
+img { border-radius: 18px; }
+h1 { margin: 6px 0 0; font-size: 28px; line-height: 1.15; font-weight: 900; }
+p { margin: 0; font-size: 16px; line-height: 1.5; max-width: 320px; }
+a { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 28px; border-radius: 27px; background: #123021; color: #FFFFFF; font-size: 17px; font-weight: 700; text-decoration: none; }
+a:focus-visible { outline: 3px solid #123021; outline-offset: 3px; box-shadow: 0 0 0 2px #FAF8F4; }
