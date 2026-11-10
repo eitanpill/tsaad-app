@@ -20,6 +20,15 @@ describe("csp", () => {
     expect(prod).toContain("object-src 'none'");
     expect(prod).not.toMatch(/style-src [^;]*unsafe-inline/);
   });
+  it("img-src gets the Bunny thumbnail host only when a valid one is configured", () => {
+    expect(/img-src ([^;]+)/.exec(prod)![1]).toBe("'self' data: blob:");
+    const withHost = buildCsp("abc", { thumbHost: "vz-1a2b3c4d-5e6.b-cdn.net" });
+    expect(/img-src ([^;]+)/.exec(withHost)![1]).toBe("'self' data: blob: https://vz-1a2b3c4d-5e6.b-cdn.net");
+    for (const bad of ["evil.com", "x.b-cdn.net.evil.com", "a b.b-cdn.net", "*.b-cdn.net", "https://a.b-cdn.net"]) {
+      expect(/img-src ([^;]+)/.exec(buildCsp("abc", { thumbHost: bad }))![1]).toBe("'self' data: blob:");
+    }
+    expect(withHost).toContain("connect-src 'self'");
+  });
   it("allows the service worker and the manifest from the same origin only", () => {
     expect(prod).toContain("worker-src 'self'");
     expect(prod).toContain("manifest-src 'self'");

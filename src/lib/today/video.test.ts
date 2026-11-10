@@ -1,11 +1,23 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { makeSchedule } from "@/lib/days";
-import { getVideoConfig, hasVideo, videoFor } from "./video";
+import { getVideoConfig, hasVideo, posterUrl, videoFor } from "./video";
 
 const s = makeSchedule("2026-12-01");
 const now = new Date("2026-12-04T14:00:00+02:00");
 const env = { BUNNY_LIBRARY_ID: "lib1", BUNNY_TOKEN_KEY: "key", BUNNY_VIDEO_IDS: "a1,,c3,d4" } as never;
+
+describe("poster url", () => {
+  const cfg = getVideoConfig(env);
+  it("is built from the configured host and the day's video id only", () => {
+    expect(posterUrl(4, cfg, "vz-abc.b-cdn.net")).toBe("https://vz-abc.b-cdn.net/d4/thumbnail.jpg");
+  });
+  it("is null without a host, without an id for that day, or without a library", () => {
+    expect(posterUrl(4, cfg, undefined)).toBeNull();
+    expect(posterUrl(2, cfg, "vz-abc.b-cdn.net")).toBeNull();
+    expect(posterUrl(4, getVideoConfig({} as never), "vz-abc.b-cdn.net")).toBeNull();
+  });
+});
 
 describe("video issuance", () => {
   const cfg = getVideoConfig(env);

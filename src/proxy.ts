@@ -16,7 +16,7 @@ const NOT_FOUND_PATH = "/__not-found";
  */
 export function proxy(request: NextRequest) {
   const nonce = newNonce();
-  const csp = buildCsp(nonce, { dev: process.env.NODE_ENV === "development" });
+  const csp = buildCsp(nonce, { dev: process.env.NODE_ENV === "development", thumbHost: process.env.BUNNY_CDN_HOST });
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);

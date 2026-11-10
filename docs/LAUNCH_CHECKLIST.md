@@ -33,6 +33,7 @@ The server refuses to start in production when a **required** variable is missin
 | Variable | Value |
 |---|---|
 | `START_DATE` | `YYYY-MM-DD`, day 1 of the challenge (Israel time). Unset = every screen shows "before start". |
+| `BUNNY_CDN_HOST` | Optional. Library CDN hostname (`vz-….b-cdn.net`, Bunny Stream → Library → CDN Hostname). With it the Today and day screens show the video thumbnail as the poster (`https://HOST/VIDEO_ID/thumbnail.jpg`); the host is added to the CSP `img-src` and nothing else. Without it a warm illustration is shown. If CDN token authentication is on for that zone, thumbnails will not load and the illustration stays. |
 | `BUNNY_LIBRARY_ID` | Bunny Stream library id. |
 | `BUNNY_VIDEO_IDS` | 14 video ids, comma-separated in day order; an empty slot means "no video yet" for that day. |
 | `LIVE_TIME_DAY7`, `LIVE_TIME_DAY14` | `HH:MM` Israel time. Unset = "השעה תפורסם בקרוב." and no calendar file. `LIVE_TIME_DAY14` also starts the offer window. |

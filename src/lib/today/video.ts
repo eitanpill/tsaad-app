@@ -18,6 +18,16 @@ export function getVideoConfig(
   return { libraryId: env.BUNNY_LIBRARY_ID, tokenKey: env.BUNNY_TOKEN_KEY, ids };
 }
 
+/**
+ * כתובת התמונה הממוזערת של הסרטון (https://{BUNNY_CDN_HOST}/{videoId}/thumbnail.jpg), רק כשהוגדרו מארח ומזהה ליום.
+ * נקראת רק ליום שנפתח (הדף שולח אותה ללקוח רק ליום הנוכחי או ליום שכבר נפתח).
+ */
+export function posterUrl(day: number, cfg: VideoConfig | null = getVideoConfig(), host = getConfig().env.BUNNY_CDN_HOST): string | null {
+  const id = cfg?.ids[day - 1];
+  if (!id || !host || !/^[A-Za-z0-9_-]+$/.test(id)) return null;
+  return `https://${host}/${id}/thumbnail.jpg`;
+}
+
 /** האם יש סרטון מוגדר ליום (בלי לחשוף את המזהה). */
 export function hasVideo(day: number, cfg: VideoConfig | null = getVideoConfig()): boolean {
   return !!cfg?.ids[day - 1];

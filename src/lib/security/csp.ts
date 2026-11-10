@@ -16,14 +16,21 @@ export const BUNNY_EMBED_ORIGIN = "https://iframe.mediadelivery.net";
 export const CSP_REPORT_PATH = "/api/csp-report";
 export const CSP_REPORT_GROUP = "csp";
 
-export function buildCsp(nonce: string, opts: { dev?: boolean } = {}): string {
+/** מארח CDN תקין של Bunny (אותו כלל כמו BUNNY_CDN_HOST ב־config/env.ts); כל דבר אחר לא נכנס ל־CSP. */
+const CDN_HOST_RE = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.b-cdn\.net$/;
+
+/**
+ * @param opts.thumbHost מארח ה־CDN של Bunny (BUNNY_CDN_HOST), רק לתמונות הממוזערות של הסרטונים: נוסף ל־img-src ולא לשום הנחיה אחרת.
+ */
+export function buildCsp(nonce: string, opts: { dev?: boolean; thumbHost?: string } = {}): string {
   const dev = opts.dev ?? false;
+  const thumb = opts.thumbHost && CDN_HOST_RE.test(opts.thumbHost) ? ` https://${opts.thumbHost}` : "";
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'`,
     "style-src-attr 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob:${thumb}`,
     "font-src 'self' data:",
     `connect-src 'self'${dev ? " ws: wss:" : ""}`,
     "media-src 'self' blob:",

@@ -95,6 +95,8 @@ export const envSchema = z.object({
 
   BUNNY_LIBRARY_ID: optional(z.string().min(1)),
   BUNNY_TOKEN_KEY: optional(z.string().min(1)),
+  /** מארח ה־CDN של הספרייה (Bunny Stream → Library → "CDN Hostname", למשל vz-xxxx-xxx.b-cdn.net): רק לתמונות הממוזערות של הסרטונים. */
+  BUNNY_CDN_HOST: optional(z.string().regex(/^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.b-cdn\.net$/, "a *.b-cdn.net hostname")),
   /** מזהי הסרטונים של ימים 1..14, מופרדים בפסיקים לפי הסדר; מקום ריק = אין עדיין סרטון ליום. */
   BUNNY_VIDEO_IDS: optional(
     z
