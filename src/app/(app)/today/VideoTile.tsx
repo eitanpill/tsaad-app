@@ -11,7 +11,7 @@ type Phase = "idle" | "loading" | "ready" | "error";
  * הסרטון של היום. כתובת ההטמעה החתומה מבוקשת מהשרת רק בלחיצה (GET /api/video/[day]), והשרת מנפיק אותה
  * רק ליום שנפתח. בלי autoplay. כשאין סרטון מוגדר ליום מוצג מצב ממתין (כפתור כבוי).
  */
-export function VideoTile({ day, available }: { day: number; available: boolean }) {
+export function VideoTile({ day, available, title: heading }: { day: number; available: boolean; title?: string }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [src, setSrc] = useState<string | null>(null);
   const playRef = useRef<HTMLButtonElement>(null);
@@ -94,7 +94,7 @@ export function VideoTile({ day, available }: { day: number; available: boolean 
           )}
         </div>
         <div className="video-cap">
-          <h2>{copy.today.videoTitle}</h2>
+          <h2>{heading ?? copy.today.videoTitle}</h2>
           <span>{fill(copy.today.dayChip, { n: day })}</span>
         </div>
         {!available ? (

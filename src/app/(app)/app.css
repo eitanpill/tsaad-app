@@ -353,3 +353,150 @@
   .t-hero h1 { font-size: 23px; }
   .act-grid { grid-template-columns: 1fr; }
 }
+
+/* Path screen: the winding stone path (design: AppPath). Stones sit at fixed vertical offsets and
+   percent horizontal offsets, so the map reflows from 320px to the 440px shell without overlap. */
+.path-hero-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.t-path-hero h1 { margin: 0; font-size: 34px; line-height: 1; font-weight: 900; letter-spacing: -0.02em; }
+.t-path-hero p { margin: 6px 0 0; font-size: 15px; line-height: 1.45; }
+.chip--count { flex-shrink: 0; background: #fff; }
+.t-map { position: relative; background: var(--sage); color: var(--forest); overflow: hidden; }
+.map-road { position: absolute; inset: 0; width: 100%; height: 100%; }
+.stones { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; }
+.stone { position: absolute; width: 0; transform: translate(0, -38px); }
+.stone-link {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateX(-50%);
+  display: block;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  box-sizing: border-box;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 14px;
+}
+.stone-link--plain { cursor: default; }
+.stone-visual { position: relative; display: block; width: 44px; margin: 0 auto; }
+.stone-cup { display: block; margin: 0 auto -5px; position: relative; }
+.stone-rock {
+  display: block;
+  box-sizing: border-box;
+  width: 44px;
+  height: 16px;
+  border: 2px solid var(--muted);
+  box-shadow: 0 4px 6px -2px rgba(18, 48, 33, 0.35);
+}
+.stone-rock--counted { background: var(--stone-done); }
+.stone-rock--today { background: var(--terracotta); border-color: var(--terracotta-text); animation: apglow 2s ease-out infinite; }
+.stone-rock--yesterday { background: var(--cream); border-color: var(--terracotta-text); }
+.stone-rock--missed { background: var(--sand); }
+.stone-rock--locked { background: var(--cream); border-style: dashed; }
+.stone-tag {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 9px;
+  border-radius: 10px;
+  background: var(--terracotta-text);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.stone-num { display: block; margin-top: 3px; font-size: 12px; font-weight: 500; white-space: nowrap; color: var(--forest); }
+.stone-num--hi { font-weight: 800; color: var(--terracotta-text); }
+.stone-link--plain .stone-visual { opacity: 1; }
+@keyframes apglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(187, 111, 81, 0.55); } 50% { box-shadow: 0 0 0 9px rgba(187, 111, 81, 0); } }
+[data-motion='off'] .stone-rock--today { animation-play-state: paused; }
+
+.t-legend { background: #fff; padding: 12px; }
+.t-legend ul { display: flex; flex-wrap: wrap; gap: 8px 8px; margin: 0; padding: 0; list-style: none; font-size: 13px; font-weight: 500; }
+.t-legend li { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.legend-glyph { display: inline-flex; }
+.swatch { display: inline-flex; flex-direction: column; align-items: center; }
+.swatch .stone-cup { margin: 0 0 -2px; }
+.swatch-rock { display: block; box-sizing: border-box; width: 22px; height: 9px; border-radius: 50%; border: 2px solid var(--muted); }
+.swatch-rock.stone-rock--today { animation: none; border-color: var(--terracotta-text); }
+.swatch-rock.stone-rock--locked { background: var(--cream); }
+.legend-live { color: var(--terracotta-text); display: inline-flex; }
+
+/* Day screen (open past day) and the locked screen (design: AppLocked). */
+.act-title { margin: 0; font-size: 15px; font-weight: 800; }
+.ro-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.ro-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  align-items: baseline;
+  padding: 10px 14px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-btn);
+  background: #fff;
+  font-size: 14px;
+}
+.ro-item b { font-size: 15px; font-weight: 800; }
+.ro-state { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.ro-item[data-marked='true'] .ro-state { color: var(--forest); font-weight: 700; }
+.t-links { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px 0; }
+.t-links .btn-s { flex: 1 1 140px; align-self: auto; box-sizing: border-box; padding: 0 12px; }
+
+.t-lockhero { background: var(--sand); padding: 26px 20px 22px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.t-lockhero h1 { margin: 8px 0 0; font-size: 32px; line-height: 1.05; font-weight: 900; overflow-wrap: break-word; }
+.t-lockhero p { margin: 0; font-size: 15px; line-height: 1.5; max-width: 290px; }
+.lock-art { position: relative; width: 120px; }
+.lock-art svg { display: block; margin: 0 auto -10px; position: relative; }
+.lock-stone {
+  display: block;
+  box-sizing: border-box;
+  width: 120px;
+  height: 34px;
+  border-radius: 48% 52% 44% 56% / 58% 42% 58% 42%;
+  background: var(--cream);
+  border: 2px dashed var(--muted);
+  box-shadow: 0 8px 12px -6px rgba(46, 8, 8, 0.35);
+}
+.lock-badge {
+  position: absolute;
+  left: 50%;
+  top: 36px;
+  width: 44px;
+  height: 44px;
+  margin-left: -22px;
+  border-radius: 50%;
+  background: var(--forest);
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.t-back, .t-past { padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-height: 150px; }
+.t-back { background: var(--forest); color: var(--cream); }
+.t-past { background: var(--sky); }
+.t-back b, .t-past b { font-size: 20px; line-height: 1.15; font-weight: 800; }
+.btn-light {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 22px;
+  background: var(--cream);
+  color: var(--forest);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 15px;
+}
+.t-back .btn-light { margin-top: auto; }
+.link-s { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 700; color: var(--terracotta-text); }
+.t-bell { background: #fff; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.t-bell p { margin: 0; font-size: 14px; line-height: 1.4; }
+.bell-dot { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--sand); color: var(--forest); display: flex; align-items: center; justify-content: center; }
+
+@media (max-width: 340px) {
+  .t-back, .t-past { grid-column: span 2; min-height: 0; }
+  .t-path-hero h1 { font-size: 28px; }
+}

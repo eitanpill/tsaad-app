@@ -30,3 +30,6 @@ export const AlertCircle = () => (
 export const WifiOffIcon = () => (
   <svg {...base} strokeLinecap="round"><path d="M2 8.5 C 7.5 3.5, 16.5 3.5, 22 8.5" /><path d="M5.5 12.5 C 9 9.5, 15 9.5, 18.5 12.5" /><path d="M9 16 C 10.8 14.6, 13.2 14.6, 15 16" /><circle cx="12" cy="19.5" r="1.2" fill="currentColor" /><path d="M3 3 L21 21" /></svg>
 );
+export const LockIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11 V8 A4 4 0 0 1 16 8 V11" /></svg>
+);

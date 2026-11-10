@@ -3,7 +3,6 @@
 import { useEffect, useId, useMemo, useOptimistic, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { copy } from "@/content/copy.he";
-import { DAYS } from "@/content/days";
 import {
   actionsForDay,
   computeProgress,
@@ -15,6 +14,8 @@ import {
 import { fill } from "@/lib/format";
 import { actionKey, doneActionsFor } from "@/lib/today/view";
 import { AlertCircle, CheckIcon, WifiOffIcon } from "../_components/icons";
+import { actionTitle, type DayTitles } from "./action-labels";
+import { ActionButton } from "./ActionButton";
 import { toggleAction } from "./actions";
 import { Cup } from "./Cup";
 import { Ring } from "./Ring";
@@ -34,6 +35,8 @@ export type BoardProps = {
   greeting: string;
   hero: string;
   videoAvailable: boolean;
+  /** כותרות הפעולות של היום ושל אתמול בלבד (לא של ימים נעולים). */
+  titles: Record<number, DayTitles>;
   /** הרגע הקרוב שבו המסך משתנה (ISO), או null. */
   nextChangeIso: string | null;
 };
@@ -41,13 +44,6 @@ export type BoardProps = {
 type Toast =
   | { kind: "saved" | "undone"; text: string; undo?: { day: number; action: Action; to: boolean } }
   | { kind: "error"; text: string; retry: { day: number; action: Action; to: boolean } };
-
-const TYPE_LABEL = (a: Action): string => (a === "live" ? copy.today.liveAction : copy.common.actionTypes[a]);
-
-function actionTitle(day: number, a: Action): string {
-  const d = DAYS[day - 1];
-  return a === "habit" ? d.habit.title : a === "move" ? d.movement.title : a === "meditate" ? d.meditation.title : "";
-}
 
 const subscribeOnline = (cb: () => void) => {
   window.addEventListener("online", cb);
@@ -57,37 +53,6 @@ const subscribeOnline = (cb: () => void) => {
     window.removeEventListener("offline", cb);
   };
 };
-
-function ActionButton({
-  day,
-  action,
-  pressed,
-  wide,
-  onToggle,
-}: {
-  day: number;
-  action: Action;
-  pressed: boolean;
-  wide?: boolean;
-  onToggle: (day: number, action: Action) => void;
-}) {
-  const isLive = action === "live";
-  return (
-    <button
-      type="button"
-      className={`act${wide ? " act--wide" : ""}`}
-      data-action-key={actionKey(day, action)}
-      aria-pressed={pressed}
-      onClick={() => onToggle(day, action)}
-    >
-      <b>{TYPE_LABEL(action)}</b>
-      {isLive ? <span className="act-sub">{copy.today.liveActionHint}</span> : actionTitle(day, action)}
-      <span className="dot" aria-hidden="true">
-        {pressed ? <CheckIcon /> : null}
-      </span>
-    </button>
-  );
-}
 
 export function TodayBoard(p: BoardProps) {
   const router = useRouter();
@@ -233,7 +198,7 @@ export function TodayBoard(p: BoardProps) {
             <div ref={yestGroup} id={`${yestId}-g`} className="grp" role="group" aria-label={fill(copy.today.yesterdayDayLabel, { n: p.yesterday })}>
               <span className="grp-label">{fill(copy.common.dayLabel, { n: p.yesterday })}</span>
               {actionsForDay(p.yesterday).map((a, i) => (
-                <ActionButton key={a} day={p.yesterday!} action={a} pressed={optimistic.includes(actionKey(p.yesterday!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
+                <ActionButton key={a} day={p.yesterday!} action={a} title={actionTitle(p.titles[p.yesterday!], a)} pressed={optimistic.includes(actionKey(p.yesterday!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
               ))}
             </div>
           )}
@@ -276,7 +241,7 @@ export function TodayBoard(p: BoardProps) {
         <div className="t t-actions">
           <div className="act-grid">
             {actions.map((a, i) => (
-              <ActionButton key={a} day={p.day!} action={a} pressed={optimistic.includes(actionKey(p.day!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
+              <ActionButton key={a} day={p.day!} action={a} title={actionTitle(p.titles[p.day!], a)} pressed={optimistic.includes(actionKey(p.day!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
             ))}
           </div>
           <p className="act-hint">{p.live ? copy.today.cupExplainLive : copy.today.cupExplain}</p>

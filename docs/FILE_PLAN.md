@@ -90,7 +90,17 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
     - `components/Logo.tsx`: the YOGIT logo path, 11KB with C2PA metadata cut to 2KB. Also used in the auth layout.
     - `/` redirects to `/today` or `/login`.
     - Not implemented, left to stage 9: offline queueing. Marks need a connection; a failed save shows an error with retry.
-- **Stage 8, path and locked day:** `path` and `day/[n]`.
+- **Stage 8, path and locked day:**
+  - `path` and `day/[n]`
+  - built:
+    - `lib/path/view.ts`: pure view models. `stoneState` and `pathModel` (14 stones: counted, today, yesterday, missed, locked, with water level, live flag and link), `dayScreen` (today, open with markable and counted, locked as before_start, tomorrow or far) and `parseDayParam` (1 to 14 only, no zeros, signs or decimals).
+    - `app/(app)/path/{page,PathMap,StoneCup}.tsx`: the Bento path. The map is an `ol` with an aria-label summary. Stones sit at percent x and pixel y, so the map reflows from 320 px without losing the 44 px targets. Opened stones link to `/day/[n]` (today links to `/today`). Locked stones are plain list items, except tomorrow's, which links to its locked screen (as in AppLocked). The legend shows "אפשר לסמן עד חצות" only when such a stone exists.
+    - `app/(app)/day/[n]/{page,DayActions,LockedDay}.tsx`: an invalid `n` is `notFound()` (a Hebrew not-found screen in `(app)/not-found.tsx`); the current day redirects to `/today`; an open day shows its video and its actions, markable only for yesterday (through `toggleAction`, which still enforces the rule on the server), otherwise view only with "לא נספר" or "נספר" copy; a locked day renders `LockedDay`, which receives only the day number, so no titles or video id exist for it.
+    - Shared: `today/ActionButton.tsx` (extracted), `today/action-labels.ts` (client-safe, no `content/days`), `lib/today/titles.ts` (server only), `_components/RefreshAtBoundary.tsx`, `lib/format.ts` `withStartDate`.
+    - `TodayBoard` now gets the titles of today and yesterday as props instead of importing `content/days`. Before this, the Today client bundle contained the titles of all 14 days.
+    - The `/path` tab is `aria-current` on `/path` and on `/day/*`.
+    - New copy: the `day` group in `copy.he.ts` and `docs/content/COPY.md` (5 strings).
+    - e2e: `e2e/path.spec.ts` (path states, accessibility, day states, invalid day, no-leak checks on HTML and JS).
 - **Stage 9, live, reminders and install:**
   - `live`, `reminders` and `install`
   - `api/live` and `api/push`, accepting known push endpoints only

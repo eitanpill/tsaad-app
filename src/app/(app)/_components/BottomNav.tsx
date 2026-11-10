@@ -12,7 +12,13 @@ const ITEMS = [
   { href: "/reminders", label: copy.nav.reminders, Icon: BellIcon },
 ] as const;
 
-/** ניווט תחתון. המסכים של השביל, הלייב והתזכורות מגיעים בשלבים הבאים (עד אז הקישורים מובילים ל־404). */
+/** מסכי היום (/day/[n]) שייכים ללשונית "השביל": משם מגיעים אליהם. */
+function isCurrent(pathname: string, href: string): boolean {
+  if (pathname === href || pathname.startsWith(`${href}/`)) return true;
+  return href === "/path" && pathname.startsWith("/day/");
+}
+
+/** ניווט תחתון. המסכים של הלייב והתזכורות מגיעים בשלב הבא (עד אז הקישורים מובילים ל־404). */
 export function BottomNav() {
   const pathname = usePathname();
   return (
@@ -22,7 +28,7 @@ export function BottomNav() {
           key={href}
           href={href}
           prefetch={href === "/today"}
-          aria-current={pathname === href || pathname.startsWith(`${href}/`) ? "page" : undefined}
+          aria-current={isCurrent(pathname, href) ? "page" : undefined}
         >
           <Icon />
           {label}
