@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { copy } from "@/content/copy.he";
 import { requireUser } from "@/lib/auth/dal";
+import { LogoutForm } from "../_components/LogoutForm";
 import { DeleteAccountForm } from "./DeleteAccountForm";
 
 export const metadata: Metadata = { title: `${copy.account.title} | ${copy.brand.name}` };
@@ -25,6 +26,12 @@ export default async function AccountPage() {
             </dd>
           </div>
         </dl>
+      </section>
+
+      <section className="t t-acc-out" aria-labelledby="acc-out-h">
+        <h2 id="acc-out-h">{A.logout.heading}</h2>
+        <p>{A.logout.lead}</p>
+        <LogoutForm />
       </section>
 
       <section className="t t-acc-legal" aria-labelledby="acc-legal-h">
