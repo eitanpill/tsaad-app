@@ -18,8 +18,9 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 | POST /api/webhooks/ghl/signup | handler | callers with the shared secret; replays are rejected |
 | login, forgot, activate, logout | server actions (`src/app/(auth)/actions.ts`) | login and forgot are open but rate-limited; every action checks `Origin` against `APP_ORIGIN`; logout deletes the session row. There are no `/api/auth/*` handlers; handlers added later use `rejectCrossOrigin` |
 | GET /api/video/[day] | handler | a session, and only once the server has unlocked that day |
-| GET /api/live/[session] | handler | a session, from 60 minutes before the live session |
-| POST/DELETE /api/push/subscribe | handler | a session |
+| GET /api/live/[day]/ics | handler | a session; day 7 or 14 only, and only when `START_DATE` and `LIVE_TIME_DAYn` are set (else 404). The join link is not in the file |
+| POST/DELETE /api/push | handler | a session, `Origin` check, rate limit, subscription validated (see Stage 9) |
+| GET /manifest.webmanifest, /sw.js, /offline.html | static / metadata | anyone (no personal data; the service worker caches no HTML) |
 | GET /api/cron/reminders, /api/cron/sync, /api/cron/cleanup | handler | requests that carry `Bearer CRON_SECRET` (constant-time check; 401 if the secret is unset or shorter than 16 characters) |
 | GET /api/health | handler | anyone |
 
@@ -101,10 +102,17 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
     - The `/path` tab is `aria-current` on `/path` and on `/day/*`.
     - New copy: the `day` group in `copy.he.ts` and `docs/content/COPY.md` (5 strings).
     - e2e: `e2e/path.spec.ts` (path states, accessibility, day states, invalid day, no-leak checks on HTML and JS).
-- **Stage 9, live, reminders and install:**
-  - `live`, `reminders` and `install`
-  - `api/live` and `api/push`, accepting known push endpoints only
-  - the PWA manifest and the service worker, which caches no personal data
+- **Stage 9, live, reminders, install and the service worker:**
+  - built:
+    - `/live` (`app/(app)/live/{page,AttendanceToggle}.tsx`): two sessions (day 7, day 14) from `lib/live/{model,config,ics}.ts`. The pure model `liveSession` decides `before` / `open` / `passed` from the server clock; `joinUrl` exists only while `open`, so the link is never rendered (HTML, RSC payload or JS) outside the window. Constants in `config/constants.ts` `LIVE`: the link opens 60 minutes before the start and stays 150 minutes after it (assumed 90 minute session plus 60 minutes grace); the calendar event lasts 90 minutes. Without `LIVE_TIME_DAYn` the time shows the copy placeholder, there is no calendar file and no link window (the session counts as passed only when its day is over). Without `LIVE_URL_DAYn` an open window says the link is not there yet. Attendance is the existing `toggleAction(day, 'live')` (server rules, 2 steps in the cup), offered once the session has started (or any time that day if the time is unknown) while the day is still markable. `RefreshAtBoundary` refreshes the screen when the window opens or closes.
+    - `GET /api/live/[day]/ics`: server-generated `.ics` (UTC times converted from Asia/Jerusalem, DST-safe), no join link inside.
+    - `/reminders` (`app/(app)/reminders/{page,RemindersControls}.tsx`, `lib/pwa/push-client.ts`): `role="switch"` with the states checking / on / off / blocked / unsupported / error in one polite status region. The public VAPID key reaches the client as a server-rendered prop (not `NEXT_PUBLIC`); no key means "unsupported". Turning off deletes on the server first. The reminder time is fixed text (07:30).
+    - `POST/DELETE /api/push` (`app/api/push/route.ts`, `lib/push/subscription.ts`): `Origin` check, session, rate limit (`RATE_LIMITS.push`, new `login_attempts.kind = 'push'`, migration `0005`), JSON and size limits, zod: endpoint on the allowlist (`lib/push/endpoints.ts`), `p256dh` = base64url of an uncompressed P-256 point that is on the curve (65 bytes, `0x04`), `auth` = 16 bytes. At most `REMINDERS.maxSubscriptionsPerUser` (5) per user: the oldest is deleted in the same transaction (per-user advisory lock). Upsert by endpoint: the same user refreshes keys and the subscription becomes the newest; an endpoint that belongs to another user moves to the caller only when `p256dh` and `auth` are identical (the same browser, a different login on a shared device), otherwise 409. Whoever knows only the endpoint cannot take it over.
+    - `/install` (`app/(app)/install/{page,InstallGuide}.tsx`, `lib/pwa/install-prompt.ts`): iPhone steps, Android wording, "for the reminder", done / later (both navigate to `/today`). `display-mode: standalone` hides the steps. The "התקנה" button exists only after `beforeinstallprompt` fired (captured once in the shell by `PwaBoot`). No bottom nav on this screen.
+    - PWA: `app/manifest.ts` (name, `lang he`, `dir rtl`, `start_url /today`, standalone, brand colours), icons rendered by `scripts/gen-icons.mjs` into `public/icons` and `public/apple-touch-icon.png`, `public/sw.js` registered by `PwaBoot` (production builds only). The worker handles `push` and `notificationclick` (same origin only) and caches only `/_next/static/*`, `/icons/*` and the offline page; navigations are network-first with `public/offline.html` (static, no script, no nonce, own CSP) as the only fallback. Cache names are versioned and old ones are deleted on activate. `sw.js` is served with `Cache-Control: no-cache` and its own CSP; the page CSP gained `worker-src 'self'` and `manifest-src 'self'`; `proxy.ts` skips the static PWA files.
+    - Offline queue for marks: not built. Marks need a connection; a failed save shows "retry" (as in stage 7). `copy.today.toastOffline` stays unused and the offline copy no longer promises a queue.
+    - Push payload: `buildReminderMessage` already returns `{ title, body, url: '/today', tag }`, which is what `sw.js` reads. Sending is still dry-run unless `REMINDERS_ENABLED=true` and VAPID keys are set.
+    - e2e: `e2e/{live,reminders,install,pwa}.spec.ts` with `e2e/helpers.ts`. The e2e server sets fake `LIVE_TIME_DAY7`, `LIVE_URL_DAY7` (day 14 unset on purpose) and an ephemeral `VAPID_PUBLIC_KEY`.
 - **Stage 9א, GHL link:**
   - the signup webhook, with a shared secret, idempotency and replay protection
   - it never resets an existing user
@@ -124,7 +132,7 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
 - `cacheComponents` is on. Read the session and the time inside `<Suspense>` or after `connection()`, and never cache user state or the current day.
 - Next 16 renamed `middleware.ts` to `proxy.ts`. Read `node_modules/next/dist/docs` before writing code that touches it.
 - Reminders: send once per user per day on the first cron run at or after 07:30 Jerusalem time (DST-safe); never rely on an exact-minute match.
-- The CSP is set per request in `src/proxy.ts` (nonce). Stage 9's service worker must not cache HTML (the nonce is per request).
+- The CSP is set per request in `src/proxy.ts` (nonce). The service worker (`public/sw.js`) never caches HTML (the nonce is per request); a test inspects Cache Storage after navigating.
 - Test clock: `TSAAD_TEST_NOW` and the `x-tsaad-test-now` header work only under the guard in `lib/today/test-clock.ts` (never on Vercel; in production only with `TSAAD_E2E=1` and a loopback `APP_ORIGIN`).
 - Passwords and tokens never go into logs. Sending through GHL, WhatsApp or email stays off until gate G3.
 - Vercel must not be connected to this repo before a deploy gate, or every branch push creates a preview deployment.

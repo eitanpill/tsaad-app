@@ -491,9 +491,9 @@ test.describe("day screen", () => {
     // signed out: the same 404 (the check needs no session and reveals nothing about the user)
     const anon = await browser.newContext({ locale: "he-IL" });
     expect((await anon.request.get("/day/0")).status()).toBe(404);
-    // pages that do not exist yet (nav targets of later stages) get the Hebrew 404 too
+    // unknown pages get the Hebrew 404 too
     const live = await anon.newPage();
-    expect((await live.goto("/live"))!.status()).toBe(404);
+    expect((await live.goto("/no-such-page"))!.status()).toBe(404);
     await expect(live.getByRole("heading", { level: 1 })).toHaveText("הדף לא נמצא");
     await expect(live.locator("html")).toHaveAttribute("lang", "he");
     await axe(live);

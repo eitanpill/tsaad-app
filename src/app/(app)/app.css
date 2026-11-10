@@ -508,3 +508,163 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   .t-back, .t-past { grid-column: span 2; min-height: 0; }
   .t-path-hero h1 { font-size: 28px; }
 }
+
+/* ---- Live (design: AppLive) ---- */
+.t-live-hero { background: var(--terracotta); color: #fff; padding: 20px; position: relative; overflow: hidden; }
+/* White text on --terracotta only at 19px bold or larger (contrast.md); the h1 is 38px and the time line 19px bold. */
+.t-live-hero h1 { margin: 10px 0 6px; font-size: 38px; line-height: 1; font-weight: 900; letter-spacing: -0.02em; overflow-wrap: break-word; }
+.lv-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 15px;
+  background: var(--cream);
+  color: var(--terracotta-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+.lv-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--terracotta); animation: appulse 2.4s ease-in-out 2; }
+.lv-when { margin: 0; font-size: 19px; font-weight: 700; }
+.lv-when time { font-weight: 700; }
+.ph {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 400;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--maroon);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+.t-live-act { background: var(--sand); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.lv-join {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 54px;
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 27px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+.lv-join--off { border: 2px dashed #8E7B6F; background: var(--cream); color: var(--muted); cursor: default; }
+.lv-join--on { border: 2px solid var(--forest); background: var(--forest); color: #fff; cursor: pointer; }
+.lv-cal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 2px solid var(--forest);
+  border-radius: 25px;
+  background: var(--forest);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.lv-cal--off { background: var(--cream); color: var(--muted); border: 2px dashed #8E7B6F; cursor: default; }
+.lv-note { font-size: 13px; line-height: 1.4; color: var(--muted); text-align: center; }
+.lv-attend { display: flex; flex-direction: column; gap: 4px; }
+.lv-attend-msg { margin: 0; min-height: 0; font-size: 13px; color: var(--muted); text-align: center; }
+.lv-attend-msg:empty { display: none; }
+.lv-attend-done { margin: 0; font-size: 14px; font-weight: 700; color: var(--forest); text-align: center; }
+.t-live-other, .t-live-cant { padding: 16px; display: flex; flex-direction: column; gap: 6px; min-height: 150px; }
+.t-live-other { background: var(--sage); color: var(--forest); }
+.t-live-cant { background: var(--sky); }
+.t-live-other h2, .t-live-cant h2 { margin: 0; font-size: 20px; line-height: 1.15; font-weight: 800; }
+.lv-tag-s { font-size: 13px; font-weight: 700; }
+.lv-other-when { font-size: 14px; margin-top: auto; }
+.t-live-cant span { font-size: 14px; line-height: 1.4; margin-top: auto; }
+.t-live-other .lv-cal { min-height: 44px; font-size: 14px; padding: 0 10px; }
+/* The compact tile is half width: stack the label above its hint instead of the wide row layout. */
+.t-live-other .act { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 8px 10px 8px 38px; min-height: 64px; }
+.t-live-other .act .act-sub { font-size: 13px; }
+.t-live-other .act--wide .dot { left: 10px; margin-top: -12px; }
+.t-live-other .act--wide b { min-width: 0; }
+.t-live-other .lv-note { text-align: start; }
+@media (max-width: 340px) {
+  .t-live-hero h1 { font-size: 30px; }
+  .t-live-other, .t-live-cant { grid-column: span 2; min-height: 0; }
+}
+
+/* ---- Reminders (design: AppReminders) ---- */
+.t-rem-hero { background: var(--sky); padding: 18px; }
+.t-rem-hero h1 { margin: 0; font-size: 32px; line-height: 1.05; font-weight: 900; overflow-wrap: break-word; }
+.t-rem-hero p { margin: 6px 0 0; font-size: 15px; line-height: 1.45; }
+.t-rem-preview { background: var(--sand); padding: 16px; }
+.rm-eyebrow { font-size: 12px; font-weight: 700; color: var(--muted); }
+.rm-notif {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 24px -14px rgba(46, 8, 8, 0.45);
+}
+.rm-notif-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; background: var(--terracotta); display: flex; align-items: center; justify-content: center; }
+.rm-notif-text { font-size: 14px; line-height: 1.35; }
+.t-rem-set { background: #fff; padding: 6px 16px; }
+.rm-row { display: flex; align-items: center; gap: 12px; min-height: 64px; font-size: 15px; }
+.rm-row--time { border-top: 1px solid var(--sand); }
+.rm-row-text { flex: 1; min-width: 0; }
+.rm-row-text b { font-weight: 800; }
+.rm-sub { font-size: 13px; color: var(--muted); }
+.rm-switch { flex-shrink: 0; width: 60px; height: 44px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rm-switch[aria-disabled='true'] { cursor: default; opacity: 0.6; }
+.rm-track { box-sizing: border-box; width: 52px; height: 30px; border-radius: 15px; border: 2px solid var(--muted); background: #fff; position: relative; transition: background 0.15s; }
+.rm-track--on { border-color: var(--forest); background: var(--forest); }
+/* The knob sits on the inline-end side when off (right in RTL) and on the start side when on, as in the design. */
+.rm-knob { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: #6B4B45; display: flex; align-items: center; justify-content: center; color: var(--forest); }
+.rm-track--on .rm-knob { right: auto; left: 3px; background: #fff; }
+.rm-status { margin: 0; padding: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--forest); }
+.rm-status:empty { display: none; }
+.rm-status--bad { color: var(--terracotta-text); }
+.rm-time { font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700; padding: 8px 12px; border-radius: 12px; background: var(--sand); }
+.t-rem-ios { background: var(--sage); color: var(--forest); padding: 14px 16px; display: flex; gap: 12px; align-items: center; font-size: 14px; line-height: 1.4; }
+.rm-i { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--forest); color: var(--cream); display: flex; align-items: center; justify-content: center; font-weight: 900; }
+.rm-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--forest); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- Install (design: AppInstall) ---- */
+.t-in-hero { background: var(--sky); padding: 22px 20px; display: flex; gap: 16px; align-items: center; }
+.t-in-hero h1 { margin: 0; font-size: 28px; line-height: 1.05; font-weight: 900; overflow-wrap: break-word; }
+.t-in-hero p { margin: 6px 0 0; font-size: 14px; line-height: 1.45; }
+.in-icon { flex-shrink: 0; width: 92px; height: 92px; border-radius: 24px; background: var(--terracotta); display: flex; align-items: center; justify-content: center; box-shadow: 0 16px 28px -12px rgba(187, 111, 81, 0.9); }
+.in-wave { animation: apwv 2.4s linear 2; }
+.t-in-ios { background: #fff; padding: 8px 18px; }
+.t-in-ios h2 { margin: 0; padding-top: 10px; font-size: 14px; color: var(--muted); font-weight: 700; }
+.in-steps { list-style: none; margin: 0; padding: 0; }
+.in-steps li { display: flex; gap: 12px; align-items: center; min-height: 56px; font-size: 15px; line-height: 1.35; }
+.in-steps b { font-weight: 800; }
+.in-sub { font-size: 13px; color: var(--muted); }
+.in-num { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--forest); color: var(--cream); display: flex; align-items: center; justify-content: center; font-weight: 900; font-family: var(--font-heading), sans-serif; }
+.t-in-android, .t-in-why { padding: 16px; min-height: 120px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.4; }
+.t-in-android { background: var(--sage); color: var(--forest); }
+.t-in-why { background: var(--sand); }
+.t-in-android h2, .t-in-why h2 { margin: 0; font-size: 17px; font-weight: 800; }
+.in-install { margin-top: 8px; align-self: stretch; }
+.t-in-actions { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+.in-done { display: flex; align-items: center; justify-content: center; min-height: 54px; border-radius: 27px; background: var(--forest); color: #fff; text-decoration: none; font-weight: 700; font-size: 17px; }
+.in-later { display: flex; align-items: center; justify-content: center; min-height: 44px; color: var(--muted); font-size: 15px; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 340px) {
+  .t-in-android, .t-in-why { grid-column: span 2; min-height: 0; }
+  .t-in-hero { flex-direction: column; align-items: flex-start; }
+  .t-rem-hero h1 { font-size: 27px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .in-wave, .lv-dot { animation: none; }
+}
+[data-motion='off'] .in-wave { animation-play-state: paused; }

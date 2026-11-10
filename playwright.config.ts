@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createECDH, randomBytes } from "node:crypto";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -11,6 +11,11 @@ const ORIGIN = `http://localhost:${PORT}`;
 // Per-run key for the test-clock header (src/lib/today/test-clock.ts). Set once in the runner process so the
 // worker processes (which inherit the env and re-read this file) and the web server share the same value.
 process.env.TSAAD_TEST_CLOCK_KEY ??= randomBytes(32).toString("hex");
+
+// Ephemeral VAPID public key for the reminders screen (a fresh P-256 point per run; the private half is never kept).
+const ecdh = createECDH("prime256v1");
+ecdh.generateKeys();
+const E2E_VAPID_PUBLIC_KEY = ecdh.getPublicKey().toString("base64url");
 
 export default defineConfig({
   testDir: "e2e",
@@ -39,6 +44,11 @@ export default defineConfig({
       BUNNY_LIBRARY_ID: "e2e-library",
       BUNNY_TOKEN_KEY: "e2e-not-a-real-key",
       BUNNY_VIDEO_IDS: "e2evid1,e2evid2,e2evid3,e2evid4",
+      // Live: day 7 fully configured (time + link), day 14 left unset on purpose (placeholder state).
+      // Fake values on a reserved .test domain; nothing real.
+      LIVE_TIME_DAY7: "20:00",
+      LIVE_URL_DAY7: "https://live.example.test/e2e-room-day7",
+      VAPID_PUBLIC_KEY: E2E_VAPID_PUBLIC_KEY,
     },
   },
 });
