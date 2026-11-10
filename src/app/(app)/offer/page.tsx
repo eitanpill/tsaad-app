@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 import { copy } from "@/content/copy.he";
 import { requireUser } from "@/lib/auth/dal";
-import { fill } from "@/lib/format";
 import { getOfferModel } from "@/lib/offer/config";
-import { goHref } from "@/lib/offer/links";
-import { formatDeadline } from "@/lib/offer/model";
 import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
-import { OfferCta } from "./OfferCta";
+import { OfferTiles } from "./OfferTiles";
 import { YesodotTile } from "./YesodotTile";
 
 export const metadata: Metadata = { title: `${copy.offer.day14.heading} | ${copy.brand.name}` };
@@ -49,33 +46,5 @@ export default async function OfferPage() {
     );
   }
 
-  const D = O.day14;
-  return (
-    <>
-      <RefreshAtBoundary atIso={offer.nextChange.toISOString()} />
-      <section className="t t-ofr-hero" aria-labelledby="ofr-h">
-        <h1 id="ofr-h">{D.heading}</h1>
-        <p>{D.lead}</p>
-        <p>{fill(D.window, { hours: offer.hours, deadline: formatDeadline(offer.deadline, m.tz) })}</p>
-      </section>
-
-      <section className="t t-ofr" aria-labelledby="ofr-session-h">
-        <h2 id="ofr-session-h">{D.session.title}</h2>
-        <p>{D.session.detail}</p>
-        <p className="ofr-price">{D.session.price}</p>
-        <p className="ofr-note">{D.session.scope}</p>
-        {m.spots !== null ? <p className="ofr-spots">{fill(D.session.spots, { spots: m.spots })}</p> : null}
-        <OfferCta href={goHref("session", m.links.session)} label={D.session.cta} ariaLabel={copy.a11y.offer.sessionCta} noteId="ofr-session-note" />
-      </section>
-
-      <section className="t t-ofr" aria-labelledby="ofr-bundle-h">
-        <h2 id="ofr-bundle-h">{D.bundle.title}</h2>
-        <p>{D.bundle.detail}</p>
-        <p className="ofr-price">{D.bundle.price}</p>
-        <OfferCta href={goHref("bundle", m.links.bundle)} label={D.bundle.cta} ariaLabel={copy.a11y.offer.bundleCta} noteId="ofr-bundle-note" />
-      </section>
-
-      <YesodotTile />
-    </>
-  );
+  return <OfferTiles m={m} headingLevel={1} />;
 }
