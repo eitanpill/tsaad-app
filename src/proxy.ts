@@ -1,10 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isInvalidDayPath } from "@/lib/path/day-param";
 import { buildCsp, newNonce } from "@/lib/security/csp";
+
+/** נתיב שאין לו דף: שכתוב אליו נותן את דף ה־404 של האפליקציה (src/app/not-found.tsx) עם סטטוס 404 אמיתי. */
+const NOT_FOUND_PATH = "/__not-found";
 
 /**
  * Next 16: proxy.ts (לשעבר middleware). יוצר nonce לכל בקשה ומציב Content-Security-Policy.
  * הכותרת נקבעת גם על הבקשה (כדי ש־Next יקרא ממנה את ה־nonce בזמן הרינדור) וגם על התגובה.
  * הגנת הגישה עצמה נמצאת ב־DAL ובכל handler, לא כאן.
+ *
+ * /day/<לא יום תקין> (0, 15, 07, abc...) מקבל כאן 404 אמיתי: בדף עצמו notFound() מגיע אחרי שהמעטפת
+ * כבר נשלחה (Suspense), ולכן שם הסטטוס נשאר 200. הבדיקה לא תלויה במשתמש או בשעה, רק בצורת הכתובת.
  */
 export function proxy(request: NextRequest) {
   const nonce = newNonce();
@@ -14,7 +21,9 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const response = isInvalidDayPath(request.nextUrl.pathname)
+    ? NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url), { request: { headers: requestHeaders } })
+    : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
   return response;
 }

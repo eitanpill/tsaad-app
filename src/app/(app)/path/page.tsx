@@ -38,7 +38,7 @@ export default async function PathPage() {
         <p>{model.completed ? fill(copy.path.completed, { n: model.counted }) : copy.path.intro}</p>
       </section>
       <PathMap stones={model.stones} counted={model.counted} />
-      <PathLegend showYesterday={model.hasYesterday} />
+      <PathLegend states={model.legend} />
     </>
   );
 }

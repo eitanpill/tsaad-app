@@ -86,6 +86,21 @@ describe("stone state", () => {
     expect(closed.every((x) => x === "missed")).toBe(true);
   });
 
+  it("legend lists 'counted' and only the states on the path", () => {
+    expect(pathModel(at("2026-11-30T12:00:00+02:00"), s, {}).legend).toEqual(["counted", "locked"]);
+    expect(pathModel(at("2026-12-04T14:00:00+02:00"), s, { 1: 1, 2: 1, 3: 1 }).legend).toEqual(["counted", "today", "locked"]);
+    expect(pathModel(at("2026-12-07T10:00:00+02:00"), s, { 1: 1, 3: 1 }).legend).toEqual([
+      "counted",
+      "today",
+      "yesterday",
+      "missed",
+      "locked",
+    ]);
+    // after the end: no "today", no "locked"
+    expect(pathModel(at("2026-12-15T10:00:00+02:00"), s, {}).legend).toEqual(["counted", "yesterday", "missed"]);
+    expect(pathModel(at("2026-12-16T10:00:00+02:00"), s, {}).legend).toEqual(["counted", "missed"]);
+  });
+
   it("tomorrow is the only locked stone with a link", () => {
     const m = pathModel(at("2026-12-04T14:00:00+02:00"), s, {});
     expect(m.tomorrow).toBe(5);

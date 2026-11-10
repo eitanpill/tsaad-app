@@ -37,6 +37,7 @@ function StoneBody({ stone }: { stone: Stone }) {
       <span className="visually-hidden">{accessibleName(stone)}</span>
       <span aria-hidden="true" className="stone-visual">
         <StoneCup fill={stone.fill} dashed={dashedFor(stone.state)} />
+        {stone.state === "yesterday" ? <ClockBadge /> : null}
         <i className={`stone-rock stone-rock--${stone.state}`} style={{ borderRadius: SHAPES[(stone.day - 1) % 3] }} />
         {stone.state === "today" ? <span className="stone-tag">{copy.path.stone.today}</span> : null}
         <span className={`stone-num${stone.live || stone.state === "today" ? " stone-num--hi" : ""}`}>{label}</span>
@@ -97,16 +98,26 @@ export function PathMap({ stones, counted }: { stones: Stone[]; counted: number 
   );
 }
 
-/** מקרא. הסמלים דקורטיביים; המשמעות בטקסט. "אפשר לסמן עד חצות" מופיע רק כשיש אבן כזאת. */
-export function PathLegend({ showYesterday }: { showYesterday: boolean }) {
+const LEGEND_TEXT: Record<StoneState, string> = {
+  counted: copy.path.legend.counted,
+  today: copy.path.legend.today,
+  yesterday: copy.path.stone.yesterday,
+  missed: copy.path.legend.missed,
+  locked: copy.path.legend.locked,
+};
+const SWATCH_FILL: Record<StoneState, 0 | 0.5 | 1> = { counted: 1, today: 0.5, yesterday: 0, missed: 0, locked: 0 };
+
+/**
+ * מקרא. הסמלים דקורטיביים; המשמעות בטקסט. מציג רק מצבים שיש על השביל (ראו pathModel.legend),
+ * כך שאחרי סוף האתגר אין בו "היום" ו"עוד לא נפתח".
+ */
+export function PathLegend({ states }: { states: readonly StoneState[] }) {
   const items: Array<{ key: string; text: string; glyph: React.ReactNode }> = [
-    { key: "counted", text: copy.path.legend.counted, glyph: <Swatch fill={1} state="counted" /> },
-    { key: "today", text: copy.path.legend.today, glyph: <Swatch fill={0.5} state="today" /> },
-    ...(showYesterday
-      ? [{ key: "yesterday", text: copy.path.stone.yesterday, glyph: <Swatch fill={0} state="yesterday" /> }]
-      : []),
-    { key: "missed", text: copy.path.legend.missed, glyph: <Swatch fill={0} state="missed" /> },
-    { key: "locked", text: copy.path.legend.locked, glyph: <Swatch fill={0} state="locked" dashed /> },
+    ...states.map((st) => ({
+      key: st,
+      text: LEGEND_TEXT[st],
+      glyph: <Swatch fill={SWATCH_FILL[st]} state={st} dashed={st === "locked"} />,
+    })),
     {
       key: "live",
       text: copy.path.legend.live,
@@ -136,11 +147,28 @@ export function PathLegend({ showYesterday }: { showYesterday: boolean }) {
   );
 }
 
+/**
+ * סימן השעון של "אפשר לסמן עד חצות". בלעדיו אבן של אתמול נבדלת מ"לא נספר" רק בגוון (WCAG 1.4.1):
+ * שתיהן כוס ריקה עם קו רציף.
+ */
+function ClockBadge({ small = false }: { small?: boolean }) {
+  const size = small ? 12 : 16;
+  return (
+    <span className={`stone-badge${small ? " stone-badge--s" : ""}`}>
+      <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <circle cx="8" cy="8" r="7" fill="#8A4A33" stroke="#FFFFFF" strokeWidth="1.5" />
+        <path d="M8 4.2 V8 L10.6 9.6" fill="none" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
 function Swatch({ fill: f, state, dashed = false }: { fill: 0 | 0.5 | 1; state: StoneState; dashed?: boolean }) {
   return (
     <span className="swatch">
       <StoneCup fill={f} dashed={dashed} width={16} height={19} thick />
       <i className={`swatch-rock stone-rock--${state}`} />
+      {state === "yesterday" ? <ClockBadge small /> : null}
     </span>
   );
 }

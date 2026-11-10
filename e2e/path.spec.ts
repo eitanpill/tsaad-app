@@ -139,7 +139,8 @@ test.describe("path: states", () => {
     await expect(page.locator(".stone-num").nth(6)).toHaveText("7 · לייב");
     await expect(page.locator(".stone-num").nth(13)).toHaveText("14 · לייב");
     const legend = page.locator(".t-legend li");
-    await expect(legend).toHaveText(["נספר", "היום", "לא נספר", "עוד לא נפתח", "מפגש לייב"]);
+    // as in AppPath: only the states that are on the path (no missed day yet)
+    await expect(legend).toHaveText(["נספר", "היום", "עוד לא נפתח", "מפגש לייב"]);
     await expect(page.getByRole("navigation", { name: "ניווט ראשי" }).getByRole("link", { name: "השביל" })).toHaveAttribute("aria-current", "page");
     await axe(page);
     await shot(page, "path-mid");
@@ -161,6 +162,10 @@ test.describe("path: states", () => {
       "יום 8, עוד לא נפתח",
     ]);
     await expect(page.locator(".t-legend li")).toHaveText(["נספר", "היום", "אפשר לסמן עד חצות", "לא נספר", "עוד לא נפתח", "מפגש לייב"]);
+    // yesterday differs from "missed" by a clock badge (shape), not only by tone; the legend swatch carries it too
+    await expect(page.locator('.stone[data-state="yesterday"] .stone-badge')).toHaveCount(1);
+    await expect(page.locator('.stone[data-state="missed"] .stone-badge')).toHaveCount(0);
+    await expect(page.locator(".t-legend li").nth(2).locator(".stone-badge")).toHaveCount(1);
     // older missed days still open their screen (view only)
     expect((await stoneLinks(page))[1]).toBe("/day/2");
     await axe(page);
@@ -200,13 +205,15 @@ test.describe("path: states", () => {
     expect(names[8]).toBe("יום 9, לא נספר");
     expect(names.some((n) => n.endsWith("עוד לא נפתח") || n.endsWith("היום"))).toBe(false);
     await expect(page.locator(".chip--count")).toHaveText("8 מתוך 14");
+    // the legend lists only states that can still occur: no "today", no "not open yet"
+    await expect(page.locator(".t-legend li")).toHaveText(["נספר", "אפשר לסמן עד חצות", "לא נספר", "מפגש לייב"]);
     await axe(page);
     await shot(page, "path-after-end");
     await ctx.close();
     ({ ctx, page } = await open(browser, T.ended, "/path"));
     names = await stoneNames(page);
     expect(names[13]).toBe("יום 14, לייב, לא נספר");
-    await expect(page.locator(".t-legend li")).toHaveCount(5);
+    await expect(page.locator(".t-legend li")).toHaveText(["נספר", "לא נספר", "מפגש לייב"]);
     await ctx.close();
   });
 });
@@ -280,6 +287,49 @@ test.describe("path: accessibility", () => {
     ]);
     expect(names).toEqual(["none", "none"]);
     await ctx.close();
+  });
+});
+
+test.describe("bottom nav never hides content", () => {
+  test("keyboard focus stops above the fixed nav, and the logout link clears it at the end of every app page", async ({ browser }) => {
+    await seed(habits([1, 3]));
+    for (const [url, now, width] of [
+      ["/today", T.day7, 390],
+      ["/path", T.day7, 390],
+      ["/path", T.day7, 320],
+      ["/day/2", T.day4Noon, 390],
+      ["/day/3", T.day4Noon, 390],
+      ["/day/5", T.day4Noon, 390],
+    ] as const) {
+      const { ctx, page } = await open(browser, now, url, { width });
+      const hidden: string[] = [];
+      for (let i = 0; i < 45; i++) {
+        await page.keyboard.press("Tab");
+        const r = await page.evaluate(() => {
+          const a = document.activeElement as HTMLElement | null;
+          if (!a || a === document.body || a.closest(".bnav")) return null;
+          const f = a.getBoundingClientRect();
+          const navTop = document.querySelector(".bnav")!.getBoundingClientRect().top;
+          return f.bottom > navTop ? `${a.tagName} "${(a.textContent ?? "").slice(0, 24)}" ${Math.round(f.bottom)} > ${Math.round(navTop)}` : null;
+        });
+        if (r) hidden.push(r);
+      }
+      expect(hidden, `${url} @${width}`).toEqual([]);
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      const hit = await page.evaluate(() => {
+        const b = document.querySelector(".app-foot button")!.getBoundingClientRect();
+        const navTop = document.querySelector(".bnav")!.getBoundingClientRect().top;
+        const el = document.elementFromPoint(b.left + b.width / 2, b.bottom - 2);
+        return { onTop: el?.closest(".app-foot") != null, gap: navTop - b.bottom };
+      });
+      expect(hit.onTop, `${url} @${width}`).toBe(true);
+      expect(hit.gap, `${url} @${width}`).toBeGreaterThanOrEqual(16);
+      if (url === "/path" && width === 390) {
+        await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+        await shot(page, "path-scrolled-end");
+      }
+      await ctx.close();
+    }
   });
 });
 
@@ -415,12 +465,13 @@ test.describe("day screen", () => {
     }
   });
 
-  test("invalid day: the not-found screen (no day content) for 0, 15, 01, text, decimals", async ({ browser }) => {
+  test("invalid day: a real 404 with the Hebrew not-found screen (no day content) for 0, 15, 07, text, decimals", async ({ browser }) => {
     await seed([]);
     const ctx = await browser.newContext({ storageState, extraHTTPHeaders: clock(T.day4Noon), locale: "he-IL" });
-    for (const bad of ["0", "15", "01", "-1", "abc", "1.5", "1e1", "99"]) {
+    for (const bad of ["0", "15", "01", "07", "-1", "abc", "1.5", "7.0", "1e1", "99", "99999999999999999999", "%20", "%2537"]) {
       const page = await ctx.newPage();
-      await page.goto(`/day/${bad}`);
+      const res = await page.goto(`/day/${bad}`);
+      expect(res!.status(), bad).toBe(404);
       await expect(page.getByRole("heading", { level: 1 }), bad).toHaveText("הדף לא נמצא");
       await expect(page.getByRole("button", { name: /הפעלת סרטון/ }), bad).toHaveCount(0);
       await expect(page.locator('meta[name="robots"]').first(), bad).toHaveAttribute("content", /noindex/);
@@ -432,6 +483,21 @@ test.describe("day screen", () => {
       await expect(ok.getByRole("heading", { level: 1 })).toHaveText("יום 3");
       await ok.close();
     }).toPass();
+    // a percent-encoded digit is the same day as the plain one (Next decodes the param)
+    const enc = await ctx.newPage();
+    expect((await enc.goto("/day/%37"))!.status()).toBe(200);
+    await expect(enc.getByRole("heading", { level: 1 })).toHaveText("יום 7 עוד לא נפתח");
+    await enc.close();
+    // signed out: the same 404 (the check needs no session and reveals nothing about the user)
+    const anon = await browser.newContext({ locale: "he-IL" });
+    expect((await anon.request.get("/day/0")).status()).toBe(404);
+    // pages that do not exist yet (nav targets of later stages) get the Hebrew 404 too
+    const live = await anon.newPage();
+    expect((await live.goto("/live"))!.status()).toBe(404);
+    await expect(live.getByRole("heading", { level: 1 })).toHaveText("הדף לא נמצא");
+    await expect(live.locator("html")).toHaveAttribute("lang", "he");
+    await axe(live);
+    await anon.close();
     const page = await ctx.newPage();
     await page.goto("/day/15");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("הדף לא נמצא");

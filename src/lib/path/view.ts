@@ -28,11 +28,16 @@ export type PathModel = {
   stones: Stone[];
   counted: number;
   completed: boolean;
-  /** יש אבן "אפשר לסמן עד חצות": מציגים אותה במקרא. */
-  hasYesterday: boolean;
+  /**
+   * המצבים שהמקרא מסביר, בסדר קבוע: "נספר" תמיד (זו המטרה), והשאר רק כשיש על השביל אבן במצב הזה.
+   * כך אחרי סוף האתגר אין "היום" ו"עוד לא נפתח", ולפני ההתחלה אין "לא נספר".
+   */
+  legend: StoneState[];
   /** היום שנפתח מחר (הוא היחיד מבין הנעולים שיש לו מסך משלו בשביל), או null. */
   tomorrow: number | null;
 };
+
+const LEGEND_ORDER: readonly StoneState[] = ["counted", "today", "yesterday", "missed", "locked"];
 
 const FILL_BY_STEPS: Record<number, Fill> = { 0: 0, 1: 0.5, 2: 0.75, 3: 1 };
 
@@ -98,16 +103,12 @@ export function pathModel(
     stones,
     counted,
     completed: counted >= CHALLENGE.daysToComplete,
-    hasYesterday: stones.some((s) => s.state === "yesterday"),
+    legend: LEGEND_ORDER.filter((st) => st === "counted" || stones.some((s) => s.state === st)),
     tomorrow,
   };
 }
 
-/** "5" בלבד (1 עד 14, בלי אפסים מובילים ובלי סימנים): אחרת null. */
-export function parseDayParam(raw: string): number | null {
-  if (!/^(?:[1-9]|1[0-4])$/.test(raw)) return null;
-  return Number(raw);
-}
+export { parseDayParam } from "./day-param";
 
 export type DayScreen =
   /** היום הנוכחי: מפנים ל־/today (שם נמצא הלוח המלא). */
