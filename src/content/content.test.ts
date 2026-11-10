@@ -56,6 +56,7 @@ const ALLOWED_TOKENS = new Set([
   "time",
   "text",
   "name",
+  "greeting",
   "username",
   "link",
   "sessionLink",

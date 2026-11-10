@@ -87,7 +87,11 @@ export const copy = {
     markHint: "מסמנים פעולה, והכוס עולה.",
     liveAction: "לייב עם אביטל",
     liveActionHint: "הסימון לא חובה.",
+    // השם הפרטי (רק כשיש שם נקי בחשבון); בלעדיו מוצגת הברכה לבדה.
+    greetingName: "{greeting}, {name}",
+    strip: { link: "לשביל" },
     toastFirst: "צעד אחד. היום נחשב.",
+    toastFull: "הכוס מלאה.",
     toastOffline: "יישמר כשהחיבור יחזור.",
   },
 
@@ -124,6 +128,29 @@ export const copy = {
     closedCounted: "יום {n} נספר. הסימון נסגר, ואפשר לצפות בסרטון.",
     notMarked: "לא סומן",
     toPath: "חזרה לשביל",
+  },
+
+  // סיום האתגר: סיכום אישי ושיתוף. הברכה בקול הקיים; בלי מספרים מומצאים.
+  finish: {
+    warm: "{n} ימים נספרו. צעד קטן אחרי צעד קטן, והגעתם. תודה שהייתם איתנו.",
+    endedLine: "{n} ימים נספרו. כל צעד קטן נחשב.",
+    countedDays: "הימים שנספרו",
+    cups: "הכוסות שלכם",
+    share: "שתפו",
+    download: "להורדת התמונה",
+    shareText: "השלמתי 14 ימים של צעד קטן ביום",
+    toast: "האתגר הושלם. תודה שהייתם איתנו.",
+  },
+
+  // מסך הפתיחה לפני תאריך ההתחלה.
+  before: {
+    days: "ימים עד ההתחלה",
+    tomorrow: "מחר מתחילים",
+    today: "היום מתחילים",
+    expectHeading: "מה מחכה בכל יום",
+    prepare: "שתי הכנות קטנות",
+    remindersCta: "להפעלת תזכורות",
+    installCta: "להוספה למסך הבית",
   },
 
   locked: {
@@ -589,6 +616,8 @@ export const copy = {
     footerLink: "החשבון שלי",
     legalLink: "פרטיות ונגישות",
     details: { heading: "פרטי החשבון", username: "שם משתמש", displayName: "שם" },
+    // היציאה עברה לכאן מתחתית כל מסך.
+    logout: { heading: "יציאה", lead: "היציאה מנתקת את ההתחברות במכשיר הזה. אפשר להיכנס שוב בכל זמן." },
     legal: {
       heading: "פרטיות ונגישות",
       privacy: "מדיניות פרטיות",
@@ -641,6 +670,13 @@ export const copy = {
   },
 
   a11y: {
+    // רצועת השביל במסך היום.
+    strip: {
+      region: "השביל של 14 הימים",
+      counted: "יום {day} מתוך 14, {counted} ימים נספרו",
+      oneCounted: "יום {day} מתוך 14, יום אחד נספר",
+      noDay: "{counted} ימים נספרו מתוך 14",
+    },
     skipLink: "דילוג לתוכן",
     mainNav: "ניווט ראשי",
     logo: "YOGIT",

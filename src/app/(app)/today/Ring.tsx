@@ -15,7 +15,7 @@ export function Ring({ counted, total = 14, size = 50 }: { counted: number; tota
       role="img"
       aria-label={fill(copy.a11y.ring, { n: counted })}
     >
-      <circle cx="50" cy="50" r="42" fill="none" stroke="#F0E8E1" strokeWidth="11" />
+      <circle cx="50" cy="50" r="42" fill="none" stroke="#FFFFFF" strokeWidth="11" />
       <circle
         className="ring-arc"
         cx="50"
