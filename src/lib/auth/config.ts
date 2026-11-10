@@ -26,6 +26,8 @@ export const RATE_LIMITS = Object.freeze({
   push: Object.freeze({ windowSeconds: 10 * 60, perIdentifier: 20, perIp: 1_000_000 }),
   /** כשלי אימות ב־webhook של GHL, לפי IP (רק כשה־IP אמין; ראו clientIp). בדיקה מוקדמת לפני האימות. */
   webhook: Object.freeze({ windowSeconds: 15 * 60, perIdentifier: 20, perIp: 20 }),
+  /** ניסיונות מחיקת חשבון (כל ניסיון נספר, גם מוצלח, לפי משתמש). שימוש רגיל: פעם אחת בחיים. נגד ניחוש סיסמה מתוך סשן גנוב. */
+  account: Object.freeze({ windowSeconds: 15 * 60, perIdentifier: 5, perIp: 30 }),
   /** הרשמה חוזרת של חשבון שלא הופעל: הנפקה מחדש של קישור לכל איש קשר (הנפקה ראשונה אינה נספרת). */
   webhookReissue: Object.freeze({ windowSeconds: 60 * 60, perIdentifier: 3, perIp: 1_000_000 }),
 });

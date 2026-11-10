@@ -50,6 +50,13 @@
       "when": 1794320042289,
       "tag": "0006_webhook_signup_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794335550726,
+      "tag": "0007_account_rate_kind",
+      "breakpoints": true
     }
   ]
 }

@@ -660,3 +660,58 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   .rm-track { transition: none; }
 }
 [data-motion='off'] .in-wave, [data-motion='off'] .lv-dot { animation-play-state: paused; }
+
+/* ---- Account, offer, Yesodot (stage 10) ---- */
+.app-foot--links { flex-wrap: wrap; gap: 0 8px; }
+.app-foot--links .linkbtn { display: inline-flex; align-items: center; }
+.acc-dl { margin: 8px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.acc-dl div { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.acc-dl dt { font-size: 14px; color: var(--muted); }
+.acc-dl dd { margin: 0; font-weight: 700; font-size: 16px; overflow-wrap: anywhere; }
+.acc-ltr { unicode-bidi: isolate; }
+.t-acc-legal { background: var(--sage); color: var(--forest); padding: 16px 18px; }
+.t-acc-legal h2, .t-acc-del h2, .t-ofr h2, .t-yes h2 { margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800; }
+.t-acc-legal ul { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; }
+.t-acc-legal a { display: flex; align-items: center; min-height: 44px; color: var(--forest); font-weight: 700; text-underline-offset: 3px; }
+.t-acc-del { background: #fff; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.t-acc-del h3 { margin: 4px 0 0; font-size: 16px; font-weight: 800; }
+.t-acc-del p { margin: 0; font-size: 15px; line-height: 1.5; }
+.acc-list { margin: 0; padding-inline-start: 20px; font-size: 15px; line-height: 1.5; }
+.acc-form { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.acc-field { display: flex; flex-direction: column; gap: 6px; }
+.acc-field label { font-weight: 700; font-size: 15px; }
+.acc-field input {
+  box-sizing: border-box; width: 100%; min-height: 52px; padding: 0 14px; border: 2px solid var(--muted); border-radius: var(--radius-btn);
+  background: #fff; color: var(--maroon); font: inherit; font-size: 16px; text-align: right;
+}
+.acc-field input[aria-invalid='true'] { border-color: var(--terracotta-text); }
+.acc-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.acc-error { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; font-weight: 700; color: var(--terracotta-text); }
+.acc-error svg { flex: none; }
+.acc-danger {
+  min-height: 52px; padding: 0 20px; border: 2px solid var(--terracotta-text); border-radius: 26px; background: #fff; color: var(--terracotta-text);
+  font: inherit; font-size: 17px; font-weight: 700; cursor: pointer;
+}
+.acc-danger:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* Offer (day 14) and Yesodot: tiles; disabled buttons follow the dashed /live pattern. */
+.t-ofr-hero { background: var(--sky); padding: 16px 18px; }
+.t-ofr-hero h1 { margin: 2px 0 0; font-size: 26px; line-height: 1.1; font-weight: 900; overflow-wrap: break-word; }
+.t-ofr-hero p { margin: 8px 0 0; font-size: 15px; line-height: 1.45; }
+.t-ofr { background: var(--sand); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.t-ofr--sage { background: var(--sage); color: var(--forest); }
+.t-ofr p { margin: 0; font-size: 15px; line-height: 1.45; }
+.ofr-price { font-family: var(--font-heading), sans-serif; font-size: 32px; line-height: 1; font-weight: 900; }
+.ofr-note { font-size: 13px; line-height: 1.4; color: var(--muted); }
+.t-ofr--sage .ofr-note { color: var(--forest); }
+.ofr-spots { font-weight: 700; }
+.ofr-cta {
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 54px; margin: 4px 0 0; padding: 8px 14px;
+  border: 2px solid var(--forest); border-radius: 27px; background: var(--forest); color: #fff; font: inherit; font-size: 16px; font-weight: 700; text-align: center; text-decoration: none; cursor: pointer;
+}
+.ofr-cta--off { border: 2px dashed #8E7B6F; background: var(--cream); color: var(--muted); cursor: default; }
+.ofr-expired { font-weight: 700; }
+.t-entry { background: var(--sage); color: var(--forest); padding: 14px 18px; display: flex; flex-direction: column; gap: 6px; }
+.t-entry h2 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 800; }
+.t-entry p { margin: 0; font-size: 14px; line-height: 1.4; }
+.t-entry a { display: inline-flex; align-items: center; min-height: 44px; color: var(--forest); font-weight: 700; text-underline-offset: 3px; }

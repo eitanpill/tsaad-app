@@ -17,8 +17,8 @@ describe("root redirect", () => {
     verify.mockResolvedValue({ userId: "u", username: "a", displayName: "a" });
     await expect(Home()).rejects.toThrow("REDIRECT:/today");
   });
-  it("sends everyone else to /login", async () => {
+  it("sends everyone else to the public landing page /tsaad", async () => {
     verify.mockResolvedValue(null);
-    await expect(Home()).rejects.toThrow("REDIRECT:/login");
+    await expect(Home()).rejects.toThrow("REDIRECT:/tsaad");
   });
 });

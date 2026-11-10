@@ -34,6 +34,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       <main id="main" className="app-main">
         {children}
         <LogoutForm />
+        <nav className="app-foot app-foot--links" aria-label={copy.account.legal.heading}>
+          <Link href="/account" className="linkbtn">
+            {copy.account.footerLink}
+          </Link>
+          <Link href="/legal" className="linkbtn">
+            {copy.account.legalLink}
+          </Link>
+        </nav>
       </main>
       <BottomNav />
       <PwaBoot />

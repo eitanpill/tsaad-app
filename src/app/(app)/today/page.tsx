@@ -15,6 +15,8 @@ import { getSchedule } from "@/lib/today/schedule";
 import { getVideoConfig, hasVideo } from "@/lib/today/video";
 import { actionKey, greetingKey, isMorning, nextBoundary, todayModel } from "@/lib/today/view";
 import { stepsFor } from "@/lib/days";
+import { getOfferModel } from "@/lib/offer/config";
+import { OfferEntry } from "./OfferEntry";
 
 export const metadata: Metadata = { title: `${copy.nav.today} | ${copy.brand.name}` };
 
@@ -60,21 +62,28 @@ export default async function TodayPage() {
   const titles: Record<number, DayTitles> = {};
   for (const d of [day, yesterday]) if (d !== null) titles[d] = dayTitles(d);
 
+  // יום 14 ואחריו: אריח קטן אל ההצעות (מצב ההצעה נקבע בשרת; בלי קישורים ובלי מחירים כאן).
+  const offerEntry =
+    day === 14 || model.phase === "ended" ? <OfferEntry offer={getOfferModel(now, schedule).offer} /> : null;
+
   return (
-    <TodayBoard
-      schedule={schedule}
-      nowIso={now.toISOString()}
-      completions={completions}
-      phase={model.phase}
-      day={day}
-      live={model.live}
-      yesterday={yesterday}
-      showYesterday={yesterday !== null && yesterdayDone === 0}
-      greeting={copy.today.greeting[greetingKey(now, tz)]}
-      hero={hero}
-      titles={titles}
-      videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
-      nextChangeIso={next ? next.toISOString() : null}
-    />
+    <>
+      <TodayBoard
+        schedule={schedule}
+        nowIso={now.toISOString()}
+        completions={completions}
+        phase={model.phase}
+        day={day}
+        live={model.live}
+        yesterday={yesterday}
+        showYesterday={yesterday !== null && yesterdayDone === 0}
+        greeting={copy.today.greeting[greetingKey(now, tz)]}
+        hero={hero}
+        titles={titles}
+        videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
+        nextChangeIso={next ? next.toISOString() : null}
+      />
+      {offerEntry}
+    </>
   );
 }

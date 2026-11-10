@@ -84,10 +84,10 @@ export const sessions = pgTable(
   ],
 );
 
-export const ATTEMPT_KINDS = ["login", "forgot", "toggle", "push", "webhook"] as const;
+export const ATTEMPT_KINDS = ["login", "forgot", "toggle", "push", "webhook", "account"] as const;
 
 /**
- * ניסיונות להגבלת קצב: התחברות כושלת, בקשת "שכחתי סיסמה", סימון פעולה (toggle, לפי משתמש), או כשל אימות / חידוש קישור ב־webhook של GHL.
+ * ניסיונות להגבלת קצב: התחברות כושלת, בקשת "שכחתי סיסמה", סימון פעולה (toggle, לפי משתמש), כשל אימות / חידוש קישור ב־webhook של GHL, או ניסיון מחיקת חשבון (account, לפי משתמש).
  * המזהים הם HMAC (במפתח SESSION_SECRET), לא שם משתמש או IP גולמיים.
  */
 export const loginAttempts = pgTable(
@@ -101,7 +101,7 @@ export const loginAttempts = pgTable(
     attemptedAt: ts("attempted_at").notNull().defaultNow(),
   },
   (t) => [
-    check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle','push','webhook')`),
+    check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle','push','webhook','account')`),
     index("login_attempts_identifier_idx").on(t.kind, t.identifierHash, t.attemptedAt),
     index("login_attempts_ip_idx").on(t.kind, t.ipHash, t.attemptedAt),
     index("login_attempts_user_idx").on(t.userId),
