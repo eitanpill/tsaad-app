@@ -28,6 +28,7 @@ See `docs/CONTENT.md` for where the day content and the Bunny video ids (`BUNNY_
 | POST /api/csp-report | handler | anyone (browser CSP reports); log only, rate-limited per instance, no DB (stage 11) |
 | GET /go/[offer] | handler | anyone; `offer` is `challenge`, `session`, `bundle` or `yesodot` and nothing else. Counts one click (`offer_clicks`, no personal data) and answers 302 to the matching `MORNING_URL_*` (with the UTM parameters as before); 404 when the key is unknown or the URL is unset. No input of the request reaches the target |
 | /admin/stats | page | a logged-in user whose username is in `ADMIN_USERNAMES`. Everyone else gets the normal 404 (a real 404 status without a session cookie, decided in `proxy.ts`; the same 404 page for a logged-in non-admin). Server-rendered, aggregate numbers only, noindex |
+| GET /api/share-card?m=N | handler | anyone; renders the finish card (PNG, 1080x1350, next/og) from a 14-bit mask of counted days. No cookies, no name, no tracking, no DB; 400 for a bad mask. The Today finish tile's "שתפו" button fetches it (same origin) and shares it with the Web Share API, else downloads it. Fonts: `src/assets/fonts` (OFL TTFs; satori cannot read woff2). |
 | GET /api/health | handler | anyone; `{ok, db}` only (200, or 503 when the database is unreachable), `no-store`, result memoised 5 s |
 
 Access is enforced in the data-access layer (DAL) and in each route handler, not only in `proxy.ts`. The page never receives the content of a locked day.
@@ -182,3 +183,12 @@ Measurement is cookieless and first-party only. Signed up, activated, active per
 - Test clock: `TSAAD_TEST_NOW` and the `x-tsaad-test-now` header work only under the guard in `lib/today/test-clock.ts` (never on Vercel; in production only with `TSAAD_E2E=1` and a loopback `APP_ORIGIN`).
 - Passwords and tokens never go into logs. Sending through GHL, WhatsApp or email stays off until gate G3.
 - Vercel must not be connected to this repo before a deploy gate, or every branch push creates a preview deployment.
+
+## Improvement round (design/UX)
+- Today is a mosaic: sky hero (greeting with the first name when `users.display_name` is a clean name that differs from the username, `src/lib/today/first-name.ts`), a thin path strip linking to `/path`, a light video tile (Bunny thumbnail as poster when `BUNNY_CDN_HOST` and the day's video id are set, else a drawn meadow), cup and ring tiles, and the actions. Terracotta is for interactive elements; dark forest only for marked/selected states and the bottom nav.
+- The cup water rises with a CSS transition; a full cup shows a short sparkle (hidden, not animated, under `prefers-reduced-motion` and the pause button). Reaching 12 counted days shows the completion tile and the whole path in place and announces it in the existing polite region; focus never moves.
+- After day 14 the Today screen is the end screen: personal summary, the whole path, share, and, while the offer window is open, the offer tiles (`offer/OfferTiles.tsx`, shared with `/offer`).
+- Before the start: welcome screen (days to `START_DATE` only when it is set, the three daily parts, links to `/reminders` and `/install`).
+- Logout moved from the foot of every screen to `/account` (the footer link "החשבון שלי" stays on every screen).
+- At 900px and wider the auth screens get a second column with the path drawing, and Today/finish use two columns.
+- CSP: `img-src` gains the single `BUNNY_CDN_HOST` host (validated `*.b-cdn.net` name) and nothing else.
