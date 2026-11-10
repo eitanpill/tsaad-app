@@ -61,6 +61,7 @@ const ALLOWED_TOKENS = new Set([
   "deadline",
   "spots",
   "seconds",
+  "date",
 ]);
 
 // Forms that read as one gender only, or that put pressure on the reader.

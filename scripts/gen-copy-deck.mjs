@@ -2,6 +2,7 @@
 // Run: node --experimental-strip-types scripts/gen-copy-deck.mjs
 import { writeFileSync } from "node:fs";
 import { copy } from "../src/content/copy.he.ts";
+import { legal } from "../src/content/legal.he.ts";
 
 const GROUP_TITLES = {
   brand: "מותג",
@@ -21,6 +22,8 @@ const GROUP_TITLES = {
   messages: "הודעות שהמערכת החיצונית תשלח (טיוטה, לא נשלח)",
   landing: "עמוד נחיתה /tsaad",
   offer: "הצעת יום 14 ויסודות היוגה",
+  account: "החשבון ומחיקת חשבון (חדש בשלב 10)",
+  legal: "דפים משפטיים: מילות ממשק (חדש בשלב 10)",
   a11y: "נגישות: תוויות, טקסט לקורא מסך, הודעות חיות",
 };
 
@@ -92,6 +95,19 @@ const NOTES = {
   "a11y.landing.cta": "aria-label לכפתור “אני בפנים”. הטקסט הגלוי בתחילתו.",
   "a11y.offer": "aria-label לכפתורי ההצעה, כשהטקסט הגלוי לא ברור מחוץ להקשר.",
   "a11y.forms.showConfirmPassword": "לכפתור ההצגה של שדה האימות, כדי ששני הכפתורים לא יישמעו אותו דבר.",
+  "landing.hero.startTba": "חדש בשלב 10. מוצג כש־START_DATE לא הוגדר, במקום השורה עם [START_DATE].",
+  "landing.close.headingTba": "חדש בשלב 10. מוצג כש־START_DATE לא הוגדר.",
+  "landing.footer": "חדש בשלב 10: תחתית הדף הציבורי.",
+  "landing.illustration": "חדש בשלב 10: תווית הרשימה המאוירת ב״איך זה עובד״.",
+  "offer.day14.bundle.ctaTarget": "חדש בשלב 10. מציין מקום; הכפתור לא פעיל עד שמוגדר MORNING_URL_BUNDLE_139.",
+  "offer.day14.bundle.utm": "חדש בשלב 10. ערך utm_campaign מהקונפיג (OFFER_UTM_BUNDLE).",
+  "offer.yesodot.expiryTba": "חדש בשלב 10. מוצג כש־YESODOT_OFFER_EXPIRY לא הוגדר, במקום המציין.",
+  "offer.yesodot.expired": "חדש בשלב 10. אחרי תום התוקף: בלי כפתור.",
+  "offer.yesodot.more": "חדש בשלב 10. כפתור בתקציר שבמסך ההצעות, מוביל ל־/yesodot.",
+  "offer.yesodot.disabled": "חדש בשלב 10 (כפל של offer.day14.disabled, למסך הנפרד).",
+  "offer.entry": "חדש בשלב 10. אריח קטן במסך היום ביום 14 ואחריו.",
+  "account": "חדש בשלב 10. נוסח מחיקת החשבון: מה נמחק ומה נשאר מחוץ לאפליקציה (במערכת ההרשמה); דורש אישור הבעלים ובדיקה משפטית.",
+  "legal.contactTba": "חדש בשלב 10. מוצג כשפרט הקשר לא הוגדר בקונפיג, במקום [ACCESSIBILITY_CONTACT], [PRIVACY_CONTACT] או [SUPPORT_CONTACT].",
   "a11y.help": "מציין מקום מהמפרט. נוסח הצהרת הנגישות נכתב בשלב 10.",
 };
 
@@ -100,6 +116,8 @@ const QUESTIONS = [
   "האם הלייבים מוקלטים? אם כן, אוסיף “ההקלטה תעלה לכאן אחרי המפגש”.",
   "חשבון: כללי הסיסמה, [YESODOT_OFFER_EXPIRY] ו־[YESODOT_EMAIL_TIMING].",
   "[ACCESSIBILITY_CONTACT] להצהרת הנגישות, ופרט אישי על אביטל לדף הנחיתה.",
+  "שלב 10: [PRIVACY_CONTACT], [SUPPORT_CONTACT] ו־[MORNING_URL_BUNDLE_139] חדשים. מחיר הבאנדל: קישור ו־UTM מהקונפיג.",
+  "שלב 10: הדפים המשפטיים הם טיוטה לבדיקת עורך דין (docs/LEGAL_REVIEW.md), כולל שאלות פתוחות על שמירת חשבונות ללא מחיקה.",
 ];
 
 // טענות טכניות בקופי. כל אחת נבדקת בפועל בשלב 11 (QA) לפני שהנוסח נשאר.
@@ -169,6 +187,19 @@ for (const [group, value] of Object.entries(copy)) {
   }
   lines.push("");
 }
+
+// דפים משפטיים: טיוטה, ממתינה לבדיקה משפטית (src/content/legal.he.ts, docs/LEGAL_REVIEW.md).
+lines.push("## דפים משפטיים (DRAFT: טיוטה, ממתינה לבדיקה משפטית)");
+lines.push("");
+lines.push("הנוסחים נמצאים ב־`src/content/legal.he.ts`. אין הערת טיוטה גלויה למשתמשים. כל סעיף ממופה ב־`docs/LEGAL_REVIEW.md`.");
+lines.push("");
+lines.push("| מפתח | טקסט |");
+lines.push("|---|---|");
+for (const [path, text] of leaves(legal, "legal")) {
+  total += 1;
+  lines.push(`| \`${path}\` | ${esc(text)} |`);
+}
+lines.push("");
 
 lines.push("## שאלות פתוחות לאישור");
 lines.push("");

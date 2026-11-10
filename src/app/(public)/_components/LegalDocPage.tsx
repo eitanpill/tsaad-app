@@ -68,11 +68,11 @@ export function LegalDocPage({ doc }: { doc: LegalKey }) {
   const tokens = legalTokens();
   return (
     <>
-      <div className="doc-bar">
+      <header className="doc-bar">
         <Link href="/tsaad" className="logo" aria-label={`${copy.a11y.logo}, ${copy.legal.home}`}>
           <Logo labelled={false} height={22} />
         </Link>
-      </div>
+      </header>
       <main id="main" className="doc-main">
         <h1>{d.title}</h1>
         <p className="doc-updated">{fill(copy.legal.updated, { date: formatLegalDate(LEGAL.draftDate) })}</p>

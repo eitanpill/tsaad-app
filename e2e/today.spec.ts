@@ -469,11 +469,11 @@ test.describe("shell, motion, video, CSP", () => {
     expect(problems).toEqual([]);
   });
 
-  test("root redirects: signed out to /login, signed in to /today; logout works", async ({ browser }) => {
+  test("root redirects: signed out to the landing page /tsaad, signed in to /today; logout works", async ({ browser }) => {
     const anon = await browser.newContext();
     const p0 = await anon.newPage();
     await p0.goto("/");
-    await p0.waitForURL("**/login");
+    await p0.waitForURL("**/tsaad");
     await anon.close();
 
     const { ctx, page } = await open(browser, T.day1Morning);

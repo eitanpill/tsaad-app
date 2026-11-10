@@ -29,7 +29,7 @@ export default async function YesodotPage() {
         <p>{Y.lead}</p>
       </section>
 
-      <section className="t t-ofr t-ofr--sage" aria-label={Y.heading}>
+      <div className="t t-ofr t-ofr--sage">
         {v.kind === "expired" ? (
           <p className="ofr-expired">{Y.expired}</p>
         ) : (
@@ -44,7 +44,7 @@ export default async function YesodotPage() {
             <OfferCta href={m.links.yesodot} label={Y.cta} noteId="yes-note" />
           </>
         )}
-      </section>
+      </div>
     </>
   );
 }

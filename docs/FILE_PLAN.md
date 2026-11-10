@@ -13,8 +13,8 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 ## Routes
 | Route | Kind | Who can reach it |
 |---|---|---|
-| /login, /activate, /forgot, /tsaad, /accessibility, /privacy, /terms | page | anyone (`/activate` needs a valid one-time link) |
-| /today, /path, /day/[n], /live, /reminders, /install, /offer | page | a logged-in user |
+| /login, /activate, /forgot, /tsaad, /legal, /legal/accessibility, /legal/privacy, /legal/terms, /account/deleted | page | anyone (`/activate` needs a valid one-time link; the legal texts are DRAFT, see `docs/LEGAL_REVIEW.md`) |
+| /today, /path, /day/[n], /live, /reminders, /install, /offer, /yesodot, /account | page | a logged-in user |
 | POST /api/webhooks/ghl/signup | handler | callers with `GHL_WEBHOOK_SECRET` (header `x-tsaad-webhook-secret`, or HMAC signature plus timestamp); 503 if the secret is unset or shorter than 32; 5-minute window when a timestamp header is sent; idempotent by event id; no `Origin` check (server to server) |
 | login, forgot, activate, logout | server actions (`src/app/(auth)/actions.ts`) | login and forgot are open but rate-limited; every action checks `Origin` against `APP_ORIGIN`; logout deletes the session row. There are no `/api/auth/*` handlers; handlers added later use `rejectCrossOrigin` |
 | GET /api/video/[day] | handler | a session, and only once the server has unlocked that day |
@@ -23,7 +23,7 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 | POST /api/push/status | handler | a session, `Origin` check, size limit; no rate limit (read by key, called on each app load) |
 | GET /manifest.webmanifest, /sw.js, /offline.html | static / metadata | anyone (no personal data; the service worker caches no HTML) |
 | GET /api/cron/reminders, /api/cron/sync, /api/cron/cleanup | handler | requests that carry `Bearer CRON_SECRET` (constant-time check; 401 if the secret is unset or shorter than 16 characters) |
-| GET /api/health | handler | anyone |
+| GET /api/health | handler | anyone; `{ok, db}` only (200, or 503 when the database is unreachable), `no-store`, result memoised 5 s |
 
 Access is enforced in the data-access layer (DAL) and in each route handler, not only in `proxy.ts`. The page never receives the content of a locked day.
 
@@ -137,6 +137,15 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
   - `/tsaad`, the day-14 offer, and `/yesodot` with server-side eligibility
   - the full accessibility statement
   - privacy, terms, and account deletion (new app pages, which need legal review)
+  - built (stage 10):
+    - Route groups: `src/app/(public)/` (own layout: skip link, footer with the legal links; `public.css`) holds `/tsaad`, `/legal*`, `/account/deleted`; `(app)/` gained `/offer`, `/yesodot`, `/account`.
+    - `/tsaad`: bento landing after `R5Bento` (hero with real logo, "who is it" tiles from `copy.landing`: path illustration, ring and cup, how it works with day-1 titles, audience, Avital, two lives (time from `LIVE_TIME_DAYn`, else `copy.live.timeTba`), FAQ as `details`, closing CTA). The CTA is a link only when `MORNING_URL_CHALLENGE_79` is a valid https URL; otherwise a disabled button with `copy.landing.hero.ctaDisabledNote`. Unset `START_DATE` shows `landing.hero.startTba` / `close.headingTba`. SEO: title, description, canonical (`metadataBase` from `APP_ORIGIN`), Open Graph, robots allow; `app/robots.ts`. The Avital image placeholder (`[MEDIA_*]`) is not rendered (no asset). The ring, cup and path are decoration (4 counted, as in the design).
+    - `/` now sends a signed-out visitor to `/tsaad` (they are mostly prospects); `/login` stays reachable from the landing page, and `/today` still redirects to it.
+    - Offer (`/offer`, `lib/offer/{model,links,config}.ts`): states from the server clock. "End of the day-14 live" is `LIVE_TIME_DAY14` + `OFFER.liveEndsAfterStartMinutes` (60, the calendar duration); the window is `OFFER_WINDOW_HOURS` from there. `notYet` also when the live time, the window or `START_DATE` is unset (nothing invented, no prices or links in the HTML), `open` (deadline shown, no countdown), `expired`. Session (271) and bundle (139) cards; Yesodot summary separate. Links come from `MORNING_URL_SESSION_271`, `MORNING_URL_BUNDLE_139`, `MORNING_URL_YESODOT_1265` (https only) with `utm_source=tsaad_app`, `utm_medium=app` and `utm_campaign` from `OFFER_UTM_SESSION|BUNDLE|YESODOT`; existing `utm_*` in a configured URL are kept. No link = disabled button with `copy.offer.day14.disabled`. `SESSION_SPOTS` shows a spots line only when set. Today shows a small tile (`OfferEntry`) on day 14 and after the end. `/live` has no day-14 offer copy, so no link there.
+    - `/yesodot`: open to every logged-in participant at any time (entry points start at day 14); own validity `YESODOT_OFFER_EXPIRY` (a date = through the end of that day in Israel, or an ISO instant); unset shows `offer.yesodot.expiryTba`; expired shows `offer.yesodot.expired` without a button.
+    - Legal: `src/content/legal.he.ts` (DRAFT) rendered by `LegalDocPage`; retention numbers are filled from `RETENTION` and `SESSION_POLICY`; contacts from `ACCESSIBILITY_CONTACT`, `PRIVACY_CONTACT`, `SUPPORT_CONTACT`. `docs/LEGAL_REVIEW.md` lists every clause and the open questions. The footer of the app has "החשבון שלי" and "פרטיות ונגישות" (to `/legal`) under logout.
+    - Account deletion (`/account`, `lib/account/delete.ts`, `(app)/account/actions.ts`): Origin check, session, password re-entry, rate limit (`RATE_LIMITS.account`, new `login_attempts.kind = 'account'`, migration `0007`), `delete from users` (cascade covers sessions, tokens, completions, push subscriptions, reminder log, outbox, attempts), cookie cleared, redirect to `/account/deleted`, which unsubscribes the browser push subscription client-side. Nothing is sent or queued for GHL; `deletion-notice.ts` is a dry-run port for G3.
+    - `GET /api/health`. Tests: `lib/offer/offer.test.ts`, `lib/account/delete.integration.test.ts`, `(app)/account/actions.test.ts`, `lib/legal/legal.test.ts`, `lib/health.test.ts`, env additions; e2e `pages.spec.ts` (server A: nothing configured) and `offer.spec.ts` (server B on port 3101, same build, offer and contacts configured; see `playwright.config.ts`).
 - **Stage 11, QA:**
   - Playwright with axe on every screen
   - keyboard, 200% zoom and screen-reader checks

@@ -13,6 +13,7 @@ import { liveSessions, liveWhen, type LiveSession } from "@/lib/live/model";
 import { getOfferLinks } from "@/lib/offer/config";
 import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
+import { connection } from "next/server";
 import { getAppOrigin } from "@/lib/auth/config";
 import { LandingCta } from "../_components/LandingCta";
 import { LandingCup, LandingPath, LandingRing } from "../_components/LandingPath";
@@ -70,6 +71,8 @@ function whenNode(s: LiveSession, tz: string): ReactNode {
 }
 
 export default async function LandingPage() {
+  // The live times and start date depend on the request clock: render per request (before anything reads the time).
+  await connection();
   const cfg = getConfig();
   const now = await serverNow();
   const schedule = getSchedule();

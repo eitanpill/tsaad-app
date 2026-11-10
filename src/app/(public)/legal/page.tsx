@@ -19,11 +19,11 @@ const DOCS = [
 export default function LegalIndex() {
   return (
     <>
-      <div className="doc-bar">
+      <header className="doc-bar">
         <Link href="/tsaad" className="logo" aria-label={`${copy.a11y.logo}, ${copy.legal.home}`}>
           <Logo labelled={false} height={22} />
         </Link>
-      </div>
+      </header>
       <main id="main" className="doc-main">
         <h1>{copy.legal.indexTitle}</h1>
         <p>{copy.legal.indexLead}</p>

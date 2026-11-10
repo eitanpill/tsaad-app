@@ -14,11 +14,11 @@ export default function AccountDeleted() {
   const D = copy.account.deleted;
   return (
     <>
-      <div className="doc-bar">
+      <header className="doc-bar">
         <span className="logo">
           <Logo height={22} />
         </span>
-      </div>
+      </header>
       <main id="main" className="doc-main">
         <h1>{D.title}</h1>
         <p>{D.body}</p>
