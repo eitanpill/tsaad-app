@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
 import { AlertCircle } from "../_components/icons";
@@ -14,7 +14,13 @@ type Phase = "idle" | "loading" | "ready" | "error";
 export function VideoTile({ day, available }: { day: number; available: boolean }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [src, setSrc] = useState<string | null>(null);
-  const retryRef = useRef<HTMLButtonElement>(null);
+  const playRef = useRef<HTMLButtonElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+
+  // כפתור הניגון (או "לנסות שוב") מוחלף בנגן: המיקוד עובר לנגן, ולא נופל לגוף הדף.
+  useEffect(() => {
+    if (phase === "ready") frameRef.current?.focus();
+  }, [phase]);
 
   async function load() {
     if (!available || phase === "loading") return;
@@ -39,7 +45,15 @@ export function VideoTile({ day, available }: { day: number; available: boolean 
           <div>
             <h2 id="video-err-h">{copy.states.videoError.heading}</h2>
             <p>{copy.states.videoError.body}</p>
-            <button ref={retryRef} type="button" className="btn-s" onClick={load}>
+            <button
+              type="button"
+              className="btn-s"
+              onClick={() => {
+                // אריח השגיאה נעלם עם הטעינה: המיקוד חוזר לכפתור הניגון
+                playRef.current?.focus();
+                void load();
+              }}
+            >
               {copy.states.videoError.retry}
             </button>
           </div>
@@ -49,6 +63,7 @@ export function VideoTile({ day, available }: { day: number; available: boolean 
         <div className="video-box">
           {phase === "ready" && src ? (
             <iframe
+              ref={frameRef}
               src={src}
               title={title}
               loading="lazy"
@@ -63,6 +78,7 @@ export function VideoTile({ day, available }: { day: number; available: boolean 
                 <path d="M0 132 C 80 104, 150 140, 230 116 C 290 98, 320 110, 346 104 L346 172 L0 172 Z" fill="#123021" opacity="0.55" />
               </svg>
               <button
+                ref={playRef}
                 type="button"
                 className="play"
                 aria-label={fill(copy.a11y.video.play, { n: day })}

@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const core = vi.hoisted(() => vi.fn());
+const rate = vi.hoisted(() => vi.fn());
 const hdrs = vi.hoisted(() => ({ h: new Map<string, string>() }));
 vi.mock("next/headers", () => ({ headers: async () => ({ get: (k: string) => hdrs.h.get(k) ?? null }) }));
 vi.mock("@/db", () => ({ getDb: () => ({}) }));
@@ -11,7 +12,11 @@ vi.mock("@/lib/auth/dal", () => ({
     return { userId: "u1", username: "a", displayName: "a" };
   },
 }));
-vi.mock("@/lib/today/toggle", () => ({ toggleActionCore: core }));
+vi.mock("@/lib/today/toggle", () => ({ toggleActionCore: core, toggleRateAllowed: rate }));
+vi.mock("@/lib/auth/config", async (orig) => ({
+  ...(await orig<typeof import("@/lib/auth/config")>()),
+  getSessionSecret: () => "s".repeat(32),
+}));
 vi.mock("@/lib/today/clock", () => ({ serverNow: async () => new Date("2026-12-04T12:00:00Z") }));
 vi.mock("@/lib/today/schedule", () => ({ getSchedule: () => null }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() } }));
@@ -21,6 +26,8 @@ import { toggleAction } from "./actions";
 describe("toggleAction (server action wrapper)", () => {
   beforeEach(() => {
     core.mockReset();
+    rate.mockReset();
+    rate.mockResolvedValue(true);
     hdrs.h.clear();
     vi.stubEnv("APP_ORIGIN", "http://localhost:3100");
   });
@@ -63,6 +70,15 @@ describe("toggleAction (server action wrapper)", () => {
     hdrs.h.set("cookie", "x");
     core.mockRejectedValue(new Error("db down"));
     expect(await toggleAction(4, "habit")).toEqual({ ok: false, error: "failed" });
+  });
+
+  it("checks the per-user rate cap with the session user, and refuses without writing when over it", async () => {
+    hdrs.h.set("origin", "http://localhost:3100");
+    hdrs.h.set("cookie", "x");
+    rate.mockResolvedValue(false);
+    expect(await toggleAction(4, "habit", true)).toEqual({ ok: false, error: "rate_limited" });
+    expect(rate.mock.calls[0][2]).toBe("u1");
+    expect(core).not.toHaveBeenCalled();
   });
 
   it("ignores a non-boolean desired value", async () => {

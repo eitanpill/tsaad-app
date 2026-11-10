@@ -84,10 +84,10 @@ export const sessions = pgTable(
   ],
 );
 
-export const ATTEMPT_KINDS = ["login", "forgot"] as const;
+export const ATTEMPT_KINDS = ["login", "forgot", "toggle"] as const;
 
 /**
- * ניסיונות להגבלת קצב: התחברות כושלת, או בקשת "שכחתי סיסמה".
+ * ניסיונות להגבלת קצב: התחברות כושלת, בקשת "שכחתי סיסמה", או סימון פעולה (toggle, לפי משתמש).
  * המזהים הם HMAC (במפתח SESSION_SECRET), לא שם משתמש או IP גולמיים.
  */
 export const loginAttempts = pgTable(
@@ -101,7 +101,7 @@ export const loginAttempts = pgTable(
     attemptedAt: ts("attempted_at").notNull().defaultNow(),
   },
   (t) => [
-    check("login_attempts_kind", sql`${t.kind} in ('login','forgot')`),
+    check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle')`),
     index("login_attempts_identifier_idx").on(t.kind, t.identifierHash, t.attemptedAt),
     index("login_attempts_ip_idx").on(t.kind, t.ipHash, t.attemptedAt),
     index("login_attempts_user_idx").on(t.userId),

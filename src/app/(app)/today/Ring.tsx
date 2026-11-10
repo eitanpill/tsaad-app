@@ -4,12 +4,12 @@ import { fill } from "@/lib/format";
 const C = 264; // 2π·42
 
 /** טבעת "N מתוך 14". המספר והטקסט שלידה נושאים את הערך; ה־SVG עם תווית נגישה. */
-export function Ring({ counted, total = 14 }: { counted: number; total?: number }) {
+export function Ring({ counted, total = 14, size = 50 }: { counted: number; total?: number; size?: number }) {
   const offset = C * (1 - Math.min(counted, total) / total);
   return (
     <svg
-      width="74"
-      height="74"
+      width={size}
+      height={size}
       viewBox="0 0 100 100"
       className="ring-svg"
       role="img"

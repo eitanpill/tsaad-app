@@ -15,6 +15,9 @@ test.afterAll(() => pool.end());
 const SHOTS = process.env.SHOTS_DIR;
 const sha = (v: string) => createHash("sha256").update(v).digest("hex");
 const HDR = "x-tsaad-test-now";
+const KEY = process.env.TSAAD_TEST_CLOCK_KEY!;
+/** The test clock header plus the per-run key that makes the server honour it. */
+const clock = (now: string) => ({ [HDR]: now, "x-tsaad-test-key": KEY });
 
 const T = {
   beforeStart: "2026-11-30T12:00:00+02:00",
@@ -74,7 +77,7 @@ const countRows = async (uid = userId) =>
 async function open(browser: Browser, now: string, opts: { width?: number; reducedMotion?: boolean } = {}) {
   const ctx = await browser.newContext({
     storageState,
-    extraHTTPHeaders: { [HDR]: now },
+    extraHTTPHeaders: clock(now),
     viewport: { width: opts.width ?? 390, height: 844 },
     deviceScaleFactor: 1,
     reducedMotion: opts.reducedMotion ? "reduce" : "no-preference",
@@ -98,6 +101,14 @@ async function shot(page: Page, name: string) {
   mkdirSync(SHOTS, { recursive: true });
   await page.screenshot({ path: `${SHOTS}/${name}-390.png` });
 }
+
+/** Rendered text lines in the ring tile's caption (the design keeps it to 3). */
+const ringLines = (page: Page) =>
+  page.locator(".t-ring > span").evaluate((el) => {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    return new Set(Array.from(r.getClientRects()).map((x) => Math.round(x.top))).size;
+  });
 
 const habit = (page: Page) => page.getByRole("button", { name: /^הרגל/ }).first();
 
@@ -134,6 +145,7 @@ test.describe("states (axe, copy, server clock)", () => {
     await expect(page.getByRole("img", { name: "הכוס של היום, חצי מלאה" })).toBeVisible();
     await expect(page.getByRole("img", { name: "4 מתוך 14 ימים" })).toBeVisible();
     await expect(page.getByText("עוד 8 ימים להשלמת האתגר")).toBeVisible();
+    expect(await ringLines(page)).toBeLessThanOrEqual(3);
     await expect(page.getByText("שכחת לסמן אתמול?")).toHaveCount(0);
     await axe(page);
     await shot(page, "today-day4-half");
@@ -166,14 +178,16 @@ test.describe("states (axe, copy, server clock)", () => {
     await page.getByRole("button", { name: "לסימון אתמול" }).click();
     const group = page.getByRole("group", { name: /הפעולות של יום 3/ });
     await expect(group).toBeVisible();
+    // the opener is replaced by the group: focus moves into it, not to the page body
+    await expect(group.getByRole("button", { name: /^הרגל/ })).toBeFocused();
     await axe(page);
     // After midnight the server refuses, even though this page still shows the button.
-    await ctx.setExtraHTTPHeaders({ [HDR]: T.day5Night });
+    await ctx.setExtraHTTPHeaders(clock(T.day5Night));
     await group.getByRole("button", { name: /^הרגל/ }).click();
     await expect(page.getByText("הסימון לא נשמר. אפשר לנסות שוב.")).toBeVisible();
     expect(await countRows()).toBe(2);
     // Before midnight it works.
-    await ctx.setExtraHTTPHeaders({ [HDR]: T.day4Late });
+    await ctx.setExtraHTTPHeaders(clock(T.day4Late));
     await page.getByRole("button", { name: "לנסות שוב" }).click();
     await expect(group.getByRole("button", { name: /^הרגל/ })).toHaveAttribute("aria-pressed", "true");
     await expect.poll(countRows).toBe(3);
@@ -191,7 +205,10 @@ test.describe("states (axe, copy, server clock)", () => {
   test("unreachable 12: continuing copy replaces the count", async ({ browser }) => {
     await seed([[1, "habit"], [2, "habit"], [3, "habit"], [4, "habit"], [5, "habit"]]);
     const { ctx, page } = await open(browser, T.day13);
-    await expect(page.getByText("אפשר להמשיך לתרגל עד יום 14, גם בלי להשלים את האתגר.")).toBeVisible();
+    // the long message has its own full-width tile; the ring tile keeps only its short caption
+    await expect(page.locator(".t-progress-note")).toHaveText("אפשר להמשיך לתרגל עד יום 14, גם בלי להשלים את האתגר.");
+    await expect(page.locator(".t-ring")).not.toContainText("אפשר להמשיך");
+    expect(await ringLines(page)).toBeLessThanOrEqual(3);
     await expect(page.getByText(/עוד \d+ ימים להשלמת האתגר/)).toHaveCount(0);
     await axe(page);
     await shot(page, "today-unreachable");
@@ -202,7 +219,8 @@ test.describe("states (axe, copy, server clock)", () => {
     await seed(Array.from({ length: 12 }, (_, i): [number, string] => [i + 1, "habit"]));
     const { ctx, page } = await open(browser, T.day12);
     await expect(page.getByText("האתגר הושלם")).toBeVisible();
-    await expect(page.getByText("אפשר להמשיך עד יום 14.")).toBeVisible();
+    await expect(page.locator(".t-progress-note")).toHaveText("אפשר להמשיך עד יום 14.");
+    expect(await ringLines(page)).toBeLessThanOrEqual(3);
     await expect(page.getByRole("img", { name: "12 מתוך 14 ימים" })).toBeVisible();
     await axe(page);
     await shot(page, "today-completed");
@@ -218,6 +236,9 @@ test.describe("states (axe, copy, server clock)", () => {
     await ctx.close();
     ({ ctx, page } = await open(browser, T.ended));
     await expect(page.getByText("שכחת לסמן אתמול?")).toHaveCount(0);
+    // the challenge is over: no "you can keep practising until day 14"
+    await expect(page.getByText(/אפשר להמשיך/)).toHaveCount(0);
+    await expect(page.locator(".t-ring")).toContainText("ימים נספרו");
     await axe(page);
     await shot(page, "today-ended");
     await ctx.close();
@@ -253,6 +274,8 @@ test.describe("marking", () => {
     await expect(habit(page)).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "ביטול הסימון האחרון" }).click();
     await expect(habit(page)).toHaveAttribute("aria-pressed", "false");
+    // the toast (and its button) is gone: focus is back on the action, not lost to the page body
+    await expect(habit(page)).toBeFocused();
     await expect.poll(countRows).toBe(0);
     await ctx.close();
   });
@@ -282,6 +305,7 @@ test.describe("marking", () => {
     fail = false;
     await page.getByRole("button", { name: "לנסות שוב" }).click();
     await expect(habit(page)).toHaveAttribute("aria-pressed", "true");
+    await expect(habit(page)).toBeFocused();
 
     await ctx.setOffline(true);
     const banner = page.getByRole("status").filter({ hasText: "אין חיבור לאינטרנט" });
@@ -403,7 +427,7 @@ test.describe("shell, motion, video, CSP", () => {
 
   test("CSP: per-request nonce, no unsafe-inline scripts, no violations, hydrated", async ({ browser }) => {
     await seed([]);
-    const ctx = await browser.newContext({ storageState, extraHTTPHeaders: { [HDR]: T.day1Morning } });
+    const ctx = await browser.newContext({ storageState, extraHTTPHeaders: clock(T.day1Morning) });
     const page = await ctx.newPage();
     const problems: string[] = [];
     page.on("console", (m) => /content security policy|refused to/i.test(m.text()) && problems.push(m.text()));
@@ -422,6 +446,17 @@ test.describe("shell, motion, video, CSP", () => {
     await habit(page).click();
     await expect(habit(page)).toHaveAttribute("aria-pressed", "true");
     expect(problems).toEqual([]);
+    await ctx.close();
+  });
+
+  test("test clock: a spoofed header without the run key is ignored (page and video route)", async ({ browser }) => {
+    await seed([]);
+    // The server's env clock is day 4 (TSAAD_TEST_NOW). A bare header asking for day 13 must change nothing.
+    const ctx = await browser.newContext({ storageState, extraHTTPHeaders: { [HDR]: T.day13 } });
+    const page = await ctx.newPage();
+    await page.goto("/today");
+    await expect(page.locator(".chip")).toHaveText("יום 4 מתוך 14");
+    expect((await ctx.request.get("/api/video/9", { headers: { [HDR]: T.day13, "x-tsaad-test-key": "wrong" } })).status()).toBe(403);
     await ctx.close();
   });
 

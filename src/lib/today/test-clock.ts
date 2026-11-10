@@ -2,7 +2,9 @@
  * שעון בדיקות, ל־e2e ולבדיקות ידניות מקומיות בלבד. אסור שיהיה לו אפקט בפרודקשן.
  *
  * מנגנון: משתנה הסביבה TSAAD_TEST_NOW (רגע ISO) קובע את "עכשיו". כשהמנגנון מופעל, הכותרת
- * x-tsaad-test-now יכולה לדרוס אותו לבקשה בודדת (כך ריצת שרת אחת משרתת הרבה מצבים).
+ * x-tsaad-test-now יכולה לדרוס אותו לבקשה בודדת (כך ריצת שרת אחת משרתת הרבה מצבים), אבל רק אם הבקשה
+ * נושאת גם x-tsaad-test-key ששווה ל־TSAAD_TEST_CLOCK_KEY (32 תווים לפחות, נוצר אקראית לכל ריצת e2e).
+ * כך גם פריסה שהוגדרה בטעות עם TSAAD_E2E ו־APP_ORIGIN מקומי לא מקבלת שעון מכותרת של זר.
  *
  * ההגנה ("ignored in production"), כולה ב־testClockAllowed:
  *  1. כל סביבת Vercel (VERCEL או VERCEL_ENV מוגדרים) דוחה, תמיד.
@@ -13,8 +15,12 @@
  *  3. בפיתוח ובבדיקות (NODE_ENV אחר) מותר, אם יש ערך.
  * ערך שאינו תאריך תקין מתעלמים ממנו.
  */
+import { createHash, timingSafeEqual } from "node:crypto";
+
 export const TEST_CLOCK_ENV = "TSAAD_TEST_NOW";
 export const TEST_CLOCK_HEADER = "x-tsaad-test-now";
+export const TEST_CLOCK_KEY_HEADER = "x-tsaad-test-key";
+export const TEST_CLOCK_KEY_ENV = "TSAAD_TEST_CLOCK_KEY";
 
 type Env = Record<string, string | undefined>;
 
@@ -46,8 +52,26 @@ function parseInstant(v: string | null | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/** השוואה בזמן קבוע (sha256 משווה אורכים). */
+function sameSecret(a: string, b: string): boolean {
+  const h = (v: string) => createHash("sha256").update(v).digest();
+  return timingSafeEqual(h(a), h(b));
+}
+
+/** הכותרת נחשבת רק עם מפתח הריצה הנכון. בלי מפתח מוגדר (או קצר), הכותרת לא נחשבת כלל. */
+function headerKeyOk(env: Env, key: string | null | undefined): boolean {
+  const expected = env[TEST_CLOCK_KEY_ENV];
+  if (!expected || expected.length < 32 || !key) return false;
+  return sameSecret(key, expected);
+}
+
 /** "עכשיו" של השרת. בלי מנגנון מורשה, תמיד השעון האמיתי. */
-export function resolveNow(env: Env, headerValue: string | null | undefined, real: Date): Date {
+export function resolveNow(
+  env: Env,
+  header: { now?: string | null; key?: string | null } | null,
+  real: Date,
+): Date {
   if (!testClockAllowed(env)) return real;
-  return parseInstant(headerValue) ?? parseInstant(env[TEST_CLOCK_ENV]) ?? real;
+  const fromHeader = header && headerKeyOk(env, header.key) ? parseInstant(header.now) : null;
+  return fromHeader ?? parseInstant(env[TEST_CLOCK_ENV]) ?? real;
 }

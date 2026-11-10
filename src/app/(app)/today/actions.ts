@@ -2,17 +2,18 @@
 
 import { headers } from "next/headers";
 import { getDb } from "@/db";
+import { getSessionSecret } from "@/lib/auth/config";
 import { requireUser } from "@/lib/auth/dal";
 import { OriginError, assertSameOrigin } from "@/lib/auth/origin";
 import { logger } from "@/lib/logger";
 import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
-import { toggleActionCore, type ToggleResult } from "@/lib/today/toggle";
+import { toggleActionCore, toggleRateAllowed, type ToggleResult } from "@/lib/today/toggle";
 
 export type ToggleActionResult = ToggleResult | { ok: false; error: "forbidden" | "failed" };
 
 /**
- * סימון/ביטול סימון של פעולה. Origin, סשן ושעון השרת נבדקים כאן. `desired` (אופציונלי) הופך את הקריאה לאידמפוטנטית.
+ * סימון/ביטול סימון של פעולה. Origin, סשן, מגבלת קצב לפי משתמש ושעון השרת נבדקים כאן. `desired` (אופציונלי) הופך את הקריאה לאידמפוטנטית.
  * אין כאן שמירה לא־מקוונת: בלי רשת הקריאה נכשלת והלקוח מציג "לנסות שוב" (תור לא־מקוון הוא שלב 9).
  */
 export async function toggleAction(
@@ -28,7 +29,12 @@ export async function toggleAction(
   }
   const user = await requireUser();
   try {
-    return await toggleActionCore(getDb(), {
+    const db = getDb();
+    if (!(await toggleRateAllowed(db, getSessionSecret(), user.userId))) {
+      logger.warn("toggleAction rate limited");
+      return { ok: false, error: "rate_limited" };
+    }
+    return await toggleActionCore(db, {
       userId: user.userId,
       day,
       action,

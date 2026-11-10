@@ -4,13 +4,29 @@ import { actionCompletions } from "@/db/schema";
 import type { Db } from "@/db";
 import { ACTIONS, isActionValidForDay, markState, stepsFor, type Action, type Schedule } from "@/lib/days";
 import { enqueueTrackerSync } from "@/lib/sync";
+import { RATE_LIMITS } from "@/lib/auth/config";
+import { rateLimitKeys, registerAttempt } from "@/lib/auth/rate-limit";
 import { listDayCompletions } from "./completions";
 
-export type ToggleError = "invalid" | "locked" | "closed";
+export type ToggleError = "invalid" | "locked" | "closed" | "rate_limited";
 
 export type ToggleResult =
   | { ok: true; day: number; action: Action; done: boolean; steps: number; changed: boolean }
   | { ok: false; error: ToggleError };
+
+/**
+ * מגבלת קצב לסימונים, לפי משתמש (כל קריאה נספרת, גם לא תקינה). שימוש רגיל רחוק ממנה מאוד;
+ * היא רק עוצרת לולאת כתיבות (וסנכרונים) מחשבון אחד. המזהה נשמר כ־HMAC, כמו בשאר מגבלות הקצב.
+ */
+export async function toggleRateAllowed(
+  db: Pick<Db, "execute">,
+  secret: string,
+  userId: string,
+  limits: { windowSeconds: number; perIdentifier: number; perIp: number } = RATE_LIMITS.toggle,
+): Promise<boolean> {
+  const r = await registerAttempt(db, "toggle", rateLimitKeys(secret, userId, null), limits);
+  return r.allowed;
+}
 
 export function isAction(v: unknown): v is Action {
   return typeof v === "string" && (ACTIONS as readonly string[]).includes(v);

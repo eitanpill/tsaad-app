@@ -76,6 +76,7 @@ function ActionButton({
     <button
       type="button"
       className={`act${wide ? " act--wide" : ""}`}
+      data-action-key={actionKey(day, action)}
       aria-pressed={pressed}
       onClick={() => onToggle(day, action)}
     >
@@ -164,19 +165,40 @@ export function TodayBoard(p: BoardProps) {
     });
   }
 
+  // הכפתור בהודעה (ביטול / לנסות שוב) נעלם אחרי הלחיצה: המיקוד עובר לכפתור הפעולה עצמה, לא לגוף הדף.
+  function focusAction(day: number, action: Action) {
+    document.querySelector<HTMLButtonElement>(`[data-action-key="${actionKey(day, action)}"]`)?.focus();
+  }
+
+  // פתיחת "לסימון אתמול" מחליפה את הכפתור בקבוצת הפעולות: המיקוד עובר לפעולה הראשונה בקבוצה.
+  const yestGroup = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (yesterdayOpen) yestGroup.current?.querySelector("button")?.focus();
+  }, [yesterdayOpen]);
+
   const toggle = (day: number, action: Action) => setAction(day, action, !optimistic.includes(actionKey(day, action)));
 
   const stepsText = level === "empty" ? copy.today.cup.empty : level === "half" ? copy.today.cup.one : level === "three_quarters" ? copy.today.cup.two : copy.today.cup.three;
   const cupLabel = copy.a11y.cup[level === "empty" ? "empty" : level === "half" ? "one" : level === "three_quarters" ? "two" : "three"];
 
   const actions = p.day ? actionsForDay(p.day) : [];
-  const completionLine = progress.completed
+  // בטבעת: "ימים נספרו" ושורת ספירה קצרה בלבד (עד 3 שורות, כמו בעיצוב). הודעה ארוכה עוברת לאריח משלה.
+  // אחרי סוף האתגר אין "אפשר להמשיך": רק "האתגר הושלם" אם הושלם.
+  const ended = p.phase === "ended";
+  const countLine = progress.completed
     ? copy.today.remaining.done
-    : !progress.isCompletionReachable
-      ? copy.today.remaining.unreachable
+    : ended || !progress.isCompletionReachable
+      ? null
       : progress.remaining === 1
         ? copy.today.remaining.one
         : fill(copy.today.remaining.many, { remaining: progress.remaining });
+  const longNote = ended
+    ? null
+    : progress.completed
+      ? copy.today.afterCompletion
+      : !progress.isCompletionReachable
+        ? copy.today.remaining.unreachable
+        : null;
 
   return (
     <>
@@ -208,7 +230,7 @@ export function TodayBoard(p: BoardProps) {
               {copy.today.yesterday.action}
             </button>
           ) : (
-            <div id={`${yestId}-g`} className="grp" role="group" aria-label={fill(copy.today.yesterdayDayLabel, { n: p.yesterday })}>
+            <div ref={yestGroup} id={`${yestId}-g`} className="grp" role="group" aria-label={fill(copy.today.yesterdayDayLabel, { n: p.yesterday })}>
               <span className="grp-label">{fill(copy.common.dayLabel, { n: p.yesterday })}</span>
               {actionsForDay(p.yesterday).map((a, i) => (
                 <ActionButton key={a} day={p.yesterday!} action={a} pressed={optimistic.includes(actionKey(p.yesterday!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
@@ -220,16 +242,14 @@ export function TodayBoard(p: BoardProps) {
 
       {p.day ? <VideoTile day={p.day} available={p.videoAvailable} /> : null}
 
-      <section className="t t--half t-ring" aria-label={copy.today.counted}>
+      <section className={`t t-ring${p.phase === "active" ? " t--half" : ""}`} aria-label={copy.today.counted}>
         <Ring counted={progress.counted} />
         <span>
           {copy.today.counted}
-          <br />
-          <b>{completionLine}</b>
-          {progress.completed && p.phase === "active" ? (
+          {countLine ? (
             <>
               <br />
-              {copy.today.afterCompletion}
+              <b>{countLine}</b>
             </>
           ) : null}
         </span>
@@ -243,6 +263,12 @@ export function TodayBoard(p: BoardProps) {
             <br />
             {level === "empty" ? <span>{copy.today.markHint}</span> : <b>{copy.today.counts}</b>}
           </span>
+        </section>
+      ) : null}
+
+      {longNote ? (
+        <section className="t t-note t-progress-note">
+          <p>{longNote}</p>
         </section>
       ) : null}
 
@@ -273,14 +299,14 @@ export function TodayBoard(p: BoardProps) {
             </span>
             <span className="msg">{toast.text}</span>
             {toast.kind === "error" ? (
-              <button type="button" onClick={() => { const r = toast.retry; setToast(null); setAction(r.day, r.action, r.to); }}>
+              <button type="button" onClick={() => { const r = toast.retry; setToast(null); focusAction(r.day, r.action); setAction(r.day, r.action, r.to); }}>
                 {copy.common.retry}
               </button>
             ) : toast.undo ? (
               <button
                 type="button"
                 aria-label={copy.a11y.toast.undo}
-                onClick={() => { const u = toast.undo!; setToast(null); setAction(u.day, u.action, u.to); }}
+                onClick={() => { const u = toast.undo!; setToast(null); focusAction(u.day, u.action); setAction(u.day, u.action, u.to); }}
               >
                 {copy.common.undo}
               </button>

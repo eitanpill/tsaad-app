@@ -22,8 +22,8 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      // api/ ו־assets סטטיים אינם דפים. prefetch לא צריך nonce.
-      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      // api/ ו־assets סטטיים אינם דפים. prefetch לא צריך nonce. ("api/" עם הלוכסן: דף כמו /apiary מקבל CSP.)
+      source: "/((?!api/|_next/static|_next/image|favicon.ico).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

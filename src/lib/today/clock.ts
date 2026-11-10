@@ -1,6 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
-import { TEST_CLOCK_HEADER, resolveNow } from "./test-clock";
+import { TEST_CLOCK_HEADER, TEST_CLOCK_KEY_HEADER, resolveNow } from "./test-clock";
 
 /**
  * השעון של השרת. כל החלטה על יום, נעילה וסימון נעשית לפיו, ולא לפי שעון הלקוח.
@@ -9,5 +9,5 @@ import { TEST_CLOCK_HEADER, resolveNow } from "./test-clock";
  */
 export async function serverNow(): Promise<Date> {
   const h = await headers();
-  return resolveNow(process.env, h.get(TEST_CLOCK_HEADER), new Date());
+  return resolveNow(process.env, { now: h.get(TEST_CLOCK_HEADER), key: h.get(TEST_CLOCK_KEY_HEADER) }, new Date());
 }

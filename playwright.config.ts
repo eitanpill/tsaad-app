@@ -8,6 +8,9 @@ import { defineConfig, devices } from "@playwright/test";
  */
 const PORT = 3100;
 const ORIGIN = `http://localhost:${PORT}`;
+// Per-run key for the test-clock header (src/lib/today/test-clock.ts). Set once in the runner process so the
+// worker processes (which inherit the env and re-read this file) and the web server share the same value.
+process.env.TSAAD_TEST_CLOCK_KEY ??= randomBytes(32).toString("hex");
 
 export default defineConfig({
   testDir: "e2e",
@@ -28,9 +31,10 @@ export default defineConfig({
       SESSION_SECRET: randomBytes(32).toString("hex"),
       ACTIVATION_LINK_TTL_MINUTES: "30",
       // Test-only values (fake; nothing real). The test clock is honoured only because of these two
-      // together (see src/lib/today/test-clock.ts); a real deployment can never satisfy both.
+      // together (and the header only with the run key) (see src/lib/today/test-clock.ts); a real deployment can never satisfy both.
       TSAAD_E2E: "1",
       TSAAD_TEST_NOW: "2026-12-04T14:00:00+02:00",
+      TSAAD_TEST_CLOCK_KEY: process.env.TSAAD_TEST_CLOCK_KEY,
       START_DATE: "2026-12-01",
       BUNNY_LIBRARY_ID: "e2e-library",
       BUNNY_TOKEN_KEY: "e2e-not-a-real-key",

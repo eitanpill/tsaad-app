@@ -29,6 +29,13 @@
       "when": 1794109670544,
       "tag": "0003_background_statuses",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794122300169,
+      "tag": "0004_toggle_rate_kind",
+      "breakpoints": true
     }
   ]
 }

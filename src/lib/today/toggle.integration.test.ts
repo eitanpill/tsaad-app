@@ -5,7 +5,7 @@ import { createDb, isLocalDatabaseUrl, schema, type Db } from "@/db";
 import { makeSchedule } from "@/lib/days";
 import { rowsOf } from "@/lib/auth/sql";
 import { listCompletions } from "./completions";
-import { toggleActionCore } from "./toggle";
+import { toggleActionCore, toggleRateAllowed } from "./toggle";
 
 const url = process.env.DATABASE_URL;
 const runIntegration = !!url && process.env.TSAAD_TEST_DB === "1" && isLocalDatabaseUrl(url);
@@ -153,5 +153,27 @@ describe.skipIf(!runIntegration)("toggleActionCore (integration)", () => {
     )[0];
     expect(row.payload).toMatchObject({ day: 4, counted_days: 1 });
     expect(JSON.stringify(row.payload)).not.toMatch(/example\.test|tg\d/);
+  });
+  it("rate cap: per user, counted in a window, blocked attempts do not extend it", async () => {
+    const u = await mkUser();
+    const v = await mkUser();
+    await db.execute(sql`delete from login_attempts where kind = 'toggle'`);
+    const secret = "r".repeat(32);
+    const limits = { windowSeconds: 60, perIdentifier: 3, perIp: 1_000_000 };
+    const results: boolean[] = [];
+    for (let i = 0; i < 5; i++) results.push(await toggleRateAllowed(db, secret, u, limits));
+    expect(results).toEqual([true, true, true, false, false]);
+    // another user is not affected
+    expect(await toggleRateAllowed(db, secret, v, limits)).toBe(true);
+    // stored as an HMAC, never the raw user id
+    const raw = rowsOf<{ n: number }>(
+      await db.execute(sql`select count(*)::int as n from login_attempts where kind = 'toggle' and identifier_hash = ${u}`),
+    )[0].n;
+    expect(raw).toBe(0);
+    const kept = rowsOf<{ n: number }>(
+      await db.execute(sql`select count(*)::int as n from login_attempts where kind = 'toggle'`),
+    )[0].n;
+    expect(kept).toBe(4); // 3 for u (the 2 blocked ones were removed) + 1 for v
+    await db.execute(sql`delete from login_attempts where kind = 'toggle'`);
   });
 });
