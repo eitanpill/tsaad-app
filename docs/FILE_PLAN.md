@@ -25,6 +25,7 @@ See `docs/CONTENT.md` for where the day content and the Bunny video ids (`BUNNY_
 | POST /api/push/status | handler | a session, `Origin` check, size limit; no rate limit (read by key, called on each app load) |
 | GET /manifest.webmanifest, /sw.js, /offline.html | static / metadata | anyone (no personal data; the service worker caches no HTML) |
 | GET /api/cron/reminders, /api/cron/sync, /api/cron/cleanup | handler | requests that carry `Bearer CRON_SECRET` (constant-time check; 401 if the secret is unset or shorter than 16 characters) |
+| POST /api/csp-report | handler | anyone (browser CSP reports); log only, rate-limited per instance, no DB (stage 11) |
 | GET /api/health | handler | anyone; `{ok, db}` only (200, or 503 when the database is unreachable), `no-store`, result memoised 5 s |
 
 Access is enforced in the data-access layer (DAL) and in each route handler, not only in `proxy.ts`. The page never receives the content of a locked day.
@@ -152,6 +153,12 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
   - Playwright with axe on every screen
   - keyboard, 200% zoom and screen-reader checks
   - a full security sweep
+  - built (stage 11):
+    - `POST /api/csp-report` (`lib/security/csp-report.ts`): target of `report-uri` and `report-to csp` (the proxy adds `Reporting-Endpoints`). Anyone; no DB, no session; report content types only; 8KB streaming cap; at most 30 logged reports a minute per instance; logs the directive, the blocked origin or keyword, the page path without query, the source file without query. Always 204 (413/415 for size/type).
+    - `src/instrumentation.ts` + `config/required.ts`: in production the server refuses to start without `DATABASE_URL`, `APP_ORIGIN`, `SESSION_SECRET`, `ACTIVATION_LINK_TTL_MINUTES` or with any invalid value (names only); missing recommended values are warnings.
+    - The reminders cron reads `serverNow()` (test clock only under its guard), so e2e runs a dry-run day.
+    - `vercel.json` pins functions to `fra1`. `docs/LAUNCH_CHECKLIST.md` lists every variable and the deploy and smoke steps.
+    - e2e: `qa.spec.ts` (every screen and state: axe, structure, 24px targets, real 195px/DPR 2 reflow, keyboard-only walk, headers) and `journey.spec.ts` (14 days with the test clock, cron dry-run, day content). The CRON_SECRET of the e2e run is random per run.
 - **Stage 12, report.**
 
 ## Notes for the coming stages
