@@ -7,7 +7,7 @@ import { rowsOf } from "@/lib/auth/sql";
 import { issueTokenIn } from "@/lib/auth/tokens";
 import type { Logger } from "@/lib/logger";
 import type { SignupPayload } from "./payload";
-import { USERNAME_MAX, usernameBase, usernameCandidate } from "./username";
+import { USERNAME_MAX, usernameBase, usernameCandidate, usernameRandomCandidate } from "./username";
 
 export type SignupStatus = "created" | "reissued" | "exists" | "duplicate";
 
@@ -23,7 +23,10 @@ export type IssuedLink = {
 
 export type SignupOutcome = { status: SignupStatus; issued?: IssuedLink };
 
-const MAX_USERNAME_TRIES = 200;
+/** סיומות רציפות (dana .. dana50), ואחריהן עוד ניסיונות עם סיומת אקראית, כדי שמילוי מכוון של הסיומות לא יחסום הרשמה. */
+const SEQUENTIAL_USERNAME_TRIES = 50;
+const RANDOM_USERNAME_TRIES = 20;
+const MAX_USERNAME_TRIES = SEQUENTIAL_USERNAME_TRIES + RANDOM_USERNAME_TRIES;
 
 type UserRow = {
   id: string;
@@ -116,7 +119,8 @@ export async function processSignup(
     let username = base;
     let displayName = payload.displayName ?? base;
     for (let n = 1; n <= MAX_USERNAME_TRIES && userId === null; n++) {
-      username = usernameCandidate(base, n);
+      username =
+        n <= SEQUENTIAL_USERNAME_TRIES ? usernameCandidate(base, n) : usernameRandomCandidate(base, args.random);
       displayName = payload.displayName ?? username;
       const res = await tx.execute(
         sql`insert into users (username, display_name, email, phone, ghl_contact_id)

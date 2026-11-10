@@ -133,6 +133,39 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     expect(captured.map((c) => c.username)).toEqual(["whtest.same", "whtest.same2", "whtest.same3"]);
   });
 
+  it("when the sequential suffixes are used up, a random 6-digit suffix is used (no permanent 500)", async () => {
+    await db.execute(sql`insert into users (username, display_name) values ('whtestfull', 'x')`);
+    for (let i = 2; i <= 50; i++) {
+      await db.execute(sql`insert into users (username, display_name) values (${`whtestfull${i}`}, 'x')`);
+    }
+    const r = await call(contact({ email: "whtestfull@a.test" }));
+    expect(r.json.status).toBe("created");
+    await runAfter();
+    expect(captured[0].username).toMatch(/^whtestfull\d{6}$/);
+  });
+
+  it("a reserved local part (admin, support...) never becomes the username", async () => {
+    const r = await call(contact({ contact_id: "ghl-wh-admin", email: "Admin@example.test", phone: "0527770001" }));
+    expect(r.json.status).toBe("created");
+    await runAfter();
+    expect(captured[0].username).toBe("0527770001");
+  });
+
+  it("the display name is stored without bidi controls, URLs or digits", async () => {
+    const r = await call(contact({ contact_id: "ghl-wh-bidi", full_name: "\u202eדנה\u2066 https://evil.example 0521234567\u2069" }));
+    expect(r.json.status).toBe("created");
+    const u = rowsOf<{ display_name: string }>(
+      await db.execute(sql`select display_name from users where ghl_contact_id = 'ghl-wh-bidi'`),
+    )[0];
+    expect(u.display_name).toBe("דנה https evil example");
+  });
+
+  it("the same x-tsaad-event-id for two different contacts creates both (the header id is scoped per contact)", async () => {
+    const a = await call(contact(), { "x-tsaad-event-id": "wf-constant" });
+    const b = await call(contact(), { "x-tsaad-event-id": "wf-constant" });
+    expect([a.json.status, b.json.status]).toEqual(["created", "created"]);
+  });
+
   it("a duplicate event id returns 'duplicate', with no second user or token", async () => {
     const c = contact({ email: "whtest.dup@x.test" });
     const h = { [WEBHOOK_EVENT_ID_HEADER]: "evt-dup-1" };

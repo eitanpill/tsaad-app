@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { cleanName, normalizeEmail, normalizePhoneIL } from "./normalize";
 import { parseSignupPayload } from "./payload";
-import { sanitizeLocalPart, usernameBase, usernameCandidate } from "./username";
+import { isReservedUsername, sanitizeLocalPart, usernameBase, usernameCandidate, usernameRandomCandidate } from "./username";
 import {
   WEBHOOK_SECRET_HEADER,
   WEBHOOK_SIGNATURE_HEADER,
@@ -53,7 +53,29 @@ describe("normalizeEmail", () => {
 describe("cleanName", () => {
   it("collapses whitespace, strips braces and control characters, caps length", () => {
     expect(cleanName("  דנה \n  לוי ")).toBe("דנה לוי");
-    expect(cleanName("Dana {link} <b>x</b>")).toBe("Dana link b x /b");
+    expect(cleanName("Dana {link} <b>x</b>")).toBe("Dana link b x b");
+  });
+  it("keeps real names: Hebrew with niqqud, apostrophes, hyphens, maqaf, gershayim", () => {
+    expect(cleanName("שִׁירָה")).toBe("שִׁירָה");
+    expect(cleanName("O'Brien-Smith")).toBe("O'Brien-Smith");
+    expect(cleanName("בת־אל")).toBe("בת־אל");
+    expect(cleanName("ד\"ר נועה")).toBe("ד\"ר נועה");
+    expect(cleanName("José Muñoz")).toBe("José Muñoz");
+  });
+  it("strips bidi controls, zero-width characters and isolates (RTL spoofing)", () => {
+    for (const c of ["\u200e", "\u200f", "\u202a", "\u202b", "\u202c", "\u202d", "\u202e", "\u2066", "\u2067", "\u2068", "\u2069", "\u061c", "\u200b", "\ufeff", "\u2060", "\u00ad"]) {
+      expect(cleanName(`דנה${c}לוי`)).toBe("דנה לוי");
+    }
+    expect(cleanName("\u202egnp.exe")).toBe("gnp exe");
+  });
+  it("removes URLs, phone numbers, placeholders and emoji (the name is quoted in messages sent in the programme's name)", () => {
+    expect(cleanName("Dana https://evil.example/x")).toBe("Dana https evil example x");
+    expect(cleanName("call 052-1234567")).toBe("call");
+    expect(cleanName("[START_DATE] Dana")).toBe("START DATE Dana");
+    expect(cleanName("Dana 🧘‍♀️")).toBe("Dana");
+    expect(cleanName("12345")).toBeNull();
+    expect(cleanName("--")).toBeNull();
+    expect(cleanName("a\u0301\u0301\u0301\u0301\u0301\u0301b")).toBe("\u00e1\u0301\u0301\u0301b");
     expect(cleanName("x".repeat(200))?.length).toBe(80);
     expect(cleanName("   ")).toBeNull();
     expect(cleanName(5 as never)).toBeNull();
@@ -203,9 +225,41 @@ describe("verifyWebhookAuth", () => {
   });
 });
 
+describe("signature over raw bytes", () => {
+  const secret = "s".repeat(40);
+  it("string and its UTF-8 bytes give the same signature; a BOM or other byte change does not", () => {
+    const body = '{"full_name":"דנה"}';
+    const bytes = new TextEncoder().encode(body);
+    expect(signWebhook(secret, "1", bytes)).toBe(signWebhook(secret, "1", body));
+    const withBom = new Uint8Array([0xef, 0xbb, 0xbf, ...bytes]);
+    expect(signWebhook(secret, "1", withBom)).not.toBe(signWebhook(secret, "1", body));
+    const now = new Date(1000 * 1000);
+    const headers = new Headers({ "x-tsaad-timestamp": "1000", "x-tsaad-signature": signWebhook(secret, "1000", withBom) });
+    expect(verifyWebhookAuth({ headers, rawBody: withBom, secret, now })).toEqual({ ok: true, via: "signature" });
+    expect(verifyWebhookAuth({ headers, rawBody: body, secret, now })).toEqual({ ok: false, reason: "bad_signature" });
+  });
+});
+
+describe("reserved usernames and random fallback", () => {
+  it("staff-like local parts are never used; the rule falls through to phone digits, then yogi", () => {
+    for (const e of ["admin@x.co", "Admin.Tsaad@x.co", "support-team@x.co", "tsaad@x.co", "root@x.co", "no-reply@x.co", "system1@x.co"]) {
+      expect(isReservedUsername(sanitizeLocalPart(e.split("@")[0]))).toBe(true);
+      expect(usernameBase({ email: e, phoneE164: "+972521234567" })).toBe("0521234567");
+      expect(usernameBase({ email: e }, () => 0.1)).toBe("yogi10000");
+    }
+    for (const ok of ["dana", "rootie", "information", "teamar", "adi"]) expect(isReservedUsername(ok)).toBe(false);
+  });
+  it("random candidate keeps the length limit", () => {
+    expect(usernameRandomCandidate("dana", () => 0.123456)).toBe("dana123456");
+    expect(usernameRandomCandidate("x".repeat(20), () => 0)).toBe("x".repeat(14) + "000000");
+  });
+});
+
 describe("deriveEventId", () => {
   it("uses the header when present, validated", () => {
-    expect(deriveEventId("evt_1", "c1", null)).toBe("ghl:evt:evt_1");
+    const e = deriveEventId("evt_1", "c1", null)!;
+    expect(e).toMatch(/^ghl:evt:[0-9a-f]{40}$/);
+    expect(e).toBe(deriveEventId("evt_1", "c1", "ignored-when-header"));
     expect(deriveEventId("bad id", "c1", null)).toBeNull();
     expect(deriveEventId("", "c1", null)).toBeNull();
     expect(deriveEventId("x".repeat(129), "c1", null)).toBeNull();
@@ -216,6 +270,11 @@ describe("deriveEventId", () => {
     expect(a).not.toBe(deriveEventId(null, "c2", null));
     expect(a).not.toBe(deriveEventId(null, "c1", "m1"));
     expect(a).not.toContain("c1");
+  });
+  it("a header id is scoped to the contact: a constant header (misconfigured GHL) never blocks another contact", () => {
+    expect(deriveEventId("wf-1", "c1", null)).not.toBe(deriveEventId("wf-1", "c2", null));
+    expect(deriveEventId("wf-1", "c1", null)).not.toBe(deriveEventId("wf-2", "c1", null));
+    expect(deriveEventId("wf-1", "c1", null)).not.toBe(deriveEventId(null, "c1", "wf-1"));
   });
 });
 

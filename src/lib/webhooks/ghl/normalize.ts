@@ -45,10 +45,29 @@ export function normalizePhoneIL(input: unknown): string | null {
   return null;
 }
 
-/** שם לתצוגה: בלי תווי בקרה ובלי <>{} (לא נכנסים להודעות), רווחים מכווצים, עד 80 תווים. */
+/**
+ * שם לתצוגה. השם מגיע מטופס ציבורי ונכנס להודעות שנשלחות בשם התוכנית, ולכן רשימת היתר ולא רשימת איסור:
+ * אותיות (כל כתב), סימני ניקוד, רווח, גרש/גרשיים ומקף (כולל מקף עברי). כל השאר הופך לרווח: ספרות (מספרי טלפון),
+ * נקודות, נקודתיים ולוכסנים (כתובות כמו "evil.com" או "https://..."), סוגריים (<>{}[], ומציינים כמו "[START_DATE]"),
+ * תווי בקרה, תווי כיווניות (LRM/RLM, LRE..RLO, LRI..PDI, ALM), תווים ברוחב אפס ו־emoji. נרמול NFC, רווחים מכווצים,
+ * עד 80 תווים. null אם לא נשאר כלום.
+ */
+const NAME_DISALLOWED = /[^\p{L}\p{M} '\u2019\u05F3\u05F4"\-\u05BE]/gu;
+
 export function cleanName(input: unknown): string | null {
   if (typeof input !== "string") return null;
-  const s = input.replace(/[\u0000-\u001f\u007f-\u009f‎‏‪-‮<>{}]/g, " ").replace(/\s+/g, " ").trim();
-  if (!s) return null;
-  return [...s].slice(0, 80).join("");
+  const s = input
+    .normalize("NFC")
+    .replace(NAME_DISALLOWED, " ")
+    // סימנים "בלתי נראים" מקטגוריית M: בוררי וריאציה (emoji), CGJ, בוררי מונגולית.
+    .replace(/[\u034F\u180B-\u180D\uFE00-\uFE0F\u{E0100}-\u{E01EF}]/gu, " ")
+    // סימן ניקוד רק אחרי אות.
+    .replace(/(?<![\p{L}\p{M}])\p{M}+/gu, " ")
+    // "Zalgo": לא יותר משלושה סימני ניקוד רצופים (מספיק לניקוד עברי מלא).
+    .replace(/(\p{M}{3})\p{M}+/gu, "$1")
+    .replace(/\s+/g, " ")
+    .replace(/^[\s'\u2019\u05F3\u05F4"\-\u05BE]+|[\s\-\u05BE]+$/g, "")
+    .trim();
+  if (!/\p{L}/u.test(s)) return null;
+  return [...s].slice(0, 80).join("").trim();
 }

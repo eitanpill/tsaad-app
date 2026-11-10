@@ -32,8 +32,9 @@ type HeaderGetter = { get(name: string): string | null };
 export const isWebhookSecretConfigured = (secret: string | undefined): secret is string =>
   typeof secret === "string" && secret.length >= MIN_WEBHOOK_SECRET_LENGTH;
 
-export function signWebhook(secret: string, timestamp: string, rawBody: string): string {
-  return createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex");
+/** HMAC על הבתים הגולמיים של הגוף כפי שהתקבלו (לא על מחרוזת מפוענחת: פענוח מחליף רצפים לא תקינים ומסיר BOM). */
+export function signWebhook(secret: string, timestamp: string, rawBody: string | Uint8Array): string {
+  return createHmac("sha256", secret).update(`${timestamp}.`).update(rawBody).digest("hex");
 }
 
 /** שניות unix (או אלפיות שנייה, אם הערך גדול מ־1e12). null אם אינו מספר שלם חיובי. */
@@ -45,7 +46,7 @@ function parseTimestampSeconds(v: string): number | null {
 
 export function verifyWebhookAuth(args: {
   headers: HeaderGetter;
-  rawBody: string;
+  rawBody: string | Uint8Array;
   secret: string | undefined;
   now: Date;
 }): AuthResult {

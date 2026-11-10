@@ -32,9 +32,9 @@ export type HandlerDeps = {
   startDate?: () => string | undefined;
 };
 
-/** קורא את הגוף ועוצר ברגע שעבר את התקרה (גם בלי Content-Length). null = גדול מדי. */
-async function readCapped(req: Request, max: number): Promise<string | null> {
-  if (!req.body) return "";
+/** קורא את הגוף (בתים גולמיים) ועוצר ברגע שעבר את התקרה (גם בלי Content-Length). null = גדול מדי. */
+async function readCapped(req: Request, max: number): Promise<Uint8Array | null> {
+  if (!req.body) return new Uint8Array(0);
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
@@ -48,14 +48,19 @@ async function readCapped(req: Request, max: number): Promise<string | null> {
     }
     chunks.push(value);
   }
-  return new TextDecoder().decode(Buffer.concat(chunks));
+  return Buffer.concat(chunks);
 }
 
-/** מזהה האירוע: כותרת x-tsaad-event-id, אחרת נגזר דטרמיניסטית מאיש הקשר וסמן ההרשמה (אם נשלח). */
+/**
+ * מזהה האירוע: כותרת x-tsaad-event-id, אחרת נגזר דטרמיניסטית מאיש הקשר וסמן ההרשמה (אם נשלח).
+ * גם מזהה מהכותרת נקשר לאיש הקשר (hash של שניהם): הגדרה שגויה ב־GHL, למשל ערך קבוע כמו {{workflow.id}},
+ * לא תהפוך את כל ההרשמות שאחרי הראשונה ל־"duplicate" שקט; לכל היותר תתנהג כמו הגזירה לפי איש קשר.
+ */
 export function deriveEventId(headerValue: string | null, contactId: string, marker: string | null): string | null {
   if (headerValue !== null) {
     const v = headerValue.trim();
-    return EVENT_ID_RE.test(v) ? `ghl:evt:${v}` : null;
+    if (!EVENT_ID_RE.test(v)) return null;
+    return `ghl:evt:${createHash("sha256").update(`${contactId}\u0000${v}`).digest("hex").slice(0, 40)}`;
   }
   const h = createHash("sha256").update(`${contactId}\u0000${marker ?? ""}`).digest("hex").slice(0, 40);
   return `ghl:signup:${h}`;
@@ -116,7 +121,7 @@ export async function handleGhlSignup(req: Request, deps: HandlerDeps): Promise<
   }
   let body: unknown;
   try {
-    body = JSON.parse(rawBody);
+    body = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(rawBody));
   } catch {
     return fail("invalid", 400);
   }
