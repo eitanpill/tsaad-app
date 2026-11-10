@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { copy } from "@/content/copy.he";
+import { PathDoodle } from "@/components/Doodles";
 import { Logo } from "@/components/Logo";
 import "./auth.css";
 
@@ -28,9 +29,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </span>
         <span className="auth-byline">{copy.brand.byline}</span>
       </header>
-      <main id="main" className="auth-main">
-        {children}
-      </main>
+      <div className="auth-cols">
+        {/* מסכים רחבים (900px ומעלה) בלבד: איור השביל וטקסט המותג, במקום עמודה צרה בדף ריק. דקורטיבי. */}
+        <div className="auth-art" aria-hidden="true">
+          <PathDoodle className="auth-art-svg" />
+          <p>{copy.brand.tagline}</p>
+        </div>
+        <main id="main" className="auth-main">
+          {children}
+        </main>
+      </div>
       <footer className="auth-foot">
         <nav aria-label={copy.legal.indexTitle}>
           <ul>

@@ -248,3 +248,14 @@
 .auth-foot { margin-top: 14px; padding: 0 2px; font-size: 14px; }
 .auth-foot ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 6px; }
 .auth-foot a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; color: var(--terracotta-text); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Wide screens: the form column keeps its width and the free space gets the path drawing. */
+.auth-art { display: none; }
+@media (min-width: 900px) {
+  .auth-shell { max-width: 1040px; padding-top: 24px; }
+  .auth-cols { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 24px; align-items: stretch; margin-top: 8px; }
+  .auth-art { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; position: sticky; top: 16px; align-self: start; min-height: 620px; padding: 28px; border-radius: var(--radius-tile); background: var(--sage); color: var(--forest); }
+  .auth-art-svg { width: 100%; max-width: 360px; height: auto; }
+  .auth-art p { margin: 0; font-family: var(--font-heading), sans-serif; font-weight: 800; font-size: 22px; text-align: center; }
+  .auth-header { padding-bottom: 12px; }
+}
