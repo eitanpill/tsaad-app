@@ -48,10 +48,10 @@ export const REMINDERS = Object.freeze({
 export const LIVE = Object.freeze({
   /** הקישור נפתח שעה לפני המפגש (כמו ב־copy.live.linkOpensLater). */
   linkOpensBeforeMinutes: 60,
-  /** הקישור נשאר גלוי עד 150 דקות אחרי תחילת המפגש (אורך משוער 90 + גרייס 60 למצטרפים מאוחרים). */
-  linkOpenAfterStartMinutes: 150,
+  /** הקישור נשאר גלוי עד 120 דקות אחרי תחילת המפגש (מפגש של כ־60 דקות לפי פית, 2026-11-10, + גרייס 60). */
+  linkOpenAfterStartMinutes: 120,
   /** משך האירוע בקובץ היומן. */
-  calendarDurationMinutes: 90,
+  calendarDurationMinutes: 60,
 });
 
 /** התראות דחיפה (שלב 9). תקרת המנויים למשתמש (מכשירים) היא REMINDERS.maxSubscriptionsPerUser: המנוי הוותיק ביותר נמחק בהוספת חדש מעבר לה. */
