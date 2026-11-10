@@ -18,6 +18,8 @@ process.env.TSAAD_TEST_CLOCK_KEY ??= randomBytes(32).toString("hex");
 // GHL signup webhook (stage 9א): a per-run fake secret, and a file where the e2e-only capture delivery (guarded like the
 // test clock, see src/lib/webhooks/ghl/delivery.ts) writes the activation link, since real sending is off.
 process.env.GHL_WEBHOOK_SECRET ??= randomBytes(32).toString("hex");
+// Cron routes (journey.spec.ts runs the reminders job in dry-run and the cleanup job): a per-run bearer secret.
+process.env.CRON_SECRET ??= randomBytes(24).toString("hex");
 process.env.TSAAD_WEBHOOK_CAPTURE_FILE ??= join(mkdtempSync(join(tmpdir(), "tsaad-webhook-")), "capture.jsonl");
 
 // Ephemeral VAPID public key for the reminders screen (a fresh P-256 point per run; the private half is never kept).
@@ -35,6 +37,7 @@ const APP_ENV = {
   TSAAD_TEST_NOW: "2026-12-04T14:00:00+02:00",
   TSAAD_TEST_CLOCK_KEY: process.env.TSAAD_TEST_CLOCK_KEY,
   GHL_WEBHOOK_SECRET: process.env.GHL_WEBHOOK_SECRET,
+  CRON_SECRET: process.env.CRON_SECRET,
   TSAAD_WEBHOOK_CAPTURE_FILE: process.env.TSAAD_WEBHOOK_CAPTURE_FILE,
   START_DATE: "2026-12-01",
   BUNNY_LIBRARY_ID: "e2e-library",
