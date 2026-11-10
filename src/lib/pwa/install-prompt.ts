@@ -8,8 +8,16 @@ let deferred: BeforeInstallPromptEvent | null = null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-/** מחברים מאזינים (פעם אחת, מהמעטפת). מחזיר פונקציית ניקוי. */
+let started = false;
+
+/**
+ * מחברים מאזינים, פעם אחת לכל טעינת דף. נקרא כבר בטעינת המודול (למטה): Chrome יכול להפעיל את האירוע לפני ש־React
+ * סיים hydration, ואפילו במסך הכניסה, ואז הוא היה הולך לאיבוד. המודול נטען מ־PwaEarly ב־layout הראשי, ולכן גם
+ * /login תופס אותו, והמצב נשמר בניווטים בצד הלקוח עד /install. מחזיר פונקציית ניקוי.
+ */
 export function captureInstallPrompt(): () => void {
+  if (started) return () => undefined;
+  started = true;
   const onPrompt = (e: Event) => {
     e.preventDefault();
     deferred = e as BeforeInstallPromptEvent;
@@ -22,10 +30,13 @@ export function captureInstallPrompt(): () => void {
   window.addEventListener("beforeinstallprompt", onPrompt);
   window.addEventListener("appinstalled", onInstalled);
   return () => {
+    started = false;
     window.removeEventListener("beforeinstallprompt", onPrompt);
     window.removeEventListener("appinstalled", onInstalled);
   };
 }
+
+if (typeof window !== "undefined") captureInstallPrompt();
 
 export const subscribeInstallPrompt = (cb: () => void) => {
   listeners.add(cb);

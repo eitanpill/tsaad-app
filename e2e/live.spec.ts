@@ -60,12 +60,14 @@ test.describe("live: before the window", () => {
     await ctx.close();
   });
 
-  test("day 14 unset: placeholder time, no calendar (disabled with a note), join disabled", async ({ browser }) => {
+  test("day 14 unset: time to be announced, no calendar (disabled with a note), join disabled", async ({ browser }) => {
     // focus is day 7 here; look at the compact day 14 tile
     const { ctx, page } = await open(browser, s, T.day7Morning, "/live");
     const tile = page.locator(".t-live-other");
     await expect(tile.getByRole("heading", { level: 2 })).toHaveText("מפגש הסיום");
-    await expect(tile.locator(".ph")).toHaveText("[LIVE_DAY14_TIME]");
+    // Neutral copy instead of the raw placeholder (the placeholder stays in config/docs only).
+    await expect(tile.locator(".lv-tba")).toHaveText("השעה תפורסם בקרוב.");
+    expect(await page.content()).not.toContain("[LIVE_DAY");
     const cal = tile.getByRole("button", { name: "הוספה ליומן: המפגש ביום 14" });
     await expect(cal).toHaveAttribute("aria-disabled", "true");
     await expect(tile).toContainText("אפשר יהיה להוסיף ליומן כשהתאריך והשעה יתפרסמו.");
@@ -121,10 +123,11 @@ test.describe("live: window open", () => {
 });
 
 test.describe("live: passed", () => {
-  test("after the session day 7 says it ended and day 14 takes the stage (unset time: placeholder)", async ({ browser }) => {
+  test("after the session day 7 says it ended and day 14 takes the stage (unset time: neutral to-be-announced line)", async ({ browser }) => {
     const { ctx, page } = await open(browser, s, T.day8Noon, "/live");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("מפגש הסיום");
-    await expect(page.locator(".lv-when .ph")).toHaveText("[LIVE_DAY14_TIME]");
+    await expect(page.locator(".lv-when .lv-tba")).toHaveText("השעה תפורסם בקרוב.");
+    expect(await page.content()).not.toContain("[LIVE_DAY");
     await expect(page.locator(".t-live-other")).toContainText("המפגש הסתיים.");
     await expect(page.getByRole("link", { name: /הצטרפות למפגש/ })).toHaveCount(0);
     await axe(page);

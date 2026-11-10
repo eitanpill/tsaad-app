@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Hebrew, Rubik } from "next/font/google";
 import "./globals.css";
 import { connection } from "next/server";
+import { PwaEarly } from "@/components/PwaEarly";
 
 const notoHebrew = Noto_Sans_Hebrew({
   weight: ["700", "800", "900"],
@@ -31,7 +32,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   await connection();
   return (
     <html lang="he" dir="rtl" className={`${notoHebrew.variable} ${rubik.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaEarly />
+      </body>
     </html>
   );
 }

@@ -58,7 +58,14 @@ export async function open(
   s: Session,
   now: string,
   url: string,
-  opts: { width?: number; reducedMotion?: boolean; init?: string | ((arg: unknown) => void); initArg?: unknown } = {},
+  opts: {
+    width?: number;
+    reducedMotion?: boolean;
+    init?: string | ((arg: unknown) => void);
+    initArg?: unknown;
+    /** "block" when the test intercepts requests with page.route: a controlling service worker would bypass it. */
+    serviceWorkers?: "allow" | "block";
+  } = {},
 ): Promise<{ ctx: BrowserContext; page: Page }> {
   const ctx = await browser.newContext({
     storageState: s.storageState,
@@ -67,6 +74,7 @@ export async function open(
     deviceScaleFactor: 1,
     reducedMotion: opts.reducedMotion ? "reduce" : "no-preference",
     locale: "he-IL",
+    serviceWorkers: opts.serviceWorkers ?? "allow",
   });
   if (opts.init) await ctx.addInitScript(opts.init as never, opts.initArg);
   const page = await ctx.newPage();

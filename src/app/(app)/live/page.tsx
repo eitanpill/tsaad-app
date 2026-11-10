@@ -24,16 +24,13 @@ export const metadata: Metadata = { title: `${copy.nav.live} | ${copy.brand.name
 
 const textFor = (day: 7 | 14) => (day === 7 ? copy.live.day7 : copy.live.day14);
 
-/** שעה (ותאריך כשידוע) כ־<time>, או הטקסט המציין כשאין שעה מוגדרת (לא ממציאים). */
+/**
+ * שעה (ותאריך כשידוע) כ־<time>. כשאין שעה מוגדרת לא ממציאים אחת, ולא מציגים למשתתפים את מציין המקום
+ * (copy.live.dayN.time, "[LIVE_DAYn_TIME]"): מוצג copy.live.timeTba.
+ */
 function When({ s, tz }: { s: LiveSession; tz: string }) {
   const w = liveWhen(s, tz);
-  if (!w) {
-    return (
-      <span className="ph" dir="ltr">
-        {textFor(s.day).time}
-      </span>
-    );
-  }
+  if (!w) return <span className="lv-tba">{copy.live.timeTba}</span>;
   return (
     <time dateTime={w.datetime ?? w.time}>
       {w.date ? `${w.date}, ` : null}

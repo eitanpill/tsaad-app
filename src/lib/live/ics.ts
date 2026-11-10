@@ -9,7 +9,7 @@ export function icsUtc(d: Date): string {
 }
 
 export function icsEscape(text: string): string {
-  return text.replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return text.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n");
 }
 
 /** קיפול שורות ל־75 בתים לכל היותר (UTF-8), בלי לחתוך תו באמצע. המשך השורה מתחיל ברווח. */

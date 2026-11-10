@@ -4,7 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { REMINDERS } from "@/config/constants";
 import { createDb, isLocalDatabaseUrl, schema, type Db } from "@/db";
 import { fakeSubscription } from "../../../test/push-keys";
-import { removeSubscription, saveSubscription } from "./subscription";
+import { createSession } from "@/lib/auth/session";
+import { checkSubscription, removeSubscription, removeSubscriptionForSession, saveSubscription } from "./subscription";
 
 const url = process.env.DATABASE_URL;
 const runIntegration = !!url && process.env.TSAAD_TEST_DB === "1" && isLocalDatabaseUrl(url);
@@ -97,6 +98,54 @@ describe.skipIf(!runIntegration)("push subscriptions (integration)", () => {
     expect(await rowsOf(alice)).toHaveLength(1);
     expect(await removeSubscription(db, alice, sub.endpoint)).toBe(1);
     expect(await removeSubscription(db, alice, sub.endpoint)).toBe(0);
+  });
+
+  it("a concurrent takeover with different keys never writes (the upsert re-checks owner or keys)", async () => {
+    const alice = await mkUser();
+    const bob = await mkUser();
+    const sub = fakeSubscription();
+    const other = { endpoint: sub.endpoint, keys: fakeSubscription().keys };
+    const results = await Promise.all([saveSubscription(db, alice, sub), saveSubscription(db, bob, other)]);
+    const rows = await db.select().from(schema.pushSubscriptions).where(eq(schema.pushSubscriptions.endpoint, sub.endpoint));
+    expect(rows).toHaveLength(1);
+    // whoever won, the stored keys belong to the winner, and the loser got a conflict
+    const winner = rows[0].userId === alice ? 0 : 1;
+    expect(results[winner]).toMatchObject({ ok: true });
+    expect(results[1 - winner]).toEqual({ ok: false, error: "conflict" });
+    expect(rows[0].p256dh).toBe(winner === 0 ? sub.keys.p256dh : other.keys.p256dh);
+  });
+
+  it("checkSubscription: true only for the caller with the same keys; another user's row for the same device is removed", async () => {
+    const alice = await mkUser();
+    const bob = await mkUser();
+    const sub = fakeSubscription();
+    expect(await checkSubscription(db, alice, sub)).toBe(false); // nothing stored
+    await saveSubscription(db, alice, sub);
+    expect(await checkSubscription(db, alice, sub)).toBe(true);
+    expect(await checkSubscription(db, alice, { endpoint: sub.endpoint, keys: fakeSubscription().keys })).toBe(false);
+    // knowing only the endpoint is not enough to delete alice's row
+    expect(await checkSubscription(db, bob, { endpoint: sub.endpoint, keys: fakeSubscription().keys })).toBe(false);
+    expect(await rowsOf(alice)).toHaveLength(1);
+    // the same device, now signed in as bob: alice's row goes (and is not moved to bob)
+    expect(await checkSubscription(db, bob, sub)).toBe(false);
+    expect(await rowsOf(alice)).toHaveLength(0);
+    expect(await rowsOf(bob)).toHaveLength(0);
+  });
+
+  it("removeSubscriptionForSession deletes only the session user's row for that endpoint", async () => {
+    const alice = await mkUser();
+    const bob = await mkUser();
+    const a = fakeSubscription();
+    const b = fakeSubscription();
+    await saveSubscription(db, alice, a);
+    await saveSubscription(db, bob, b);
+    const { token } = await createSession(db, alice);
+    expect(await removeSubscriptionForSession(db, token, b.endpoint)).toBe(0); // bob's device: untouched
+    expect(await rowsOf(bob)).toHaveLength(1);
+    expect(await removeSubscriptionForSession(db, "not-a-session", a.endpoint)).toBe(0);
+    expect(await removeSubscriptionForSession(db, token, a.endpoint)).toBe(1);
+    expect(await rowsOf(alice)).toHaveLength(0);
+    expect(await removeSubscriptionForSession(db, token, "")).toBe(0);
   });
 
   it("deleting the user removes their subscriptions", async () => {

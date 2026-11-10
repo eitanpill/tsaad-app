@@ -116,9 +116,11 @@ describe("ics", () => {
     expect(unfolded).toContain("DTSTAMP:20261201T090000Z");
   });
   it("escapes text and folds lines to 75 octets without cutting a character", () => {
-    expect(unfolded).toContain("DESCRIPTION:שורה\\, עם\; תווים\\nושורה שנייה");
+    expect(unfolded).toContain("DESCRIPTION:שורה\\, עם\\; תווים\\nושורה שנייה");
     for (const line of ics.split("\r\n")) expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
-    expect(icsEscape("a\\b;c,d\ne")).toBe("a\\\\b\;c\\,d\\ne");
+    expect(icsEscape("a\\b;c,d\ne")).toBe("a\\\\b\\;c\\,d\\ne");
+    // CR or LF in any text field never starts a new property line (no header injection).
+    expect(icsEscape("x\r\nATTENDEE:evil\ry")).not.toMatch(/[\r\n]/);
     expect(icsFold("x".repeat(200)).split("\r\n ").join("")).toBe("x".repeat(200));
     expect(icsUtc(at("2026-06-07T17:00:00Z"))).toBe("20260607T170000Z");
   });

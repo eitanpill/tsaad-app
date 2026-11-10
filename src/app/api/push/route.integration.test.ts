@@ -140,6 +140,51 @@ describe.skipIf(!runIntegration)("/api/push (integration)", () => {
     expect(noisy.userId).not.toBe(session.current.userId);
   });
 
+  it("a body without Content-Length (streamed) is still capped at PUSH.maxBodyBytes", async () => {
+    session.current = await mkUser();
+    const big = new TextEncoder().encode(JSON.stringify({ ...fakeSubscription(), pad: "x".repeat(10_000) }));
+    const body = new ReadableStream<Uint8Array>({
+      start(c) {
+        for (let i = 0; i < big.length; i += 1000) c.enqueue(big.slice(i, i + 1000));
+        c.close();
+      },
+    });
+    const r = new Request(`${ORIGIN}/api/push`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: ORIGIN },
+      body,
+      duplex: "half",
+    } as RequestInit);
+    expect(r.headers.get("content-length")).toBeNull();
+    expect((await route.POST(r)).status).toBe(413);
+    expect(await count(session.current.userId)).toBe(0);
+  });
+
+  it("POST /api/push/status: registered only for the caller; another user's row for the same device is removed", async () => {
+    const status = await import("./status/route");
+    const sreq = (body: unknown, headers: Record<string, string> = {}) =>
+      new Request(`${ORIGIN}/api/push/status`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: ORIGIN, ...headers },
+        body: JSON.stringify(body),
+      });
+    const alice = await mkUser();
+    const bob = await mkUser();
+    const sub = fakeSubscription();
+    expect((await status.POST(sreq(sub))).status).toBe(401);
+    session.current = alice;
+    expect((await status.POST(sreq(sub, { origin: "https://evil.example" }))).status).toBe(403);
+    expect(await (await status.POST(sreq(sub))).json()).toEqual({ registered: false });
+    expect((await route.POST(req("POST", sub))).status).toBe(201);
+    const ok = await status.POST(sreq(sub));
+    expect(await ok.json()).toEqual({ registered: true });
+    expect(ok.headers.get("cache-control")).toContain("no-store");
+    session.current = bob;
+    expect(await (await status.POST(sreq(sub))).json()).toEqual({ registered: false });
+    expect(await count(alice.userId)).toBe(0);
+    expect(await count(bob.userId)).toBe(0);
+  });
+
   it("responses are never cacheable", async () => {
     session.current = await mkUser();
     const r = await route.POST(req("POST", fakeSubscription()));

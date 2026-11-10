@@ -22,6 +22,7 @@ import { hashPassword, validatePassword } from "@/lib/auth/password";
 import { clientIp } from "@/lib/auth/request";
 import { deleteSession, rotateSession } from "@/lib/auth/session";
 import { peekToken } from "@/lib/auth/tokens";
+import { removeSubscriptionForSession } from "@/lib/push/subscription";
 import type { ActivateState, ForgotState, LoginState } from "./state";
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
@@ -130,11 +131,25 @@ export async function forgotAction(_prev: ForgotState, formData: FormData): Prom
   return state;
 }
 
-/** יציאה: מוחק את שורת ההפעלה ואת העוגייה. */
-export async function logoutAction(): Promise<void> {
+/**
+ * יציאה: מוחק את שורת ההפעלה ואת העוגייה. אם הטופס שלח את כתובת מנוי ההתראות של המכשיר (LogoutForm, אחרי
+ * שביטל אותו בדפדפן), גם השורה שלו נמחקת, רק אם היא של המשתמש שיוצא. כך טלפון משותף לא ממשיך לקבל את
+ * התזכורות של מי שיצא. כשל במחיקה הזאת לא עוצר את היציאה.
+ */
+export async function logoutAction(formData?: FormData): Promise<void> {
   assertSameOrigin(await headers());
   const token = await readSessionToken();
-  if (token) await deleteSession(getDb(), token);
+  if (token) {
+    const endpoint = formData?.get("push_endpoint");
+    if (typeof endpoint === "string" && endpoint) {
+      try {
+        await removeSubscriptionForSession(getDb(), token, endpoint);
+      } catch (e) {
+        logger.error("logout: push subscription cleanup failed", { error: e });
+      }
+    }
+    await deleteSession(getDb(), token);
+  }
   await clearSessionCookie();
   redirect("/login");
 }

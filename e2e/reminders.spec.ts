@@ -80,9 +80,13 @@ function installMock(m: Mock) {
   }
 }
 
-async function openReminders(browser: Parameters<typeof open>[0], m: Partial<Mock> & { permission: NotificationPermission }) {
+async function openReminders(
+  browser: Parameters<typeof open>[0],
+  m: Partial<Mock> & { permission: NotificationPermission },
+  o: { serviceWorkers?: "allow" | "block"; who?: Session } = {},
+) {
   const full: Mock = { ...fakeKeys(), ...m };
-  const r = await open(browser, s, T.day4Noon, "/reminders", { init: installMock as never, initArg: full });
+  const r = await open(browser, o.who ?? s, T.day4Noon, "/reminders", { init: installMock as never, initArg: full, serviceWorkers: o.serviceWorkers });
   return { ...r, mock: full };
 }
 
@@ -131,11 +135,48 @@ test("turning on: asks permission, subscribes, saves the subscription on the ser
   await ctx.close();
 });
 
-test("permission granted and a subscription already in the browser: shown as on, without asking again", async ({ browser }) => {
-  const { ctx, page } = await openReminders(browser, { permission: "granted", subscribed: true });
+test("permission granted and a subscription already in the browser and on the server: shown as on, without asking again", async ({ browser }) => {
+  const k = fakeKeys();
+  await pool.query("insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, $3, $4)", [s.userId, k.endpoint, k.p256dh, k.auth]);
+  const { ctx, page } = await openReminders(browser, { ...k, permission: "granted", subscribed: true });
   await expect(sw(page)).toHaveAttribute("aria-checked", "true");
   await expect(status(page)).toHaveText("ההתראות פעילות");
   expect(await page.evaluate(() => (window as unknown as { __asked?: number }).__asked ?? 0)).toBe(0);
+  expect(await page.evaluate(() => (window as unknown as { __sub: unknown }).__sub)).not.toBeNull();
+  expect(await rows()).toHaveLength(1);
+  await ctx.close();
+});
+
+test("shared phone: a subscription left in the browser by another user is dropped (browser and server), and shown as off", async ({ browser }) => {
+  const other = await createUser(browser, "rem-prev");
+  const k = fakeKeys();
+  await pool.query("insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, $3, $4)", [other.userId, k.endpoint, k.p256dh, k.auth]);
+  const { ctx, page } = await openReminders(browser, { ...k, permission: "granted", subscribed: true });
+  await expect(sw(page)).toHaveAttribute("aria-checked", "false");
+  await expect(status(page)).toHaveText("ההתראות כבויות");
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __sub: unknown }).__sub)).toBeNull();
+  const left = await pool.query("select user_id from push_subscriptions where endpoint = $1", [k.endpoint]);
+  expect(left.rows).toEqual([]);
+  expect(await rows()).toHaveLength(0);
+  await ctx.close();
+});
+
+test("logout removes this device's subscription on the server and in the browser", async ({ browser }) => {
+  const me = await createUser(browser, "rem-out");
+  const k = fakeKeys();
+  const mine = await pool.query("select count(*)::int as n from push_subscriptions where user_id = $1", [me.userId]);
+  expect(mine.rows[0].n).toBe(0);
+  const { ctx, page } = await openReminders(browser, { ...k, permission: "default" }, { who: me });
+  await sw(page).click();
+  await expect(sw(page)).toHaveAttribute("aria-checked", "true");
+  // Another device of the same user stays registered.
+  const o = fakeKeys();
+  await pool.query("insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, $3, $4)", [me.userId, o.endpoint, o.p256dh, o.auth]);
+  await page.getByRole("button", { name: "יציאה" }).click();
+  await page.waitForURL("**/login");
+  const left = await pool.query("select endpoint from push_subscriptions where user_id = $1", [me.userId]);
+  expect(left.rows).toEqual([{ endpoint: o.endpoint }]);
+  expect(await page.evaluate(() => (window as unknown as { __sub: unknown }).__sub)).toBeNull();
   await ctx.close();
 });
 
@@ -184,7 +225,7 @@ test("unsupported browser: off, disabled, with the wording from the copy deck", 
 });
 
 test("a server failure shows the error, keeps the switch off and leaves no local subscription; retry works", async ({ browser }) => {
-  const { ctx, page } = await openReminders(browser, { permission: "default" });
+  const { ctx, page } = await openReminders(browser, { permission: "default" }, { serviceWorkers: "block" });
   let fail = true;
   await page.route("**/api/push", (route) => (fail ? route.fulfill({ status: 500, body: "{}" }) : route.continue()));
   await sw(page).click();

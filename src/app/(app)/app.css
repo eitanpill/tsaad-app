@@ -528,15 +528,6 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .lv-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--terracotta); animation: appulse 2.4s ease-in-out 2; }
 .lv-when { margin: 0; font-size: 19px; font-weight: 700; }
 .lv-when time { font-weight: 700; }
-.ph {
-  font-family: ui-monospace, monospace;
-  font-size: 13px;
-  font-weight: 400;
-  background: rgba(255, 255, 255, 0.75);
-  color: var(--maroon);
-  padding: 1px 6px;
-  border-radius: 6px;
-}
 .t-live-act { background: var(--sand); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .lv-join {
   display: flex;
@@ -666,5 +657,6 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .in-wave, .lv-dot { animation: none; }
+  .rm-track { transition: none; }
 }
-[data-motion='off'] .in-wave { animation-play-state: paused; }
+[data-motion='off'] .in-wave, [data-motion='off'] .lv-dot { animation-play-state: paused; }

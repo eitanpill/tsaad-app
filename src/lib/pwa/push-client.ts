@@ -26,12 +26,65 @@ export async function detectStatus(vapidKey: string | null): Promise<ReminderSta
   if (Notification.permission === "denied") return "blocked";
   if (Notification.permission !== "granted") return "off";
   try {
-    const reg = await navigator.serviceWorker.getRegistration("/");
-    const sub = await reg?.pushManager.getSubscription();
-    return sub ? "on" : "off";
+    return (await reconcileSubscription()) ? "on" : "off";
   } catch {
     return "off";
   }
+}
+
+async function currentSubscription(): Promise<PushSubscription | null> {
+  const reg = await navigator.serviceWorker.getRegistration("/");
+  return (await reg?.pushManager.getSubscription()) ?? null;
+}
+
+let reconciling: Promise<boolean> | null = null;
+
+/**
+ * מתאם בין המנוי של הדפדפן לבין המשתמש המחובר: מנוי מקומי נחשב פעיל רק אם השרת אומר שהוא רשום למשתמש הזה.
+ * אחרת (מנוי שנשאר ממשתמש קודם באותו דפדפן, או שנמחק בשרת) הוא מבוטל כאן, והשרת מוחק את השורה של הקודם.
+ * כשל רשת: לא נוגעים במנוי, ומחזירים את מה שהדפדפן יודע. קריאות מקבילות (המעטפת ומסך התזכורות) חולקות בקשה אחת.
+ */
+export function reconcileSubscription(): Promise<boolean> {
+  reconciling ??= (async () => {
+    const sub = await currentSubscription();
+    if (!sub) return false;
+    const json = sub.toJSON();
+    let res: Response;
+    try {
+      res = await fetch("/api/push/status", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+      });
+    } catch {
+      return true;
+    }
+    if (!res.ok) return true;
+    const body = (await res.json().catch(() => null)) as { registered?: unknown } | null;
+    if (body?.registered === true) return true;
+    await sub.unsubscribe().catch(() => undefined);
+    return false;
+  })().finally(() => {
+    reconciling = null;
+  });
+  return reconciling;
+}
+
+/**
+ * ביציאה: מבטל את המנוי של הדפדפן ומחזיר את הכתובת שלו, כדי שהשרת ימחק את השורה (logoutAction).
+ * לא זורק ולא מחכה יותר מ־timeoutMs: יציאה לא נתקעת בגלל התראות.
+ */
+export async function releaseSubscriptionForLogout(timeoutMs = 2000): Promise<string | null> {
+  if (!pushSupported()) return null;
+  const work = (async () => {
+    const sub = await currentSubscription();
+    if (!sub) return null;
+    const endpoint = sub.endpoint;
+    await sub.unsubscribe().catch(() => undefined);
+    return endpoint;
+  })().catch(() => null);
+  return Promise.race([work, new Promise<null>((r) => setTimeout(() => r(null), timeoutMs))]);
 }
 
 const READY_TIMEOUT_MS = 10_000;

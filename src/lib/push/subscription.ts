@@ -5,6 +5,7 @@ import { z } from "zod";
 import { REMINDERS } from "@/config/constants";
 import type { Db } from "@/db";
 import { pushSubscriptions } from "@/db/schema";
+import { sha256Hex } from "@/lib/auth/crypto";
 import { rowsOf } from "@/lib/auth/sql";
 import { isAllowedPushEndpoint, MAX_ENDPOINT_LENGTH } from "./endpoints";
 
@@ -82,13 +83,19 @@ export async function saveSubscription(db: Db, userId: string, sub: SubscribeInp
     if (existing && existing.userId !== userId && (existing.p256dh !== keys.p256dh || existing.auth !== keys.auth)) {
       return { ok: false as const, error: "conflict" as const };
     }
-    await tx
+    // The same rule again inside the upsert: the lock above is per user, so a row for this endpoint that another
+    // user created concurrently (after the select) is only taken over when its keys match. Otherwise nothing is written.
+    const written = await tx
       .insert(pushSubscriptions)
       .values({ userId, endpoint, p256dh: keys.p256dh, auth: keys.auth })
       .onConflictDoUpdate({
         target: pushSubscriptions.endpoint,
         set: { userId, p256dh: keys.p256dh, auth: keys.auth, createdAt: sql`now()` },
-      });
+        setWhere: sql`${pushSubscriptions.userId} = ${userId}
+          or (${pushSubscriptions.p256dh} = ${keys.p256dh} and ${pushSubscriptions.auth} = ${keys.auth})`,
+      })
+      .returning({ id: pushSubscriptions.id });
+    if (written.length === 0) return { ok: false as const, error: "conflict" as const };
     const evicted = await tx.execute(
       sql`delete from push_subscriptions
            where user_id = ${userId}
@@ -103,6 +110,51 @@ export async function saveSubscription(db: Db, userId: string, sub: SubscribeInp
       evicted: rowsOf<{ id: string }>(evicted).length,
     };
   });
+}
+
+/**
+ * האם המנוי של המכשיר הזה (endpoint + מפתחות) רשום למשתמש הנוכחי. נקרא מהלקוח בטעינת האפליקציה ובמסך התזכורות.
+ * אם אותו מכשיר בדיוק (אותה כתובת ואותם מפתחות) רשום למשתמש אחר, השורה שלו נמחקת: בדפדפן הזה מחובר עכשיו
+ * משתמש אחר (למשל טלפון משותף, בלי יציאה מסודרת), והתזכורות של הקודם לא אמורות להגיע לכאן. השורה לא מועברת
+ * למשתמש הנוכחי: הוא לא ביקש תזכורות. הלקוח מבטל את המנוי המקומי כשהתשובה היא false.
+ */
+export async function checkSubscription(db: Db, userId: string, sub: SubscribeInput): Promise<boolean> {
+  const { endpoint, keys } = sub;
+  const [row] = await db
+    .select({ userId: pushSubscriptions.userId, p256dh: pushSubscriptions.p256dh, auth: pushSubscriptions.auth })
+    .from(pushSubscriptions)
+    .where(eq(pushSubscriptions.endpoint, endpoint));
+  if (!row) return false;
+  const sameKeys = row.p256dh === keys.p256dh && row.auth === keys.auth;
+  if (row.userId === userId) return sameKeys;
+  if (sameKeys) {
+    await db
+      .delete(pushSubscriptions)
+      .where(
+        and(
+          eq(pushSubscriptions.endpoint, endpoint),
+          eq(pushSubscriptions.userId, row.userId),
+          eq(pushSubscriptions.p256dh, keys.p256dh),
+          eq(pushSubscriptions.auth, keys.auth),
+        ),
+      );
+  }
+  return false;
+}
+
+/**
+ * ביציאה: מוחק את המנוי של המכשיר הזה, אם הוא שייך למשתמש של ההתחברות שנסגרת (לפי האסימון, גם אם פג תוקפו).
+ * כך טלפון משותף לא ממשיך לקבל את התזכורות של מי שיצא. אידמפוטנטי.
+ */
+export async function removeSubscriptionForSession(db: Db, sessionToken: string, endpoint: string): Promise<number> {
+  if (!sessionToken || sessionToken.length > 200 || !endpoint || endpoint.length > MAX_ENDPOINT_LENGTH) return 0;
+  const res = await db.execute(
+    sql`delete from push_subscriptions
+         where endpoint = ${endpoint}
+           and user_id = (select user_id from sessions where token_hash = ${sha256Hex(sessionToken)})
+        returning id`,
+  );
+  return rowsOf<{ id: string }>(res).length;
 }
 
 /** מוחק מנוי של המשתמש הנוכחי בלבד. אידמפוטנטי: מחזיר כמה נמחקו. */

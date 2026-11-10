@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { logoutAction } from "@/app/(auth)/actions";
 import { Logo } from "@/components/Logo";
 import { copy } from "@/content/copy.he";
 import { requireUser } from "@/lib/auth/dal";
@@ -8,6 +7,7 @@ import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
 import { todayModel } from "@/lib/today/view";
 import { BottomNav } from "./BottomNav";
+import { LogoutForm } from "./LogoutForm";
 import { MotionToggle } from "./MotionToggle";
 import { PwaBoot } from "./PwaBoot";
 
@@ -33,11 +33,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <main id="main" className="app-main">
         {children}
-        <form action={logoutAction} className="app-foot">
-          <button type="submit" className="linkbtn">
-            {copy.common.logout}
-          </button>
-        </form>
+        <LogoutForm />
       </main>
       <BottomNav />
       <PwaBoot />

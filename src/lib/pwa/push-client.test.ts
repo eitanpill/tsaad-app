@@ -1,11 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeSubscription, fakeVapidPublicKey } from "../../../test/push-keys";
-import { detectStatus, disableReminders, enableReminders, pushSupported, urlBase64ToUint8Array } from "./push-client";
+import {
+  detectStatus,
+  disableReminders,
+  enableReminders,
+  pushSupported,
+  reconcileSubscription,
+  releaseSubscriptionForLogout,
+  urlBase64ToUint8Array,
+} from "./push-client";
 
 const VAPID = fakeVapidPublicKey();
 
 type FakeSub = { endpoint: string; toJSON: () => unknown; unsubscribe: () => Promise<boolean> };
-function install(opts: { permission?: NotificationPermission; request?: NotificationPermission; existing?: boolean; fetchOk?: boolean; withPush?: boolean }) {
+function install(opts: { permission?: NotificationPermission; request?: NotificationPermission; existing?: boolean; fetchOk?: boolean; withPush?: boolean; registered?: boolean | "network" }) {
   const s = fakeSubscription();
   let sub: FakeSub | null = opts.existing ? mk() : null;
   function mk(): FakeSub {
@@ -24,7 +32,13 @@ function install(opts: { permission?: NotificationPermission; request?: Notifica
     configurable: true,
     value: { getRegistration: async () => reg, register: vi.fn(), ready: Promise.resolve(reg) },
   });
-  const fetchMock = vi.fn(async () => new Response(null, { status: opts.fetchOk === false ? 500 : 201 }));
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === "/api/push/status") {
+      if (opts.registered === "network") throw new TypeError("offline");
+      return Response.json({ registered: opts.registered ?? true });
+    }
+    return new Response(null, { status: opts.fetchOk === false ? 500 : 201 });
+  });
   vi.stubGlobal("fetch", fetchMock);
   return { pushManager, fetchMock, getSub: () => sub, s };
 }
@@ -63,6 +77,46 @@ describe("detectStatus", () => {
     expect(await detectStatus(VAPID)).toBe("off");
     install({ permission: "granted", existing: true });
     expect(await detectStatus(VAPID)).toBe("on");
+  });
+});
+
+describe("reconcileSubscription (a shared phone: the browser subscription must belong to the signed-in user)", () => {
+  it("keeps a subscription the server says is registered to this user", async () => {
+    const t = install({ permission: "granted", existing: true, registered: true });
+    expect(await reconcileSubscription()).toBe(true);
+    expect(t.fetchMock).toHaveBeenCalledWith("/api/push/status", expect.objectContaining({ method: "POST" }));
+    expect(JSON.parse((t.fetchMock.mock.calls[0] as unknown as [string, { body: string }])[1].body)).toEqual(t.s);
+    expect(t.getSub()).not.toBeNull();
+  });
+  it("drops a subscription that is not registered to this user (left over from someone else); shows off", async () => {
+    const t = install({ permission: "granted", existing: true, registered: false });
+    expect(await detectStatus(VAPID)).toBe("off");
+    expect(t.getSub()).toBeNull();
+  });
+  it("on a network failure leaves the subscription alone", async () => {
+    const t = install({ permission: "granted", existing: true, registered: "network" });
+    expect(await reconcileSubscription()).toBe(true);
+    expect(t.getSub()).not.toBeNull();
+  });
+  it("does nothing without a local subscription", async () => {
+    const t = install({ permission: "granted" });
+    expect(await reconcileSubscription()).toBe(false);
+    expect(t.fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("releaseSubscriptionForLogout", () => {
+  it("unsubscribes locally and returns the endpoint for the server to delete", async () => {
+    const t = install({ permission: "granted", existing: true });
+    expect(await releaseSubscriptionForLogout()).toBe(t.s.endpoint);
+    expect(t.getSub()).toBeNull();
+    expect(t.fetchMock).not.toHaveBeenCalled();
+  });
+  it("returns null without a subscription or without push support, and never throws", async () => {
+    install({ permission: "granted" });
+    expect(await releaseSubscriptionForLogout()).toBeNull();
+    install({ withPush: false });
+    expect(await releaseSubscriptionForLogout()).toBeNull();
   });
 });
 
