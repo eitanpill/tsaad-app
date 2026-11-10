@@ -296,7 +296,12 @@ test.describe("marking", () => {
     await seed([]);
     const { ctx, page } = await open(browser, T.day1Morning);
     let fail = true;
-    await page.route("**/today", async (route) => {
+    // Root cause of the old flake: page.route does not see requests from a page that the service worker controls
+    // (PwaBoot registers /sw.js after load and it claims the page), so the POST sometimes went through and saved.
+    // Wait until the worker controls the page (the real-world state, and deterministic), and route at the context
+    // level, which in Chromium also intercepts what the worker passes on to the network.
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 15_000 });
+    await ctx.route("**/today", async (route) => {
       if (fail && route.request().method() === "POST") return route.abort("failed");
       return route.continue();
     });
