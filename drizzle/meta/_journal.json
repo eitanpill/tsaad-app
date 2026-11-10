@@ -43,6 +43,13 @@
       "when": 1794317544417,
       "tag": "0005_push_rate_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794320042289,
+      "tag": "0006_webhook_signup_schema",
+      "breakpoints": true
     }
   ]
 }

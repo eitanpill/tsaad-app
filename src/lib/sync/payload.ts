@@ -9,7 +9,7 @@ import { rowsOf } from "@/lib/auth/sql";
 
 /**
  * מה ש־GHL צריך לדעת, ותו לא: מזהה איש קשר, היום, כמה ימים נספרו, האם הושלם האתגר
- * והנוכחות בלייב. אין כאן שם, דוא"ל, טלפון, שם משתמש או אסימונים, והסכמה strict
+ * והנוכחות בלייב (נגזרת מ־action_completions). אין כאן שם, דוא"ל, טלפון, שם משתמש או אסימונים, והסכמה strict
  * דוחה כל שדה נוסף (בדיקה בזמן כתיבה לתור ובזמן שליחה).
  */
 export const trackerPayloadSchema = z.strictObject({
@@ -52,10 +52,10 @@ export async function buildTrackerPayload(
   let counted = 0;
   for (const [d, actions] of byDay) if (dayCounts(stepsFor(d, actions))) counted++;
 
-  const attendance = rowsOf<{ day: number; attended: boolean }>(
-    await db.execute(sql`select day, attended from live_attendance where user_id = ${userId}`),
-  );
-  const att = (d: number) => attendance.find((a) => a.day === d)?.attended ?? null;
+  // נוכחות בלייב: מקור האמת היחיד הוא action_completions (פעולה "live", ימים 7 ו־14).
+  // יש שורה = נכח/ה; אין שורה = עדיין לא סומן (null). אין ערך false: ביטול הסימון מוחק את השורה.
+  const liveDays = new Set(completions.filter((c) => c.action === "live").map((c) => c.day));
+  const att = (d: number) => (liveDays.has(d) ? true : null);
 
   return trackerPayloadSchema.parse({
     ghl_contact_id: user.ghl_contact_id,

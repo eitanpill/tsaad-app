@@ -431,7 +431,6 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
         sql`insert into action_completions (user_id, day, action) values
             (${u.id}, 1, 'habit'), (${u.id}, 2, 'move'), (${u.id}, 3, 'meditate'), (${u.id}, 7, 'live')`,
       );
-      await db.execute(sql`insert into live_attendance (user_id, day, attended) values (${u.id}, 7, true)`);
       await enqueueTrackerSync(db, { userId: u.id, day: 7 });
       const [row] = await rowsOut();
       expect(row.payload).toEqual({
@@ -448,6 +447,16 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
       expect(Object.keys(row.payload as object).sort()).toEqual(
         ["completed", "counted_days", "day", "ghl_contact_id", "live_attendance"],
       );
+    });
+
+    it("live attendance comes from action_completions only: day 14 true, unmarked stays null, un-marking returns to null", async () => {
+      const u = await mkUser();
+      await db.execute(sql`insert into action_completions (user_id, day, action) values (${u.id}, 14, 'live')`);
+      await enqueueTrackerSync(db, { userId: u.id, day: 14 });
+      expect((await rowsOut())[0].payload).toMatchObject({ live_attendance: { day7: null, day14: true } });
+      await db.execute(sql`delete from action_completions where user_id = ${u.id} and action = 'live'`);
+      await enqueueTrackerSync(db, { userId: u.id, day: 14 });
+      expect((await rowsOut())[0].payload).toMatchObject({ live_attendance: { day7: null, day14: null } });
     });
 
     it("12 counted days marks completed", async () => {

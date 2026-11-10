@@ -26,7 +26,7 @@ type Match = {
   id: string;
   username: string;
   display_name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   password_hash: string | null;
 };
@@ -95,7 +95,7 @@ export async function requestPasswordReset(
         const { token } = await issueToken(db, { userId: u.id, purpose, ttlMinutes: args.ttlMinutes });
         const link = `${args.origin}/activate?token=${token}`;
         const base = { kind: purpose === "reset" ? ("reset" as const) : ("activation" as const), userId: u.id, name: u.display_name, username: u.username, link };
-        await args.sender.send({ ...base, channel: "email" });
+        if (u.email) await args.sender.send({ ...base, channel: "email" });
         if (u.phone) await args.sender.send({ ...base, channel: "whatsapp" });
       } catch (e) {
         // כשל פנימי לא משנה את התשובה החיצונית (אחרת היא תגלה אם יש חשבון).

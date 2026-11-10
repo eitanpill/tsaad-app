@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean,
   check,
   date,
   index,
@@ -34,7 +33,8 @@ export const users = pgTable(
     /** תמיד באותיות קטנות (נאכף ב־CHECK); ייחודי. */
     username: text("username").notNull().unique(),
     displayName: text("display_name").notNull(),
-    email: text("email").notNull(),
+    /** יכול להיות ריק: נרשמים דרך GHL עם טלפון בלבד. לפחות אחד מהאימייל והטלפון נשמר בהרשמה. */
+    email: text("email"),
     phone: text("phone"),
     ghlContactId: text("ghl_contact_id").unique(),
     /** null עד שהמשתתף/ת מפעיל/ה את החשבון דרך קישור חד־פעמי. */
@@ -84,10 +84,10 @@ export const sessions = pgTable(
   ],
 );
 
-export const ATTEMPT_KINDS = ["login", "forgot", "toggle", "push"] as const;
+export const ATTEMPT_KINDS = ["login", "forgot", "toggle", "push", "webhook"] as const;
 
 /**
- * ניסיונות להגבלת קצב: התחברות כושלת, בקשת "שכחתי סיסמה", או סימון פעולה (toggle, לפי משתמש).
+ * ניסיונות להגבלת קצב: התחברות כושלת, בקשת "שכחתי סיסמה", סימון פעולה (toggle, לפי משתמש), או כשל אימות / חידוש קישור ב־webhook של GHL.
  * המזהים הם HMAC (במפתח SESSION_SECRET), לא שם משתמש או IP גולמיים.
  */
 export const loginAttempts = pgTable(
@@ -101,7 +101,7 @@ export const loginAttempts = pgTable(
     attemptedAt: ts("attempted_at").notNull().defaultNow(),
   },
   (t) => [
-    check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle','push')`),
+    check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle','push','webhook')`),
     index("login_attempts_identifier_idx").on(t.kind, t.identifierHash, t.attemptedAt),
     index("login_attempts_ip_idx").on(t.kind, t.ipHash, t.attemptedAt),
     index("login_attempts_user_idx").on(t.userId),
@@ -144,21 +144,6 @@ export const actionCompletions = pgTable(
       sql`${t.action} = 'habit' or (${t.action} = 'live') = (${t.day} in (7, 14))`,
     ),
     index("action_completions_user_day_idx").on(t.userId, t.day),
-  ],
-);
-
-export const liveAttendance = pgTable(
-  "live_attendance",
-  {
-    id: id(),
-    userId: userRef(),
-    day: smallint("day").notNull(),
-    attended: boolean("attended").notNull(),
-    markedAt: ts("marked_at").notNull().defaultNow(),
-  },
-  (t) => [
-    unique("live_attendance_user_day").on(t.userId, t.day),
-    check("live_attendance_day", sql`${t.day} in (7, 14)`),
   ],
 );
 

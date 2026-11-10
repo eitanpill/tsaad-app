@@ -72,11 +72,6 @@ describe.skipIf(!runIntegration)("database (integration)", () => {
     await db.insert(c).values({ userId: u.id, day: 7, action: "live" });
     await db.insert(c).values({ userId: u.id, day: 7, action: "habit" });
 
-    const l = schema.liveAttendance;
-    await db.insert(l).values({ userId: u.id, day: 7, attended: true });
-    await expect(db.insert(l).values({ userId: u.id, day: 7, attended: false })).rejects.toThrow();
-    await expect(db.insert(l).values({ userId: u.id, day: 8, attended: true })).rejects.toThrow();
-
     const r = schema.reminderLog;
     await db.insert(r).values({ userId: u.id, date: "2026-12-02", status: "dry_run" });
     await expect(db.insert(r).values({ userId: u.id, date: "2026-12-02", status: "sent" })).rejects.toThrow();
@@ -110,7 +105,6 @@ describe.skipIf(!runIntegration)("database (integration)", () => {
     await db.insert(schema.sessions).values({ userId: u.id, tokenHash: "f-s", expiresAt: exp });
     await db.insert(schema.loginAttempts).values({ identifierHash: "i", ipHash: "p", userId: u.id });
     await db.insert(schema.actionCompletions).values({ userId: u.id, day: 2, action: "habit" });
-    await db.insert(schema.liveAttendance).values({ userId: u.id, day: 14, attended: false });
     await db.insert(schema.pushSubscriptions).values({ userId: u.id, endpoint: "https://push.example/f", p256dh: "k", auth: "a" });
     await db.insert(schema.reminderLog).values({ userId: u.id, date: "2026-12-03", status: "sent" });
     await db.insert(schema.syncOutbox).values({ userId: u.id, kind: "progress", dedupeKey: "f1", payload: { day: 2 } });
@@ -125,7 +119,7 @@ describe.skipIf(!runIntegration)("database (integration)", () => {
 
     for (const table of [
       schema.activationTokens, schema.sessions, schema.loginAttempts, schema.actionCompletions,
-      schema.liveAttendance, schema.pushSubscriptions, schema.reminderLog, schema.syncOutbox,
+      schema.pushSubscriptions, schema.reminderLog, schema.syncOutbox,
     ]) {
       const rows = await db.select().from(table).where(eq(table.userId, u.id));
       expect(rows).toHaveLength(0);

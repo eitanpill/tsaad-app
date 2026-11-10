@@ -69,7 +69,7 @@ export const envSchema = z.object({
   APP_ORIGIN: optional(origin),
 
   SESSION_SECRET: optional(z.string().min(32, "at least 32 characters")),
-  GHL_WEBHOOK_SECRET: optional(z.string().min(16)),
+  GHL_WEBHOOK_SECRET: optional(z.string().min(32, "at least 32 characters")),
   CRON_SECRET: optional(z.string().min(16)),
   GHL_WEBHOOK_URL: optional(httpsUrl),
 
