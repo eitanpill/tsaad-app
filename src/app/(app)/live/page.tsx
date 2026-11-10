@@ -147,7 +147,9 @@ export default async function LivePage() {
         <span className="lv-other-when">
           {other.state === "passed" ? copy.live.ended : <When s={other} tz={tz} />}
         </span>
-        {other.state !== "passed" ? calendarLink(other) : null}
+        {/* Compact tile: only a working calendar link. Without a date and time the line above already says the time
+            is to be announced, so a disabled button and its note would repeat it (AppLive has neither). */}
+        {other.state !== "passed" && other.calendarAvailable ? calendarLink(other) : null}
         {attendance(other)}
       </section>
 

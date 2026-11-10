@@ -49,6 +49,31 @@ test("the install button appears only after beforeinstallprompt fired, and calls
   await ctx.close();
 });
 
+test("an install prompt fired early, on the login screen, is kept through sign-in and client navigation to /install", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, locale: "he-IL" });
+  const page = await ctx.newPage();
+  await page.goto("/login");
+  await page.evaluate(() => {
+    const e = Object.assign(new Event("beforeinstallprompt", { cancelable: true }), {
+      prompt: async () => undefined,
+      userChoice: Promise.resolve({ outcome: "dismissed" as const }),
+    });
+    window.dispatchEvent(e);
+    (window as unknown as { __marker: boolean }).__marker = true;
+  });
+  await page.getByLabel("שם משתמש", { exact: true }).fill(s.username);
+  await page.getByLabel("סיסמה", { exact: true }).fill("today-pass-12");
+  await page.getByRole("button", { name: "כניסה", exact: true }).click();
+  await page.waitForURL("**/today");
+  await page.getByRole("navigation", { name: "ניווט ראשי" }).getByRole("link", { name: "תזכורות" }).click();
+  await page.getByRole("link", { name: "איך מוסיפים למסך הבית" }).click();
+  await page.waitForURL("**/install");
+  // still the same document (client navigation), and the captured prompt is offered
+  expect(await page.evaluate(() => (window as unknown as { __marker?: boolean }).__marker)).toBe(true);
+  await expect(page.getByRole("button", { name: "התקנה" })).toBeVisible();
+  await ctx.close();
+});
+
 test("already installed (standalone): the steps are hidden and the page only leads back to Today", async ({ browser }) => {
   const standalone = () => {
     const orig = window.matchMedia.bind(window);

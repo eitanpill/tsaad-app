@@ -60,7 +60,7 @@ test.describe("live: before the window", () => {
     await ctx.close();
   });
 
-  test("day 14 unset: time to be announced, no calendar (disabled with a note), join disabled", async ({ browser }) => {
+  test("day 14 unset: time to be announced, no calendar in the compact tile", async ({ browser }) => {
     // focus is day 7 here; look at the compact day 14 tile
     const { ctx, page } = await open(browser, s, T.day7Morning, "/live");
     const tile = page.locator(".t-live-other");
@@ -68,9 +68,10 @@ test.describe("live: before the window", () => {
     // Neutral copy instead of the raw placeholder (the placeholder stays in config/docs only).
     await expect(tile.locator(".lv-tba")).toHaveText("השעה תפורסם בקרוב.");
     expect(await page.content()).not.toContain("[LIVE_DAY");
-    const cal = tile.getByRole("button", { name: "הוספה ליומן: המפגש ביום 14" });
-    await expect(cal).toHaveAttribute("aria-disabled", "true");
-    await expect(tile).toContainText("אפשר יהיה להוסיף ליומן כשהתאריך והשעה יתפרסמו.");
+    // the compact tile shows no disabled calendar button or repeated note (the time line already says it)
+    await expect(tile.getByRole("button", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveCount(0);
+    await expect(tile.getByRole("link", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveCount(0);
+    await expect(tile).not.toContainText("אפשר יהיה להוסיף ליומן");
     await expect(page.getByText("אי אפשר להגיע?")).toBeVisible();
     await axe(page);
     await ctx.close();
@@ -127,6 +128,9 @@ test.describe("live: passed", () => {
     const { ctx, page } = await open(browser, s, T.day8Noon, "/live");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("מפגש הסיום");
     await expect(page.locator(".lv-when .lv-tba")).toHaveText("השעה תפורסם בקרוב.");
+    // the main tile still explains why there is no calendar file yet
+    await expect(page.locator(".t-live-act").getByRole("button", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveAttribute("aria-disabled", "true");
+    await expect(page.locator(".t-live-act")).toContainText("אפשר יהיה להוסיף ליומן כשהתאריך והשעה יתפרסמו.");
     expect(await page.content()).not.toContain("[LIVE_DAY");
     await expect(page.locator(".t-live-other")).toContainText("המפגש הסתיים.");
     await expect(page.getByRole("link", { name: /הצטרפות למפגש/ })).toHaveCount(0);

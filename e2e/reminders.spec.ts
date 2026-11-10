@@ -57,17 +57,21 @@ function installMock(m: Mock) {
       },
     },
   });
-  const mk = () => ({
-    endpoint: m.endpoint,
-    expirationTime: null,
-    toJSON() {
-      return { endpoint: m.endpoint, expirationTime: null, keys: { p256dh: m.p256dh, auth: m.auth } };
-    },
-    async unsubscribe() {
-      w.__sub = null;
-      return true;
-    },
-  });
+  // window.__endpoint (set by a test) overrides the endpoint of the next subscription.
+  const mk = () => {
+    const endpoint = (w.__endpoint as string | undefined) ?? m.endpoint;
+    return {
+      endpoint,
+      expirationTime: null,
+      toJSON() {
+        return { endpoint, expirationTime: null, keys: { p256dh: m.p256dh, auth: m.auth } };
+      },
+      async unsubscribe() {
+        w.__sub = null;
+        return true;
+      },
+    };
+  };
   w.__sub = m.subscribed ? mk() : null;
   PushManager.prototype.getSubscription = async () => (w.__sub as PushSubscription | null) ?? null;
   PushManager.prototype.subscribe = async () => {
@@ -83,10 +87,10 @@ function installMock(m: Mock) {
 async function openReminders(
   browser: Parameters<typeof open>[0],
   m: Partial<Mock> & { permission: NotificationPermission },
-  o: { serviceWorkers?: "allow" | "block"; who?: Session } = {},
+  o: { who?: Session } = {},
 ) {
   const full: Mock = { ...fakeKeys(), ...m };
-  const r = await open(browser, o.who ?? s, T.day4Noon, "/reminders", { init: installMock as never, initArg: full, serviceWorkers: o.serviceWorkers });
+  const r = await open(browser, o.who ?? s, T.day4Noon, "/reminders", { init: installMock as never, initArg: full });
   return { ...r, mock: full };
 }
 
@@ -224,17 +228,19 @@ test("unsupported browser: off, disabled, with the wording from the copy deck", 
   await ctx.close();
 });
 
-test("a server failure shows the error, keeps the switch off and leaves no local subscription; retry works", async ({ browser }) => {
-  const { ctx, page } = await openReminders(browser, { permission: "default" }, { serviceWorkers: "block" });
-  let fail = true;
-  await page.route("**/api/push", (route) => (fail ? route.fulfill({ status: 500, body: "{}" }) : route.continue()));
+test("a server refusal shows the error, keeps the switch off and leaves no local subscription; retry works", async ({ browser }) => {
+  // The server really refuses (400: endpoint not on the allowlist). page.route cannot be used here: once the service
+  // worker controls the page, Chromium sends its fetches past page-level routing.
+  const { ctx, page, mock } = await openReminders(browser, { permission: "default" });
+  await page.evaluate(() => ((window as unknown as { __endpoint: string }).__endpoint = "https://evil.example/not-a-push-service"));
   await sw(page).click();
   await expect(status(page)).toHaveText("לא הצלחנו להפעיל את ההתראות. אפשר לנסות שוב בעוד רגע.");
   await expect(sw(page)).toHaveAttribute("aria-checked", "false");
   expect(await page.evaluate(() => (window as unknown as { __sub: unknown }).__sub)).toBeNull();
+  expect(await rows()).toHaveLength(0);
   await axe(page);
   await shot(page, "reminders-error");
-  fail = false;
+  await page.evaluate((e) => ((window as unknown as { __endpoint: string }).__endpoint = e), mock.endpoint);
   await sw(page).click();
   await expect(sw(page)).toHaveAttribute("aria-checked", "true");
   expect(await rows()).toHaveLength(1);
