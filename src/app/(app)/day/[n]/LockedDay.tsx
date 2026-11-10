@@ -54,14 +54,14 @@ export function LockedDay({
         <p>{body}</p>
       </section>
 
-      <section className="t t--half t-back">
-        {previousDay !== null ? <b>{fill(copy.locked.previousOpen, { prev: previousDay })}</b> : null}
+      <section className="t t--half t-back" aria-labelledby={previousDay !== null ? "locked-back-h" : undefined}>
+        {previousDay !== null ? <h2 id="locked-back-h">{fill(copy.locked.previousOpen, { prev: previousDay })}</h2> : null}
         <Link href="/today" className="btn-light">
           {copy.locked.backToToday}
         </Link>
       </section>
-      <section className="t t--half t-past">
-        <b>{copy.locked.pastDays}</b>
+      <section className="t t--half t-past" aria-labelledby="locked-past-h">
+        <h2 id="locked-past-h">{copy.locked.pastDays}</h2>
         <Link href="/path" className="link-s">
           {copy.locked.pastDaysLink}
         </Link>

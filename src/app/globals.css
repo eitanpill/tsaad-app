@@ -43,9 +43,9 @@ strong {
 
 /* Focus ring (a11y-notes): visible on cream, sky, sand, sage and forest. */
 :focus-visible {
-  outline: 3px solid #123021;
+  outline: 3px solid var(--forest);
   outline-offset: 2px;
-  box-shadow: 0 0 0 2px #FAF8F4;
+  box-shadow: 0 0 0 2px var(--cream);
 }
 
 .visually-hidden {

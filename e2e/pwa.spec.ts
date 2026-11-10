@@ -96,7 +96,7 @@ test("offline: a navigation shows the static fallback page; marking is not queue
   await ctx.setOffline(true);
   await page.goto("/path").catch(() => undefined);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("אין חיבור לאינטרנט");
-  await expect(page.getByText("סימון צריך חיבור לאינטרנט. כשהוא חוזר, אפשר לחזור ולסמן.")).toBeVisible();
+  await expect(page.getByText("כדי לסמן צריך חיבור לאינטרנט. כשהוא חוזר, אפשר להמשיך.")).toBeVisible();
   // the offline page is the static one: no scripts at all
   expect(await page.locator("script").count()).toBe(0);
   expect(page.url()).toContain("/path");

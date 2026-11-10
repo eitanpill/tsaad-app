@@ -51,7 +51,7 @@ On press: set `aria-pressed="true"`, swap to the play icon, keep the label stabl
 
 ## AppLocked
 - Landmarks: header, main, nav (current tab: השביל).
-- Headings: h1 "יום 5 נפתח מחר בבוקר"; the two small tiles get h2 ("יום 4 עדיין פתוח", "אפשר לראות שוב סרטון של יום קודם").
+- Headings: h1 "יום 5 נפתח מחר בבוקר"; the two small tiles get h2 ("יום 4 עדיין פתוח", "אפשר לצפות שוב בסרטונים של ימים קודמים").
 - Names: the lock and empty cup illustration are `aria-hidden` (the h1 says it). Links "חזרה להיום" and "לימים שעברו" are 44px+ (the "לימים שעברו" text link needs `min-height: 44px` in code).
 - Unlock time `[UNLOCK_HOUR]` is a real `<time>` element.
 - Note: the footer tile still mentions "השרת"; rephrase in the stage-3 copy pass.

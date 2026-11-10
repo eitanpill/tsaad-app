@@ -138,7 +138,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   gap: 10px;
   align-items: flex-start;
 }
-.video-err h2 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 800; }
+.video-err h1, .video-err h2 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 800; }
 .video-err p { margin: 2px 0 8px; font-size: 14px; line-height: 1.4; }
 
 /* Ring + cup tiles */
@@ -168,14 +168,15 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   justify-content: center;
   gap: 2px;
   min-height: 64px;
-  padding: 0 14px 0 44px;
+  padding-block: 0;
+  padding-inline: 14px 44px;
   border: 2px solid var(--muted);
   border-radius: var(--radius-btn);
   background: #fff;
   color: var(--maroon);
   font: inherit;
   font-size: 14px;
-  text-align: right;
+  text-align: start;
   cursor: pointer;
 }
 .act b { font-size: 15px; font-weight: 800; }
@@ -183,7 +184,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .act--wide b { min-width: 62px; }
 .act .dot {
   position: absolute;
-  left: 12px;
+  inset-inline-end: 12px;
   top: 50%;
   margin-top: -11px;
   width: 22px;
@@ -196,7 +197,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   align-items: center;
   justify-content: center;
 }
-.act--wide .dot { margin-top: -12px; width: 24px; height: 24px; left: 16px; }
+.act--wide .dot { margin-top: -12px; width: 24px; height: 24px; inset-inline-end: 16px; }
 .act[aria-pressed='true'] { background: var(--forest); border-color: var(--forest); color: #fff; }
 .act[aria-pressed='true'] .dot { background: var(--cream); border-color: var(--cream); color: var(--forest); }
 .act-sub { font-size: 14px; }
@@ -221,6 +222,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   font-weight: 700;
   cursor: pointer;
 }
+.btn-s:disabled { opacity: 0.6; cursor: not-allowed; }
 .t-yest .grp { display: flex; flex-direction: column; gap: 8px; }
 .t-yest .grp-label { font-size: 14px; font-weight: 700; color: var(--muted); }
 
@@ -295,7 +297,8 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   gap: 10px;
   align-items: center;
   min-height: 52px;
-  padding: 4px 6px 4px 14px;
+  padding-block: 4px;
+  padding-inline: 6px 14px;
   border-radius: 26px;
   background: var(--forest);
   color: var(--cream);
@@ -306,7 +309,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  margin-right: 4px;
+  margin-inline-start: 4px;
   border-radius: 50%;
   background: var(--cream);
   color: var(--forest);
@@ -485,7 +488,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t-back, .t-past { padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-height: 150px; }
 .t-back { background: var(--forest); color: var(--cream); }
 .t-past { background: var(--sky); }
-.t-back b, .t-past b { font-size: 20px; line-height: 1.15; font-weight: 800; }
+.t-back b, .t-past b, .t-back h2, .t-past h2 { margin: 0; font-size: 20px; line-height: 1.15; font-weight: 800; }
 .btn-light {
   display: inline-flex;
   align-items: center;
@@ -580,9 +583,9 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t-live-cant span { font-size: 14px; line-height: 1.4; margin-top: auto; }
 .t-live-other .lv-cal { min-height: 44px; font-size: 14px; padding: 0 10px; }
 /* The compact tile is half width: stack the label above its hint instead of the wide row layout. */
-.t-live-other .act { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 8px 10px 8px 38px; min-height: 64px; }
+.t-live-other .act { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding-block: 8px; padding-inline: 10px 38px; min-height: 64px; }
 .t-live-other .act .act-sub { font-size: 13px; }
-.t-live-other .act--wide .dot { left: 10px; margin-top: -12px; }
+.t-live-other .act--wide .dot { inset-inline-end: 10px; margin-top: -12px; }
 .t-live-other .act--wide b { min-width: 0; }
 .t-live-other .lv-note { text-align: start; }
 @media (max-width: 340px) {
@@ -618,9 +621,9 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .rm-switch[aria-disabled='true'] { cursor: default; opacity: 0.6; }
 .rm-track { box-sizing: border-box; width: 52px; height: 30px; border-radius: 15px; border: 2px solid var(--muted); background: #fff; position: relative; transition: background 0.15s; }
 .rm-track--on { border-color: var(--forest); background: var(--forest); }
-/* The knob sits on the inline-end side when off (right in RTL) and on the start side when on, as in the design. */
-.rm-knob { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: #6B4B45; display: flex; align-items: center; justify-content: center; color: var(--forest); }
-.rm-track--on .rm-knob { right: auto; left: 3px; background: #fff; }
+/* The knob sits on the inline-start side when off (right in RTL) and on the end side when on, as in the design. */
+.rm-knob { position: absolute; top: 3px; inset-inline-start: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); display: flex; align-items: center; justify-content: center; color: var(--forest); }
+.rm-track--on .rm-knob { inset-inline-start: auto; inset-inline-end: 3px; background: #fff; }
 .rm-status { margin: 0; padding: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--forest); }
 .rm-status:empty { display: none; }
 .rm-status--bad { color: var(--terracotta-text); }
