@@ -39,6 +39,7 @@ const APP_ENV = {
   GHL_WEBHOOK_SECRET: process.env.GHL_WEBHOOK_SECRET,
   CRON_SECRET: process.env.CRON_SECRET,
   TSAAD_WEBHOOK_CAPTURE_FILE: process.env.TSAAD_WEBHOOK_CAPTURE_FILE,
+  ADMIN_USERNAMES: "e2eadmin",
   START_DATE: "2026-12-01",
   BUNNY_LIBRARY_ID: "e2e-library",
   BUNNY_TOKEN_KEY: "e2e-not-a-real-key",

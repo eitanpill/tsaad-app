@@ -36,13 +36,13 @@ Clause ids below are the `id` of each section in `legal.he.ts` (also the `#ancho
 | id | Subject | Source in code |
 |---|---|---|
 | p-who | Who is responsible; `[PRIVACY_CONTACT]` | open question 1 |
-| p-data | Data stored: username, display name, email, phone, GHL contact id, password hash (argon2id), sessions (hashed token, created/expires/last seen), activation and reset tokens (hash only), action completions, push subscriptions (endpoint and keys), reminder log, hashed identifier/IP for rate limits, sync outbox (PII-free tracker payload), host request logs | `schema.ts`, `sync/payload.ts` |
+| p-data | Data stored: username, display name, email, phone, GHL contact id, password hash (argon2id), sessions (hashed token, created/expires/last seen), activation and reset tokens (hash only), action completions, push subscriptions (endpoint and keys), reminder log, hashed identifier/IP for rate limits, sync outbox (PII-free tracker payload), aggregate counters (offer button clicks per offer and day, `offer_clicks`, no person attached; owner stats derived from existing rows), host request logs | `schema.ts`, `sync/payload.ts` |
 | p-not | No medical/health data, no ads or tracking tools, no payment data | no analytics dependency in `package.json` |
 | p-purpose | Purposes; supplying data is not required by law but needed for an account | Law section on notice |
 | p-processors | Vercel, Neon (Frankfurt, aws-eu-central-1), Bunny, GoHighLevel, web push services (Google, Apple, Mozilla, Microsoft), Morning (payment, external), Zoom-type service for live | `push/endpoints.ts`, `bunny/token.ts` |
 | p-abroad | Transfer outside Israel | open question 4 |
 | p-retention | Retention numbers (filled from code): session 30 days absolute / 14 idle, activation tokens 7 days after expiry or use, rate-limit attempts 1 day, webhook ids 30, sync sent 14, sync dead 90, reminder log 90; account and progress until deletion. Deletion caveat (stage 10 review): hashed rate-limit rows not tied to `user_id` and `webhook_events` ids (sha256 of contact id) outlive the account until their normal purge (1 / 30 days) | `RETENTION`, `SESSION_POLICY`, `purgeExpired` (7 days and 1 day are in SQL) |
-| p-cookies | One session cookie; local storage for pause-animation; service worker caches static files only; Bunny player note | `auth/cookies.ts`, `MotionToggle.tsx`, `public/sw.js` |
+| p-cookies | One session cookie, no tracking cookies and no third-party analytics (aggregate counters are server-side only); local storage for pause-animation; service worker caches static files only; Bunny player note | `auth/cookies.ts`, `MotionToggle.tsx`, `public/sw.js` |
 | p-rights | Access, correction, deletion (in app at `/account`, password required); push off; complaint to the Privacy Protection Authority | `account/delete.ts` |
 | p-delete | What deletion removes; GHL contact remains until YOGIT deletes it | open question 5 |
 | p-security | Reasonable measures, no absolute guarantee | |

@@ -40,6 +40,8 @@ const ALLOWED_PLACEHOLDERS = new Set([
 
 // Variables the code fills in at render time.
 const ALLOWED_TOKENS = new Set([
+  "done",
+  "total",
   "unlockTime",
   "reminderTime",
   "n",

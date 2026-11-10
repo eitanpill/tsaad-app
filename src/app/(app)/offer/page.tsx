@@ -3,6 +3,7 @@ import { copy } from "@/content/copy.he";
 import { requireUser } from "@/lib/auth/dal";
 import { fill } from "@/lib/format";
 import { getOfferModel } from "@/lib/offer/config";
+import { goHref } from "@/lib/offer/links";
 import { formatDeadline } from "@/lib/offer/model";
 import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
@@ -64,14 +65,14 @@ export default async function OfferPage() {
         <p className="ofr-price">{D.session.price}</p>
         <p className="ofr-note">{D.session.scope}</p>
         {m.spots !== null ? <p className="ofr-spots">{fill(D.session.spots, { spots: m.spots })}</p> : null}
-        <OfferCta href={m.links.session} label={D.session.cta} ariaLabel={copy.a11y.offer.sessionCta} noteId="ofr-session-note" />
+        <OfferCta href={goHref("session", m.links.session)} label={D.session.cta} ariaLabel={copy.a11y.offer.sessionCta} noteId="ofr-session-note" />
       </section>
 
       <section className="t t-ofr" aria-labelledby="ofr-bundle-h">
         <h2 id="ofr-bundle-h">{D.bundle.title}</h2>
         <p>{D.bundle.detail}</p>
         <p className="ofr-price">{D.bundle.price}</p>
-        <OfferCta href={m.links.bundle} label={D.bundle.cta} ariaLabel={copy.a11y.offer.bundleCta} noteId="ofr-bundle-note" />
+        <OfferCta href={goHref("bundle", m.links.bundle)} label={D.bundle.cta} ariaLabel={copy.a11y.offer.bundleCta} noteId="ofr-bundle-note" />
       </section>
 
       <YesodotTile />

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { axe, clock, createUser, expectReflowAndTargets, open, overflowingElements, shot, type Session } from "./helpers";
+import { axe, clock, createUser, pool, expectReflowAndTargets, open, overflowingElements, shot, type Session } from "./helpers";
 
 /**
  * Stage 10 on server B (day 14 live at 20:00, window 48h, session and Yesodot links set, bundle link unset, contacts set).
@@ -39,12 +39,8 @@ test("open: window text with the server deadline, session and bundle cards, Yeso
   expect(await page.locator("main [aria-live], main time").count()).toBe(0);
 
   const session = page.getByRole("link", { name: "לקביעת הפגישה האישית בזום" });
-  const href = new URL((await session.getAttribute("href"))!);
-  expect(href.origin + href.pathname).toBe("https://pay.example.test/session271");
-  expect(href.searchParams.get("ref")).toBe("app");
-  expect(href.searchParams.get("utm_source")).toBe("tsaad_app");
-  expect(href.searchParams.get("utm_medium")).toBe("app");
-  expect(href.searchParams.get("utm_campaign")).toBe("session271");
+  // the button points at the counting redirect, which sends on to the configured URL (checked in the /go test below)
+  await expect(session).toHaveAttribute("href", "/go/session");
   await expect(session).toHaveAttribute("rel", "noopener noreferrer");
 
   await expect(page.getByRole("heading", { level: 2, name: "פגישת זום אישית" })).toBeVisible();
@@ -109,9 +105,7 @@ test("yesodot: valid with a date, CTA link with UTM; after the expiry no button"
   let o = await open(browser, s, TT.yesodotLastDay, "/yesodot");
   await expect(o.page.getByText("המחיר הזה תקף עד 20 בדצמבר.")).toBeVisible();
   const a = o.page.getByRole("link", { name: "להרשמה ליסודות היוגה" });
-  const u = new URL((await a.getAttribute("href"))!);
-  expect(u.pathname).toBe("/yesodot1265");
-  expect(u.searchParams.get("utm_campaign")).toBe("yesodot1265");
+  await expect(a).toHaveAttribute("href", "/go/yesodot");
   await shot(o.page, "yesodot-valid");
   await axe(o.page);
   await o.ctx.close();
@@ -131,7 +125,7 @@ test("Today tile follows the offer state and the landing CTA is a real link when
   await o.ctx.close();
 
   await page.goto("/tsaad");
-  await expect(page.getByRole("link", { name: "אני בפנים, להרשמה לאתגר" }).first()).toHaveAttribute("href", "https://pay.example.test/challenge79");
+  await expect(page.getByRole("link", { name: "אני בפנים, להרשמה לאתגר" }).first()).toHaveAttribute("href", "/go/challenge");
   await axe(page);
 });
 
@@ -143,4 +137,34 @@ test("legal pages show the configured contacts as links", async ({ page }) => {
   await page.goto("/legal/terms");
   await expect(page.getByRole("link", { name: "050-123-4567" })).toHaveAttribute("href", "tel:0501234567");
   await axe(page);
+});
+
+test("/go/[offer] counts a click and redirects only to the configured https URL (never to user input)", async ({ request }) => {
+  const count = async (offer: string) =>
+    Number((await pool.query("select coalesce(sum(clicks), 0)::int as n from offer_clicks where offer = $1", [offer])).rows[0].n);
+  const before = await count("session");
+  const r = await request.get("/go/session?to=https://evil.example.test&next=//evil.example.test", { maxRedirects: 0 });
+  expect(r.status()).toBe(302);
+  const loc = new URL(r.headers()["location"]);
+  expect(loc.origin + loc.pathname).toBe("https://pay.example.test/session271");
+  expect(loc.searchParams.get("ref")).toBe("app");
+  expect(loc.searchParams.get("utm_source")).toBe("tsaad_app");
+  expect(loc.searchParams.get("utm_medium")).toBe("app");
+  expect(loc.searchParams.get("utm_campaign")).toBe("session271");
+  expect(loc.searchParams.has("to")).toBe(false);
+  expect(await count("session")).toBe(before + 1);
+
+  const c = await request.get("/go/challenge", { maxRedirects: 0 });
+  expect(c.status()).toBe(302);
+  expect(c.headers()["location"]).toBe("https://pay.example.test/challenge79");
+
+  // the bundle link is unset on this server; unknown keys and anything that looks like a URL are plain 404s and count nothing
+  const total = async () => Number((await pool.query("select coalesce(sum(clicks), 0)::int as n from offer_clicks")).rows[0].n);
+  const t0 = await total();
+  for (const path of ["/go/bundle", "/go/nope", "/go/https:%2F%2Fevil.example.test", "/go/%2F%2Fevil.example.test", "/go/SESSION"]) {
+    const x = await request.get(path, { maxRedirects: 0 });
+    expect(x.status(), path).toBe(404);
+    expect(x.headers()["location"], path).toBeUndefined();
+  }
+  expect(await total()).toBe(t0);
 });

@@ -46,6 +46,7 @@ The server refuses to start in production when a **required** variable is missin
 | `ACCESSIBILITY_CONTACT` | **Blocker before launch** (accessibility regulations, regulation 35): the accessibility coordinator's name and phone or email. |
 | `PRIVACY_CONTACT` | **Blocker before launch**: contact for privacy access and correction requests. |
 | `SUPPORT_CONTACT` | General contact shown in the terms. |
+| `ADMIN_USERNAMES` | Comma-separated usernames allowed to open `/admin/stats` (aggregate numbers: signed up, activated, active per day, days counted, completed 12 of 14, reminders opted in, offer button clicks). Empty = nobody. Everyone else, and anyone logged out, gets the normal 404. Use the owner's own participant username (an account created through the signup webhook). |
 | `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` | Public half of the VAPID pair, and `mailto:<address>` or an https URL. Without the public key the reminders screen says reminders are not supported. |
 
 ### Switches that stay off until the owner approves (gate G3)
@@ -63,7 +64,7 @@ The server refuses to start in production when a **required** variable is missin
 
 ## 2. Database (Neon, aws-eu-central-1)
 - [ ] Use the **unpooled** connection string (host without `-pooler`) for migrations only; the app uses the pooled one.
-- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0008` in order (verified on an empty Postgres 16 at stage 11 by `scripts/test-db.sh`). Run it before the first deploy, and again before any deploy that adds a migration.
+- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0009` in order (verified on an empty Postgres 16 by `scripts/test-db.sh`). `0008` drops the unused `login_attempts.user_id`; `0009` adds the `offer_clicks` counter table. Run it before the first deploy, and again before any deploy that adds a migration.
 - [ ] Do not run `scripts/create-dev-user.ts` against Neon (it refuses anything but localhost).
 - [ ] Turn on Neon point-in-time restore / backups for the branch.
 
@@ -79,7 +80,8 @@ The server refuses to start in production when a **required** variable is missin
 5. Create one staff test account: send one test signup to the webhook (see `docs/GHL_SETUP.md`, with the test contact's own details). Because delivery is dry-run, get the link with "שכחתי סיסמה" → it is also dry-run, so for this one test create the link with a one-off SQL insert, or wait for G3. Then: log in, mark today's habit, undo, open `/path`, a past day, `/live`, `/reminders` (turn on and off on a real phone), `/install`, `/account`.
 6. Delete the staff test account from `/account` and check that login then fails.
 7. On an iPhone and an Android phone: install to the home screen, open offline once (the offline page appears), and check the video plays (Bunny token, `frame-src`).
-8. Watch the logs for a day for `csp violation` lines. A few from browser extensions are normal; repeated ones on our own pages mean a real problem.
+8. Offer clicks: with a payment URL set, open `/go/session` (or the matching key) once: it answers 302 to that URL. With `ADMIN_USERNAMES` set, log in as that user and check `/admin/stats` shows the click; a logged-out request to it must be a 404.
+9. Watch the logs for a day for `csp violation` lines. A few from browser extensions are normal; repeated ones on our own pages mean a real problem.
 
 ## 5. Before inviting participants
 - [ ] Lawyer review of the legal texts (`docs/LEGAL_REVIEW.md`); the pages are marked DRAFT until then.

@@ -12,6 +12,7 @@ import { timeTokens } from "@/lib/times";
 import { getLiveInputs } from "@/lib/live/config";
 import { liveSessions, liveWhen, type LiveSession } from "@/lib/live/model";
 import { getOfferLinks } from "@/lib/offer/config";
+import { goHref } from "@/lib/offer/links";
 import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
 import { connection } from "next/server";
@@ -78,7 +79,7 @@ export default async function LandingPage() {
   const now = await serverNow();
   const schedule = getSchedule();
   const sessions = liveSessions(now, schedule, getLiveInputs(cfg.env));
-  const ctaHref = getOfferLinks(cfg.env).challenge;
+  const ctaHref = goHref("challenge", getOfferLinks(cfg.env).challenge);
   const day1 = DAYS[0];
   const startText = cfg.startDate ? withStartDate(L.hero.start, cfg.startDate) : L.hero.startTba;
   const closeHeading = cfg.startDate ? withStartDate(L.close.heading, cfg.startDate) : L.close.headingTba;

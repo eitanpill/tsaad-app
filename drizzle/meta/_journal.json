@@ -64,6 +64,13 @@
       "when": 1794352498827,
       "tag": "0008_drop_login_attempts_user_id",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794352739164,
+      "tag": "0009_offer_clicks",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   smallint,
   text,
   timestamp,
@@ -103,6 +104,27 @@ export const loginAttempts = pgTable(
     check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle','push','webhook','account')`),
     index("login_attempts_identifier_idx").on(t.kind, t.identifierHash, t.attemptedAt),
     index("login_attempts_ip_idx").on(t.kind, t.ipHash, t.attemptedAt),
+  ],
+);
+
+/**
+ * ספירות מצטברות של לחיצות על כפתורי ההצעות (/go/[offer]): לפי הצעה ולפי יום מקומי. אין כאן אדם, IP, דפדפן או מזהה כלשהו,
+ * ולכן אין קישור ל־users והשורות לא נמחקות עם חשבון.
+ */
+export const OFFER_KEYS = ["challenge", "session", "bundle", "yesodot"] as const;
+
+export const offerClicks = pgTable(
+  "offer_clicks",
+  {
+    offer: text("offer", { enum: OFFER_KEYS }).notNull(),
+    /** התאריך המקומי (Asia/Jerusalem). */
+    day: date("day", { mode: "string" }).notNull(),
+    clicks: integer("clicks").notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.offer, t.day] }),
+    check("offer_clicks_offer", sql`${t.offer} in ('challenge','session','bundle','yesodot')`),
+    check("offer_clicks_clicks", sql`${t.clicks} >= 0`),
   ],
 );
 

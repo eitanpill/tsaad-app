@@ -18,7 +18,7 @@ See `docs/CONTENT.md` for where the day content and the Bunny video ids (`BUNNY_
 | /login, /activate, /forgot, /tsaad, /legal, /legal/accessibility, /legal/privacy, /legal/terms, /account/deleted | page | anyone (`/activate` needs a valid one-time link; the legal texts are DRAFT, see `docs/LEGAL_REVIEW.md`) |
 | /today, /path, /day/[n], /live, /reminders, /install, /offer, /yesodot, /account | page | a logged-in user |
 | POST /api/webhooks/ghl/signup | handler | callers with `GHL_WEBHOOK_SECRET` (header `x-tsaad-webhook-secret`, or HMAC signature plus timestamp); 503 if the secret is unset or shorter than 32; 5-minute window when a timestamp header is sent; idempotent by event id; no `Origin` check (server to server) |
-| login, forgot, activate, logout | server actions (`src/app/(auth)/actions.ts`) | login and forgot are open but rate-limited; every action checks `Origin` against `APP_ORIGIN`; logout deletes the session row. There are no `/api/auth/*` handlers; handlers added later use `rejectCrossOrigin` |
+| login, forgot, activate, logout | server actions (`src/app/(auth)/actions.ts`) | login and forgot are open but rate-limited (a locked-out username sees a message pointing to "שכחתי סיסמה", whose link works during the lockout and lifts it once used); a database failure while creating the session shows the friendly "משהו לא עבד" error; every action checks `Origin` against `APP_ORIGIN`; logout deletes the session row. There are no `/api/auth/*` handlers; handlers added later use `rejectCrossOrigin` |
 | GET /api/video/[day] | handler | a session, and only once the server has unlocked that day |
 | GET /api/live/[day]/ics | handler | a session; day 7 or 14 only, and only when `START_DATE` and `LIVE_TIME_DAYn` are set (else 404). The join link is not in the file |
 | POST/DELETE /api/push | handler | a session, `Origin` check, rate limit, subscription validated (see Stage 9) |
@@ -26,6 +26,8 @@ See `docs/CONTENT.md` for where the day content and the Bunny video ids (`BUNNY_
 | GET /manifest.webmanifest, /sw.js, /offline.html | static / metadata | anyone (no personal data; the service worker caches no HTML) |
 | GET /api/cron/reminders, /api/cron/sync, /api/cron/cleanup | handler | requests that carry `Bearer CRON_SECRET` (constant-time check; 401 if the secret is unset or shorter than 16 characters) |
 | POST /api/csp-report | handler | anyone (browser CSP reports); log only, rate-limited per instance, no DB (stage 11) |
+| GET /go/[offer] | handler | anyone; `offer` is `challenge`, `session`, `bundle` or `yesodot` and nothing else. Counts one click (`offer_clicks`, no personal data) and answers 302 to the matching `MORNING_URL_*` (with the UTM parameters as before); 404 when the key is unknown or the URL is unset. No input of the request reaches the target |
+| /admin/stats | page | a logged-in user whose username is in `ADMIN_USERNAMES`. Everyone else gets the normal 404 (a real 404 status without a session cookie, decided in `proxy.ts`; the same 404 page for a logged-in non-admin). Server-rendered, aggregate numbers only, noindex |
 | GET /api/health | handler | anyone; `{ok, db}` only (200, or 503 when the database is unreachable), `no-store`, result memoised 5 s |
 
 Access is enforced in the data-access layer (DAL) and in each route handler, not only in `proxy.ts`. The page never receives the content of a locked day.
@@ -36,7 +38,8 @@ Access is enforced in the data-access layer (DAL) and in each route handler, not
 | `users` | Accounts: lowercase unique `username` (enforced by a CHECK), display name, email, phone, nullable `email` (phone-only signups) and `phone` (E.164 for GHL signups), nullable unique `ghl_contact_id`, nullable `password_hash` (null until activation), `created_at`, `activated_at`. There is no `must_change_password` flag. |
 | `activation_tokens` | One-time activation and reset links (`purpose` is `activate` or `reset`). Only the SHA-256 hash of the token is stored, with `expires_at` and `used_at`. |
 | `sessions` | Login sessions. Only a hash of each token is stored, with `created_at`, `expires_at` and `last_seen_at`. |
-| `login_attempts` | Failed logins, used for the rate limit. Stores hashes of the identifier and IP, never the raw values. |
+| `login_attempts` | Failed logins and other rate-limited attempts. Stores hashes of the identifier and IP, never the raw values, and no link to a user (the unused `user_id` column was dropped in migration `0008`). |
+| `offer_clicks` | Aggregate counters of clicks on the offer buttons, one row per offer and local day (`clicks`). No user, IP or browser data; not tied to `users`. Read by `/admin/stats`. |
 | `webhook_events` | Incoming webhook event IDs (unique; a hash when derived from the contact id), used to make the signup webhook idempotent; purged after 30 days. No personal data. |
 | `action_completions` | Completed actions (`habit`, `move`, `meditate`, `live`), unique on (user, day, action), day 1 to 14. |
 | `push_subscriptions` | Browser push subscriptions, endpoint unique. |
@@ -50,6 +53,15 @@ Accounts are activated through a one-time link: the participant sets their own p
 Live attendance has a single source of truth: `action_completions` with action `live` on days 7 and 14 (the tracker payload reads it; the unused `live_attendance` table was dropped in migration `0006`).
 
 Completion of the challenge (12 of 14 days) is calculated when needed and not stored.
+
+Measurement is cookieless and first-party only. Signed up, activated, active per day, returned and days counted are derived from `users`, `action_completions` and `push_subscriptions` (`src/lib/stats/queries.ts`); only offer clicks have their own counter (`offer_clicks`, migration `0009`). "Returned on day N" means the user marked something on day N and also on an earlier day; visits themselves are not recorded.
+
+## Config, CI and tooling
+- All environment reads go through `src/config` (`getConfig()`, and `readEnv()` for the raw source after validation). `src/config/single-source.test.ts` fails if another file reads `process.env` (the allow-list: client code, `proxy.ts`, `instrumentation.ts`, the logger).
+- Times in texts (`{unlockTime}`, `{reminderTime}`) are filled from `UNLOCK_HOUR` and `REMINDER_TIME` (`src/lib/times.ts`); a test forbids a hard-coded HH:MM in the copy.
+- `npm run typecheck` runs `next typegen` first, so it works on a fresh clone.
+- `.github/workflows/ci.yml`: one job (typecheck, lint, unit tests, migrate and run the database tests against a Postgres 16 service, build with dummy env) on every push and pull request with cancel-in-progress; an optional Playwright job on the default branch and on manual runs.
+- Fonts are variable fonts via `next/font` (Noto Sans Hebrew: hebrew; Rubik: hebrew and latin), one file per subset rather than per weight. The Bunny player iframe loads only after a click on the play button (`src/app/(app)/today/VideoTile.tsx`).
 
 ## Stages and the files they create (revised at gate G1)
 - **Stage 2, design:**

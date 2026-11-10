@@ -21,6 +21,8 @@ export default function robots(): MetadataRoute.Robots {
           "/offer",
           "/yesodot",
           "/account",
+          "/admin/",
+          "/go/",
         ],
       },
     ],

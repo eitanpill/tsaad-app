@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { copy } from "@/content/copy.he";
 import { requireUser } from "@/lib/auth/dal";
 import { getOfferModel } from "@/lib/offer/config";
+import { goHref } from "@/lib/offer/links";
 import { formatValidUntil } from "@/lib/offer/model";
 import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
@@ -41,7 +42,7 @@ export default async function YesodotPage() {
                 ? Y.expiry.replace("[YESODOT_OFFER_EXPIRY]", formatValidUntil(m.yesodotRaw!, v.until, m.tz))
                 : Y.expiryTba}
             </p>
-            <OfferCta href={m.links.yesodot} label={Y.cta} noteId="yes-note" />
+            <OfferCta href={goHref("yesodot", m.links.yesodot)} label={Y.cta} noteId="yes-note" />
           </>
         )}
       </div>

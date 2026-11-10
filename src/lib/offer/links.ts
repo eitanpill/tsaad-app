@@ -27,3 +27,11 @@ export function offerLink(raw: string | undefined, campaign: string | undefined)
   set("utm_campaign", campaign);
   return u.toString();
 }
+
+/**
+ * הקישור שמוצג בכפתור הצעה: נתיב ה־/go/[offer] הפנימי (סופר לחיצה ומפנה לכתובת המוגדרת), רק כשהוגדרה כתובת https תקינה.
+ * בלי כתובת: null, והכפתור מוצג כלא פעיל.
+ */
+export function goHref(offer: "challenge" | "session" | "bundle" | "yesodot", target: string | null): string | null {
+  return target ? `/go/${offer}` : null;
+}

@@ -139,6 +139,8 @@ export const envSchema = z.object({
   /** פרטי קשר בדפים המשפטיים ([ACCESSIBILITY_CONTACT], [PRIVACY_CONTACT]). לא הוגדר = שורה ניטרלית. */
   ACCESSIBILITY_CONTACT: optional(contactText),
   PRIVACY_CONTACT: optional(contactText),
+  /** שמות משתמש (מופרדים בפסיקים) שרשאים לראות את /admin/stats. לא הוגדר = אף אחד; לכל השאר 404. */
+  ADMIN_USERNAMES: optional(z.string().max(500)),
   /** [SUPPORT_CONTACT]: פרט הקשר הכללי בתנאי השימוש. */
   SUPPORT_CONTACT: optional(contactText),
 });

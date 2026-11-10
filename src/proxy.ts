@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isAdminPath, SESSION_COOKIE_NAMES } from "@/lib/path/admin-path";
 import { isInvalidDayPath } from "@/lib/path/day-param";
 import { CSP_REPORT_GROUP, CSP_REPORT_PATH, buildCsp, newNonce } from "@/lib/security/csp";
 
@@ -21,7 +22,10 @@ export function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
 
-  const response = isInvalidDayPath(request.nextUrl.pathname)
+  // דפי הבעלים בלי עוגיית התחברות בכלל: 404 אמיתי כבר כאן (בדף עצמו notFound() מגיע אחרי שהמעטפת נשלחה, והסטטוס נשאר 200).
+  // מי שיש לו עוגייה נבדק ב־layout של /admin (ADMIN_USERNAMES) ומקבל את אותו דף 404.
+  const hiddenAdmin = isAdminPath(request.nextUrl.pathname) && !SESSION_COOKIE_NAMES.some((n) => request.cookies.has(n));
+  const response = isInvalidDayPath(request.nextUrl.pathname) || hiddenAdmin
     ? NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url), { request: { headers: requestHeaders } })
     : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);

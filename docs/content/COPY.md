@@ -196,6 +196,38 @@
 | `install.later` | אחר כך |  |
 | `install.installed` | האפליקציה כבר על המסך שלך. | חדש בשלב 9. מוצג במקום ההוראות כשהאפליקציה כבר נפתחה מהמסך הראשי. |
 
+## admin
+
+| מפתח | טקסט | הערות |
+|---|---|---|
+| `admin.stats.title` | סטטיסטיקה |  |
+| `admin.stats.lead` | מספרים מצטברים בלבד. אין כאן שמות או פרטים אישיים. |  |
+| `admin.stats.summary.heading` | במספרים |  |
+| `admin.stats.summary.signedUp` | נרשמו |  |
+| `admin.stats.summary.activated` | הפעילו חשבון |  |
+| `admin.stats.summary.activatedLast7Days` | מתוכם הופעלו בשבוע האחרון |  |
+| `admin.stats.summary.completed` | השלימו את האתגר ({done} ימים מתוך {total}) |  |
+| `admin.stats.summary.remindersOptIn` | הפעילו תזכורות בטלפון |  |
+| `admin.stats.perDay.heading` | פעילות לפי יום |  |
+| `admin.stats.perDay.caption` | כמה משתמשים סימנו לפחות פעולה אחת בכל יום |  |
+| `admin.stats.perDay.day` | יום |  |
+| `admin.stats.perDay.active` | סימנו |  |
+| `admin.stats.perDay.returning` | מתוכם חזרו |  |
+| `admin.stats.distribution.heading` | כמה ימים נספרו |  |
+| `admin.stats.distribution.caption` | משתמשים שהפעילו חשבון, לפי מספר הימים שנספרו להם |  |
+| `admin.stats.distribution.counted` | ימים שנספרו |  |
+| `admin.stats.distribution.users` | משתמשים |  |
+| `admin.stats.offers.heading` | לחיצות על כפתורי ההצעות |  |
+| `admin.stats.offers.caption` | מונים מצטברים, בלי מידע על מי לחץ |  |
+| `admin.stats.offers.offer` | הצעה |  |
+| `admin.stats.offers.total` | סך הכל |  |
+| `admin.stats.offers.last7Days` | בשבוע האחרון |  |
+| `admin.stats.offers.names.challenge` | הרשמה לאתגר (עמוד הנחיתה) |  |
+| `admin.stats.offers.names.session` | פגישה אישית בזום |  |
+| `admin.stats.offers.names.bundle` | באנדל |  |
+| `admin.stats.offers.names.yesodot` | יסודות היוגה |  |
+| `admin.stats.notes` | יום נספר מפעולה אחת ומעלה. ״חזרו״ נגזר מהסימונים: משתמש שסימן ביום הזה וגם ביום מוקדם יותר. אין מעקב אחרי כניסות, ואין עוגיות או כלי ניתוח של צד שלישי. |  |
+
 ## כניסה
 
 | מפתח | טקסט | הערות |
@@ -600,7 +632,8 @@
 | `legal.privacy.sections.1.body.1.list.5` | התראות בטלפון (רק למי שהפעילו): כתובת המנוי של הדפדפן והמפתחות הנדרשים לשליחה אליו, ויומן תזכורות עם התאריך והסטטוס. |
 | `legal.privacy.sections.1.body.1.list.6` | אבטחה והגבלת קצב: ניסיונות כניסה כושלים ופעולות רגישות נרשמים כגיבוב של המזהה ושל כתובת ה־IP, בלי הערכים עצמם. |
 | `legal.privacy.sections.1.body.1.list.7` | תור עדכונים למערכת ההרשמה: מזהה איש הקשר, מספר היום, כמה ימים נספרו, האם האתגר הושלם והאם סומנה נוכחות בלייב. בלי שם, אימייל או טלפון. |
-| `legal.privacy.sections.1.body.1.list.8` | נתונים טכניים של שירות האירוח: כתובת IP וכותרות בקשה, ביומני הפעלה זמניים. |
+| `legal.privacy.sections.1.body.1.list.8` | ספירות שימוש מצטברות, בלי קשר לאדם מסוים: כמה לחיצות נרשמו על כפתורי ההצעות (לפי הצעה ולפי יום). מספרים כלליים על האתגר (כמה נרשמו, הפעילו חשבון וסימנו בכל יום) נגזרים מהמידע שלמעלה, ומוצגים לבעלי האפליקציה רק כסיכום, בלי שמות. |
+| `legal.privacy.sections.1.body.1.list.9` | נתונים טכניים של שירות האירוח: כתובת IP וכותרות בקשה, ביומני הפעלה זמניים. |
 | `legal.privacy.sections.2.id` | p-not |
 | `legal.privacy.sections.2.heading` | מה האפליקציה לא עושה |
 | `legal.privacy.sections.2.body.0.list.0` | היא לא מבקשת ולא שומרת מידע רפואי או בריאותי. |
@@ -640,7 +673,7 @@
 | `legal.privacy.sections.6.body.1` | מחיקת חשבון מוחקת את כל המידע שמפורט כאן, חוץ ממה שמוחזק במערכות חיצוניות (ראו ״מחיקת חשבון״), ומזהים טכניים מגובבים (של ניסיונות כניסה ושל אירועי הרשמה) שאינם כוללים שם או פרטי קשר ונמחקים במועדים שלמעלה. |
 | `legal.privacy.sections.7.id` | p-cookies |
 | `legal.privacy.sections.7.heading` | עוגיות ואחסון בדפדפן |
-| `legal.privacy.sections.7.body.0` | האפליקציה משתמשת בעוגייה אחת בלבד: עוגיית התחברות חיונית. היא מוגדרת כ־HttpOnly, Secure ו־SameSite=Lax, ונמחקת ביציאה מהחשבון. אין עוגיות פרסום, מעקב או ניתוח. |
+| `legal.privacy.sections.7.body.0` | האפליקציה משתמשת בעוגייה אחת בלבד: עוגיית התחברות חיונית. היא מוגדרת כ־HttpOnly, Secure ו־SameSite=Lax, ונמחקת ביציאה מהחשבון. אין עוגיות פרסום, מעקב או ניתוח. ספירות השימוש המצטברות נשמרות בשרת בלבד, בלי עוגיות ובלי כלי ניתוח של צד שלישי. |
 | `legal.privacy.sections.7.body.1` | בדפדפן נשמרת גם ההעדפה ״עצירת אנימציה״ (אחסון מקומי, רק במכשיר שלכם), ומטמון של קבצים סטטיים ושל עמוד ״אין חיבור״, בלי מידע אישי. |
 | `legal.privacy.sections.7.body.2` | נגן הסרטונים של Bunny פועל בדומיין שלו, ועשוי לשמור מידע בדפדפן לפי המדיניות של Bunny. |
 | `legal.privacy.sections.8.id` | p-rights |
@@ -733,4 +766,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 598 מחרוזות.
+סך הכול 626 מחרוזות.
