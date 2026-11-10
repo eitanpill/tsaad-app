@@ -48,7 +48,6 @@ export function normalizePhoneIL(input: unknown): string | null {
 /** שם לתצוגה: בלי תווי בקרה ובלי <>{} (לא נכנסים להודעות), רווחים מכווצים, עד 80 תווים. */
 export function cleanName(input: unknown): string | null {
   if (typeof input !== "string") return null;
-  // eslint-disable-next-line no-control-regex
   const s = input.replace(/[\u0000-\u001f\u007f-\u009f‎‏‪-‮<>{}]/g, " ").replace(/\s+/g, " ").trim();
   if (!s) return null;
   return [...s].slice(0, 80).join("");

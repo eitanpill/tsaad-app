@@ -15,7 +15,7 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 |---|---|---|
 | /login, /activate, /forgot, /tsaad, /accessibility, /privacy, /terms | page | anyone (`/activate` needs a valid one-time link) |
 | /today, /path, /day/[n], /live, /reminders, /install, /offer | page | a logged-in user |
-| POST /api/webhooks/ghl/signup | handler | callers with the shared secret; replays are rejected |
+| POST /api/webhooks/ghl/signup | handler | callers with `GHL_WEBHOOK_SECRET` (header `x-tsaad-webhook-secret`, or HMAC signature plus timestamp); 503 if the secret is unset or shorter than 32; 5-minute window when a timestamp header is sent; idempotent by event id; no `Origin` check (server to server) |
 | login, forgot, activate, logout | server actions (`src/app/(auth)/actions.ts`) | login and forgot are open but rate-limited; every action checks `Origin` against `APP_ORIGIN`; logout deletes the session row. There are no `/api/auth/*` handlers; handlers added later use `rejectCrossOrigin` |
 | GET /api/video/[day] | handler | a session, and only once the server has unlocked that day |
 | GET /api/live/[day]/ics | handler | a session; day 7 or 14 only, and only when `START_DATE` and `LIVE_TIME_DAYn` are set (else 404). The join link is not in the file |
@@ -30,13 +30,12 @@ Access is enforced in the data-access layer (DAL) and in each route handler, not
 ## Tables
 | Table | What it holds |
 |---|---|
-| `users` | Accounts: lowercase unique `username` (enforced by a CHECK), display name, email, phone, nullable unique `ghl_contact_id`, nullable `password_hash` (null until activation), `created_at`, `activated_at`. There is no `must_change_password` flag. |
+| `users` | Accounts: lowercase unique `username` (enforced by a CHECK), display name, email, phone, nullable `email` (phone-only signups) and `phone` (E.164 for GHL signups), nullable unique `ghl_contact_id`, nullable `password_hash` (null until activation), `created_at`, `activated_at`. There is no `must_change_password` flag. |
 | `activation_tokens` | One-time activation and reset links (`purpose` is `activate` or `reset`). Only the SHA-256 hash of the token is stored, with `expires_at` and `used_at`. |
 | `sessions` | Login sessions. Only a hash of each token is stored, with `created_at`, `expires_at` and `last_seen_at`. |
 | `login_attempts` | Failed logins, used for the rate limit. Stores hashes of the identifier and IP, never the raw values. |
-| `webhook_events` | Incoming webhook event IDs (unique), used to make the signup webhook idempotent. No personal data. |
+| `webhook_events` | Incoming webhook event IDs (unique; a hash when derived from the contact id), used to make the signup webhook idempotent; purged after 30 days. No personal data. |
 | `action_completions` | Completed actions (`habit`, `move`, `meditate`, `live`), unique on (user, day, action), day 1 to 14. |
-| `live_attendance` | One attended or not-attended mark per user per live day (7 or 14), unique on (user, day). |
 | `push_subscriptions` | Browser push subscriptions, endpoint unique. |
 | `reminder_log` | Reminders, unique on (user, date), with status `pending` (written before sending), `dry_run`, `sent` or `failed`. |
 | `sync_outbox` | Updates waiting to be synced, with status (`pending`, `failed` = will retry, `sent`, `dead` = gave up), attempts, next attempt time (also used as a lease while a worker holds the row) and an optional unique dedupe key. |
@@ -44,6 +43,8 @@ Access is enforced in the data-access layer (DAL) and in each route handler, not
 Every table that holds personal data references `users(id)` with `ON DELETE CASCADE`, so deleting an account removes all of its data. This is covered by an integration test.
 
 Accounts are activated through a one-time link: the participant sets their own password, and nothing temporary is ever issued.
+
+Live attendance has a single source of truth: `action_completions` with action `live` on days 7 and 14 (the tracker payload reads it; the unused `live_attendance` table was dropped in migration `0006`).
 
 Completion of the challenge (12 of 14 days) is calculated when needed and not stored.
 
@@ -117,7 +118,21 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
 - **Stage 9א, GHL link:**
   - the signup webhook, with a shared secret, idempotency and replay protection
   - it never resets an existing user
-  - `api/health`
+  - `api/health`: not built in this pass (still open)
+  - built:
+    - `app/api/webhooks/ghl/signup/route.ts` (POST only) over `lib/webhooks/ghl/{auth,payload,normalize,username,signup,delivery,handler}.ts`. Migration `0006`: `users.email` nullable, `login_attempts.kind` gains `webhook`, table `live_attendance` dropped.
+    - Auth (`auth.ts`): `GHL_WEBHOOK_SECRET` (min 32; unset or short = 503, nothing is processed). Header `x-tsaad-webhook-secret` alone is enough (GHL's Custom Webhook action can only send static headers). Optional `x-tsaad-timestamp` (unix seconds) plus `x-tsaad-signature` (hex HMAC-SHA256 of `timestamp.rawBody`, optional `sha256=` prefix). Every credential presented must be valid; when a timestamp is present, it must be within 5 minutes (both ways), for the static header too, which is shorter than the 30 days `webhook_events` are kept. All comparisons constant-time (`constantTimeEqual`). No secret in a query string.
+    - Order: secret configured (503), trusted-IP block after repeated auth failures (429), size (413, 16KB, read incrementally), auth (401), content type (415), JSON and zod (400), configuration (503), transaction, response. Failures per trusted IP are counted in `login_attempts` (kind `webhook`, HMAC keys; 20 per 15 minutes); without a trusted IP header there is no per-IP limit (the long secret is the defence).
+    - Body (`payload.ts`): `contact_id`/`contactId`/`id`, `first_name`/`last_name`/`full_name` (and camelCase), `email`, `phone`, optional `event_id`/`signup_id` (top level or in `customData`). Empty and null are missing, unknown fields ignored, an invalid email or phone is dropped, and at least one valid of the two is required. Email lowercased; phone normalised to E.164 (`+972…`, many Israeli formats; other international numbers with `+`/`00` kept).
+    - Idempotency (`signup.ts`): one transaction with an advisory lock per contact id; the event id (`x-tsaad-event-id`, else a hash of contact id plus the optional marker) is inserted first (unique), a repeat returns `duplicate`. Same contact id: activated gives `exists` (nothing changes, logged); not activated gives a fresh link that invalidates the old one (`reissued`), at most 3 per hour per contact, then `exists`. Without a per-event id or marker, the same contact always maps to the same derived id, so a second signup is a `duplicate`; to allow a re-issue GHL must send an event id or marker (see `docs/GHL_SETUP.md`).
+    - Username rule (`username.ts`): the email local part, lowercased, ASCII-folded, `[a-z0-9._-]`, 3 to 20 characters; otherwise the national phone digits (`0521234567`); last resort `yogi` plus 5 digits. A collision gets a numeric suffix (`dana`, `dana2`, `dana3`). Chosen because it is short, memorable and recognisable to the participant, and needs no counter table; uniqueness is enforced by the `users.username` unique index (`ON CONFLICT DO NOTHING` and retry). `display_name` is the GHL name, else the username. Only username, display name, email, phone and contact id are stored.
+    - Response: `{ok, status: created|reissued|exists|duplicate}` (200), `{ok:false, error}` otherwise, always `Cache-Control: no-store`; never a token or personal data. Delivery runs in `after()`, after the commit.
+    - Delivery port (`delivery.ts`): `SignupDelivery.deliver({userId, ghlContactId, username, link, expiresAt, messages})`, with the messages already composed from `copy.messages.activation` (WhatsApp if there is a phone, email if there is an address; `[START_DATE]` filled from `START_DATE`). The only adapter is dry-run: it logs kind, channel, user id and lengths, never the link or contact details. A guarded e2e-only capture adapter (same guard as the test clock, plus `TSAAD_WEBHOOK_CAPTURE_FILE`) writes the link to a file for Playwright. A delivery failure is logged and does not change the response; the participant can use "forgot password".
+    - **Delivery options at gate G3** (nothing real is implemented here):
+      - (a) The adapter calls the GHL API (private-integration token, contact update) to write the link into a contact custom field, which triggers a GHL workflow that sends the WhatsApp and the email. Pros: GHL owns templates, channels, consent and delivery logs; the webhook response stays free of the link; works from `after()` with retries through an outbox. Cons: a real outbound call (timeout, `redirect: "error"`, https only, 4xx not retried), an API token to hold, and the link is stored in the GHL contact record (so use a short TTL and clear the field after sending); WhatsApp inside the 24-hour window or an approved template is needed.
+      - (b) The webhook response returns the link to the calling workflow, which sends it with its own actions. Pros: no outbound call and no API token. Cons: the link sits in the HTTP response and in GHL's execution logs; it breaks the rule that the response carries no token; the delivery must be awaited inside the request instead of `after()`, so the port would change to return fields; GHL's ability to map response fields into later actions must be verified, and a lost response means a lost link (a retry is a `duplicate`).
+      - Recommendation: (a). Before enabling either, an adapter must refuse a message with an unresolved `[PLACEHOLDER]` (`hasUnresolvedPlaceholder`).
+  - Live attendance in the tracker payload now comes from `action_completions` (true when a `live` row exists, otherwise null).
 - **Stage 10, pages:**
   - `/tsaad`, the day-14 offer, and `/yesodot` with server-side eligibility
   - the full accessibility statement
