@@ -283,3 +283,9 @@ describe("times in copy come from config", () => {
     expect(hits).toBeNull();
   });
 });
+
+describe("day video ids", () => {
+  it("a videoId, when set, is a plain Bunny id (letters, digits, _ and -)", () => {
+    for (const d of DAYS) if (d.videoId !== undefined) expect(d.videoId, `day ${d.day}`).toMatch(/^[A-Za-z0-9_-]+$/);
+  });
+});

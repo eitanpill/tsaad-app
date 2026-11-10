@@ -22,6 +22,11 @@ export type DayContent = {
   readonly live: boolean;
   /** משפט הפתיחה בצילום, כלשונו (בלי מרכאות החיצוניות). */
   readonly opening: string;
+  /**
+   * מזהה סרטון התרגול ב־Bunny Stream (רק האותיות, הספרות, "_" ו־"-" של המזהה). אופציונלי: בלי מזהה אין סרטון ליום.
+   * המשתנה BUNNY_VIDEO_IDS דורס אותו לאותו יום כשהוא מוגדר. קובץ זה נשאר בשרת: המזהה לא נשלח לדפדפן, והסרטון נחתם בבקשה (ראו docs/CONTENT.md).
+   */
+  readonly videoId?: string;
   readonly habit: DayAction;
   readonly movement: DayAction;
   readonly meditation: DayAction;

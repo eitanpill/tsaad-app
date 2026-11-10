@@ -6,11 +6,11 @@
 Changing a title or opening line means editing `days.ts`, then running `node --experimental-strip-types scripts/gen-copy-deck.mjs` and `npx vitest run`. Titles and opening lines are sent to the browser only for today and yesterday (Today) or for an unlocked day (`/day/[n]`); locked days never receive them.
 
 ## Recorded-practice videos (Bunny)
-There is one place to put the video ids: the environment variable `BUNNY_VIDEO_IDS` (set it in Vercel, and in `.env.local` for development; the template is `.env.example`).
+Each day's recorded practice is a Bunny Stream video. There are two places for its id, and the file is the main one:
 
-- It is a comma-separated list of Bunny Stream video ids, in day order: position 1 is day 1, position 14 is day 14.
-- Leave a position empty for a day without a video yet, for example `id1,id2,,id4`. Trailing days can simply be left off.
-- `BUNNY_LIBRARY_ID` and `BUNNY_TOKEN_KEY` must be set too. Without them no day has a video.
-- Days 7 and 14 are live sessions; their positions can stay empty unless a recording is added later.
+1. **`src/content/days.ts` (main).** Each day has an optional `videoId`. When the owner sends a link or id for a day, it goes there: add `videoId: "<id>",` to that day's object. The id is the part of the Bunny link after `/embed/<library>/` or `/play/<library>/` (letters, digits, `_`, `-`); if you are sent a full link, copy only that id. Do not guess ids. Then run `npx vitest run` and deploy.
+2. **`BUNNY_VIDEO_IDS` (override).** A comma-separated list in day order (position 1 = day 1). A non-empty position wins over `days.ts` for that day; an empty position falls back to `days.ts`. Useful for a quick swap on Vercel without a code change. Example: `id1,id2,,id4`.
 
-A day with no id keeps the existing "video pending" state on Today and on the day page. Nothing in the code changes when ids are added: set the variable and redeploy. No ids are set today. The id check lives in `src/lib/today/video.ts` (`hasVideo`, `videoFor`).
+`BUNNY_LIBRARY_ID` and `BUNNY_TOKEN_KEY` must be set too (environment only, never in the repo). Without them no day has a video. Days 7 and 14 are live sessions; they can stay without an id unless a recording is added.
+
+A day with no id keeps the "video pending" state on Today and on the day page. `days.ts` stays on the server: the id is never sent to the browser, and the player URL is signed per request only for an unlocked day (`/api/video/[day]`). The merge logic is `getVideoConfig` in `src/lib/today/video.ts`. No ids are set today.

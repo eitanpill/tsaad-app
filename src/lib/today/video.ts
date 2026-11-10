@@ -1,14 +1,20 @@
 import "server-only";
 import { getConfig } from "@/config";
+import { DAYS } from "@/content/days";
 import { buildBunnyEmbedUrl } from "@/lib/bunny/token";
 import type { Schedule } from "@/lib/days";
 import { isDayUnlocked } from "@/lib/days";
 
 export type VideoConfig = { libraryId: string; tokenKey: string; ids: readonly (string | undefined)[] };
 
-export function getVideoConfig(env = getConfig().env): VideoConfig | null {
+export function getVideoConfig(
+  env = getConfig().env,
+  days: readonly { videoId?: string }[] = DAYS,
+): VideoConfig | null {
   if (!env.BUNNY_LIBRARY_ID || !env.BUNNY_TOKEN_KEY) return null;
-  const ids = (env.BUNNY_VIDEO_IDS ?? "").split(",").map((s) => s.trim() || undefined);
+  // המשתנה BUNNY_VIDEO_IDS גובר על days.ts ליום שהוגדר בו; יום שנשאר ריק בו מקבל את videoId מ־src/content/days.ts.
+  const fromEnv = (env.BUNNY_VIDEO_IDS ?? "").split(",").map((s) => s.trim() || undefined);
+  const ids = days.map((d, i) => fromEnv[i] ?? d.videoId);
   return { libraryId: env.BUNNY_LIBRARY_ID, tokenKey: env.BUNNY_TOKEN_KEY, ids };
 }
 
