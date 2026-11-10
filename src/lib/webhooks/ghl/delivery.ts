@@ -1,6 +1,6 @@
 import "server-only";
 import { appendFileSync } from "node:fs";
-import { getConfig } from "@/config";
+import { getConfig, readEnv } from "@/config";
 import { logger, type Logger } from "@/lib/logger";
 import { renderMessage, type MessageChannel } from "@/lib/messaging/sender";
 import { withStartDate } from "@/lib/format";
@@ -94,7 +94,7 @@ export function createCaptureDelivery(file: string): SignupDelivery {
  * ההגנה לכלי הלכידה: אותה הגנה כמו שעון הבדיקות (לא ב־Vercel; בפרודקשן רק עם TSAAD_E2E=1 ו־APP_ORIGIN של loopback)
  * ובנוסף קובץ במשתנה TSAAD_WEBHOOK_CAPTURE_FILE (נתיב מוחלט). פריסה אמיתית לא יכולה לקיים את התנאים.
  */
-export function captureFileFor(env: Record<string, string | undefined> = process.env): string | null {
+export function captureFileFor(env: Record<string, string | undefined> = readEnv()): string | null {
   const file = env.TSAAD_WEBHOOK_CAPTURE_FILE;
   if (!file || !file.startsWith("/") || !testClockAllowed(env)) return null;
   return file;

@@ -1,4 +1,5 @@
 import "server-only";
+import { readEnv } from "@/config";
 import { constantTimeEqual } from "@/lib/auth/crypto";
 
 /** אותו מינימום כמו ב־env.ts. */
@@ -10,7 +11,7 @@ export const MIN_CRON_SECRET_LENGTH = 16;
  */
 export function isCronAuthorized(
   request: Request,
-  secret: string | undefined = process.env.CRON_SECRET,
+  secret: string | undefined = readEnv().CRON_SECRET,
 ): boolean {
   if (!secret || secret.length < MIN_CRON_SECRET_LENGTH) return false;
   const header = request.headers.get("authorization") ?? "";

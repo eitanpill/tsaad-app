@@ -1,5 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
+import { readEnv } from "@/config";
 import { TEST_CLOCK_HEADER, TEST_CLOCK_KEY_HEADER, resolveNow } from "./test-clock";
 
 /**
@@ -9,5 +10,5 @@ import { TEST_CLOCK_HEADER, TEST_CLOCK_KEY_HEADER, resolveNow } from "./test-clo
  */
 export async function serverNow(): Promise<Date> {
   const h = await headers();
-  return resolveNow(process.env, { now: h.get(TEST_CLOCK_HEADER), key: h.get(TEST_CLOCK_KEY_HEADER) }, new Date());
+  return resolveNow(readEnv(), { now: h.get(TEST_CLOCK_HEADER), key: h.get(TEST_CLOCK_KEY_HEADER) }, new Date());
 }

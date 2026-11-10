@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { readEnv } from "@/config";
 import { WEBHOOK } from "@/config/constants";
 import type { Db } from "@/db";
 import { RATE_LIMITS, getActivationTtlMinutes, getAppOrigin, getSessionSecret } from "@/lib/auth/config";
@@ -72,7 +73,7 @@ export function deriveEventId(headerValue: string | null, contactId: string, mar
  * התשובה היא {ok, status} בלבד: בלי אסימון ובלי פרטים אישיים.
  */
 export async function handleGhlSignup(req: Request, deps: HandlerDeps): Promise<Response> {
-  const env = deps.env ?? process.env;
+  const env = deps.env ?? readEnv();
   const now = deps.now ?? (() => new Date());
   const log = deps.log;
 

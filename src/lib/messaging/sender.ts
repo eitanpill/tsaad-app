@@ -1,6 +1,7 @@
 import "server-only";
 import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
+import { readEnv } from "@/config";
 import { logger, type Logger } from "@/lib/logger";
 
 export type MessageChannel = "whatsapp" | "email";
@@ -37,7 +38,7 @@ export function renderMessage(m: OutgoingMessage): { subject?: string; body: str
  * נרשם נתיב הקישור ברמת debug, כדי שאפשר יהיה לנסות את הזרימה מקומית.
  * שליחה אמיתית (GHL) כבויה עד שער מאוחר יותר.
  */
-export function createDryRunSender(log: Logger = logger, env: Record<string, string | undefined> = process.env): MessageSender {
+export function createDryRunSender(log: Logger = logger, env: Record<string, string | undefined> = readEnv()): MessageSender {
   return {
     async send(message) {
       const rendered = renderMessage(message);
