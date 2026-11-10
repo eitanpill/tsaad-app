@@ -8,7 +8,6 @@ import { clock, createUser, pool, type Session } from "./helpers";
  * ימי הלייב (7, 14) מסומנים בהרגל ובלייב (2 צעדים); בין 00:00 ל־05:00 רק היום הנוכחי פתוח.
  * גם: תוכן כל יום (src/content/days.ts) מופיע במסך היום ובדף היום, ותזכורת יומית רצה ב־dry-run דרך ה־cron.
  */
-test.afterAll(() => pool.end());
 
 const DAYS_SRC = readFileSync("src/content/days.ts", "utf8");
 /** the habit title of each day, read from the content file the app renders */

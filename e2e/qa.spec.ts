@@ -11,7 +11,6 @@ import { axe, clock, createUser, pool, type Session } from "./helpers";
  *  - מסע מקלדת מלא: כניסה, סימון, ביטול, אתמול, שביל, יום, לייב, תזכורות, מחיקת חשבון.
  * START_DATE=2026-12-01: יום N נפתח ב־05:00 ב־2026-12-N (שעון חורף, +02:00).
  */
-test.afterAll(() => pool.end());
 
 const ARIA_DIR = process.env.QA_ARIA_DIR;
 const sha = (v: string) => createHash("sha256").update(v).digest("hex");
@@ -213,7 +212,7 @@ test.describe("every screen: axe, structure, targets, 200% zoom (195px)", () => 
     await page.getByLabel("שם משתמש", { exact: true }).fill("nobody");
     await page.getByLabel("סיסמה", { exact: true }).fill("wrong-pass-1");
     await page.getByRole("button", { name: "כניסה", exact: true }).click();
-    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: /\S/ }).first()).toBeVisible();
     await axe(page);
     await structure(page, "login-error");
 
@@ -238,7 +237,7 @@ test.describe("every screen: axe, structure, targets, 200% zoom (195px)", () => 
     const p2 = await a.newPage();
     await p2.goto("/account");
     await p2.getByRole("button", { name: "מחיקת החשבון" }).click();
-    await expect(p2.getByRole("alert")).toBeVisible();
+    await expect(p2.getByRole("alert").filter({ hasText: /\S/ }).first()).toBeVisible();
     await expect(p2.getByLabel("סיסמה", { exact: true })).toBeFocused();
     await axe(p2);
     await structure(p2, "account-error");
