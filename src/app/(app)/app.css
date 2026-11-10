@@ -720,3 +720,16 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t-entry h2 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 800; }
 .t-entry p { margin: 0; font-size: 14px; line-height: 1.4; }
 .t-entry a { display: inline-flex; align-items: center; min-height: 44px; color: var(--forest); font-weight: 700; text-underline-offset: 3px; }
+
+/* 200% zoom on a phone (CSS width about 195px, stage 11): one column, nothing wider than the screen.
+   The wide action buttons spanned two columns, which made an implicit second column next to the single one. */
+@media (max-width: 260px) {
+  .act-grid { grid-template-columns: minmax(0, 1fr); }
+  .act--wide { grid-column: auto; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 64px; }
+  .act--wide b { min-width: 0; }
+  .act { padding: 8px 10px 8px 40px; }
+  .act--wide .dot, .act .dot { left: 9px; }
+  .path-hero-row { flex-wrap: wrap; }
+  /* the ring and cup half tiles clipped their text at this width: stack them */
+  .t--half { grid-column: span 2; }
+}
