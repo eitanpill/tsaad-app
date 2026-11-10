@@ -40,6 +40,8 @@ const ALLOWED_PLACEHOLDERS = new Set([
 
 // Variables the code fills in at render time.
 const ALLOWED_TOKENS = new Set([
+  "unlockTime",
+  "reminderTime",
   "n",
   "prev",
   "day",
@@ -271,5 +273,13 @@ describe("copy deck", () => {
     const count = section.split("\n").filter((l) => /^\d+\. /.test(l)).length;
     expect(count).toBeGreaterThan(0);
     expect(count).toBeLessThanOrEqual(6);
+  });
+});
+
+describe("times in copy come from config", () => {
+  it("no hard-coded HH:MM in the copy or the legal texts (use {unlockTime} / {reminderTime})", async () => {
+    const { legal } = await import("./legal.he");
+    const hits = (JSON.stringify(copy) + JSON.stringify(legal)).match(/\b\d{1,2}:\d{2}\b/g);
+    expect(hits).toBeNull();
   });
 });

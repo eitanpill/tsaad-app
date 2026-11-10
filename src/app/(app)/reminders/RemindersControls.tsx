@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { copy } from "@/content/copy.he";
+import { fill } from "@/lib/format";
 import { isStandalone } from "@/lib/pwa/install-prompt";
 import { detectStatus, disableReminders, enableReminders, type ReminderStatus } from "@/lib/pwa/push-client";
 import { AlertCircle, CheckIcon } from "../_components/icons";
@@ -15,7 +16,15 @@ const noopSubscribe = () => () => undefined;
  * המתג הוא role="switch" עם aria-checked; כשאי אפשר להפעיל הוא aria-disabled (נשאר בפוקוס, והסיבה כתובה לידו).
  * הודעת המצב נמצאת באזור role="status" (polite) אחד.
  */
-export function RemindersControls({ vapidKey }: { vapidKey: string | null }) {
+export function RemindersControls({
+  vapidKey,
+  unlockTime,
+  reminderTime,
+}: {
+  vapidKey: string | null;
+  unlockTime: string;
+  reminderTime: string;
+}) {
   const [status, setStatus] = useState<ReminderStatus>("checking");
   // ההתראות פעילות בפועל (מנוי קיים). נפרד מהודעת המצב: כיבוי שנכשל משאיר on, והשגיאה מוצגת לידו.
   const [on, setOn] = useState(false);
@@ -97,10 +106,10 @@ export function RemindersControls({ vapidKey }: { vapidKey: string | null }) {
           <span className="rm-row-text">
             <b>{copy.reminders.timeLabel}</b>
             <br />
-            <span className="rm-sub">{copy.reminders.timeNote}</span>
+            <span className="rm-sub">{fill(copy.reminders.timeNote, { unlockTime, reminderTime })}</span>
           </span>
           <span className="rm-time" dir="ltr">
-            {copy.reminders.timeValue}
+            {reminderTime}
           </span>
         </div>
       </section>

@@ -8,6 +8,7 @@ import { getConfig } from "@/config";
 import { copy } from "@/content/copy.he";
 import { DAYS } from "@/content/days";
 import { fill, withStartDate } from "@/lib/format";
+import { timeTokens } from "@/lib/times";
 import { getLiveInputs } from "@/lib/live/config";
 import { liveSessions, liveWhen, type LiveSession } from "@/lib/live/model";
 import { getOfferLinks } from "@/lib/offer/config";
@@ -163,7 +164,7 @@ export default async function LandingPage() {
         </ul>
         <div className="facts">
           <p className="ex">{L.how.example}</p>
-          <p>{L.how.daily}</p>
+          <p>{fill(L.how.daily, timeTokens())}</p>
           <p>{L.how.access}</p>
         </div>
       </section>

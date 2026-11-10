@@ -21,7 +21,7 @@ describe("legal content", () => {
     expect([...brackets].sort()).toEqual(["[ACCESSIBILITY_CONTACT]", "[PRIVACY_CONTACT]", "[SUPPORT_CONTACT]"]);
     const tokens = new Set([...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]));
     expect([...tokens].sort()).toEqual(
-      ["accessibilityDate", "reminderLogDays", "sessionAbsoluteDays", "sessionIdleDays", "syncDeadDays", "syncSentDays", "webhookEventsDays"],
+      ["accessibilityDate", "reminderLogDays", "sessionAbsoluteDays", "sessionIdleDays", "syncDeadDays", "syncSentDays", "unlockTime", "webhookEventsDays"],
     );
   });
   it("makes no health or outcome claims", () => {

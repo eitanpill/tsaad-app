@@ -7,11 +7,13 @@ import { copy } from "@/content/copy.he";
 import { legal, type LegalBlock, type LegalKey } from "@/content/legal.he";
 import { SESSION_POLICY } from "@/lib/auth/config";
 import { fill } from "@/lib/format";
+import { timeTokens } from "@/lib/times";
 import { fillTokens, formatLegalDate, parseContact, splitContacts, type ContactKey } from "@/lib/legal/render";
 
 /** ערכי האסימונים מקבועי הקוד (שמירת מידע, תפוגת התחברות, תאריכים). */
 export function legalTokens(): Record<string, string | number> {
   return {
+    ...timeTokens(),
     sessionAbsoluteDays: SESSION_POLICY.absoluteDays,
     sessionIdleDays: SESSION_POLICY.idleDays,
     webhookEventsDays: RETENTION.webhookEventsDays,

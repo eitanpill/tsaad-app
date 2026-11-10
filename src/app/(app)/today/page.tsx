@@ -8,6 +8,7 @@ import { DAYS } from "@/content/days";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { fill, withStartDate } from "@/lib/format";
+import { timeTokens } from "@/lib/times";
 import { serverNow } from "@/lib/today/clock";
 import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listCompletions } from "@/lib/today/completions";
@@ -32,7 +33,7 @@ export default async function TodayPage() {
       <>
         <section className="t t-hero" aria-labelledby="hero-h">
           <h1 id="hero-h">{withStartDate(copy.locked.beforeStartTitle, cfg.startDate)}</h1>
-          <p>{withStartDate(copy.locked.beforeStartBody, cfg.startDate)}</p>
+          <p>{fill(withStartDate(copy.locked.beforeStartBody, cfg.startDate), timeTokens())}</p>
         </section>
         <section className="t t-locked" aria-hidden="true">
           <Cup level="empty" width={96} height={115} />
