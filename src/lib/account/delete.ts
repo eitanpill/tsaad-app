@@ -40,7 +40,7 @@ export async function deleteAccountCore(
   const deleted = await db.execute(sql`delete from users where id = ${args.userId} returning ghl_contact_id`);
   const row = rowsOf<{ ghl_contact_id: string | null }>(deleted)[0];
   if (!row) return { ok: false, reason: "not_found" };
-  // הניסיונות של המשתמש נמחקו יחד איתו (login_attempts.user_id), אבל השורה שנרשמה בלי user_id נשארת עד הניקוי היומי.
+  // ניסיונות ההתחברות נשמרים רק כ־HMAC, בלי קישור למשתמש, ולכן נשארים עד הניקוי היומי (למעט ניסיונות המחיקה: מנוקים כאן).
   await clearAttempts(db, "account", keys);
   return { ok: true, ghlContactId: row.ghl_contact_id };
 }

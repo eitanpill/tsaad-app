@@ -34,12 +34,11 @@ describe.skipIf(!runIntegration)("deleteAccountCore (integration)", () => {
     await db.insert(schema.pushSubscriptions).values({ userId: u.id, endpoint: `https://fcm.googleapis.com/${i}`, p256dh: "k", auth: "a" });
     await db.insert(schema.reminderLog).values({ userId: u.id, date: "2026-12-03", status: "sent" });
     await db.insert(schema.syncOutbox).values({ userId: u.id, kind: "tracker", dedupeKey: `d${i}`, payload: {} });
-    await db.insert(schema.loginAttempts).values({ identifierHash: `h${i}`, userId: u.id });
     return u.id;
   };
   const count = async (table: string, userId: string) =>
     rowsOf<{ n: number }>(await db.execute(sql.raw(`select count(*)::int as n from ${table} where user_id = '${userId}'`)))[0].n;
-  const TABLES = ["activation_tokens", "sessions", "action_completions", "push_subscriptions", "reminder_log", "sync_outbox", "login_attempts"];
+  const TABLES = ["activation_tokens", "sessions", "action_completions", "push_subscriptions", "reminder_log", "sync_outbox"];
 
   it("a wrong password deletes nothing", async () => {
     const id = await mk();

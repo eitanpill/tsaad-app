@@ -103,7 +103,6 @@ describe.skipIf(!runIntegration)("database (integration)", () => {
     const exp = new Date(Date.now() + 60_000);
     await db.insert(schema.activationTokens).values({ userId: u.id, tokenHash: "f-a", purpose: "activate", expiresAt: exp });
     await db.insert(schema.sessions).values({ userId: u.id, tokenHash: "f-s", expiresAt: exp });
-    await db.insert(schema.loginAttempts).values({ identifierHash: "i", ipHash: "p", userId: u.id });
     await db.insert(schema.actionCompletions).values({ userId: u.id, day: 2, action: "habit" });
     await db.insert(schema.pushSubscriptions).values({ userId: u.id, endpoint: "https://push.example/f", p256dh: "k", auth: "a" });
     await db.insert(schema.reminderLog).values({ userId: u.id, date: "2026-12-03", status: "sent" });
@@ -118,7 +117,7 @@ describe.skipIf(!runIntegration)("database (integration)", () => {
     await db.delete(users).where(eq(users.id, u.id));
 
     for (const table of [
-      schema.activationTokens, schema.sessions, schema.loginAttempts, schema.actionCompletions,
+      schema.activationTokens, schema.sessions, schema.actionCompletions,
       schema.pushSubscriptions, schema.reminderLog, schema.syncOutbox,
     ]) {
       const rows = await db.select().from(table).where(eq(table.userId, u.id));

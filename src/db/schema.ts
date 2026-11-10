@@ -97,14 +97,12 @@ export const loginAttempts = pgTable(
     kind: text("kind", { enum: ATTEMPT_KINDS }).notNull().default("login"),
     identifierHash: text("identifier_hash").notNull(),
     ipHash: text("ip_hash"),
-    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     attemptedAt: ts("attempted_at").notNull().defaultNow(),
   },
   (t) => [
     check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle','push','webhook','account')`),
     index("login_attempts_identifier_idx").on(t.kind, t.identifierHash, t.attemptedAt),
     index("login_attempts_ip_idx").on(t.kind, t.ipHash, t.attemptedAt),
-    index("login_attempts_user_idx").on(t.userId),
   ],
 );
 

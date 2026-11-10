@@ -63,7 +63,7 @@ The server refuses to start in production when a **required** variable is missin
 
 ## 2. Database (Neon, aws-eu-central-1)
 - [ ] Use the **unpooled** connection string (host without `-pooler`) for migrations only; the app uses the pooled one.
-- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0007` in order (verified on an empty Postgres 16 at stage 11 by `scripts/test-db.sh`). Run it before the first deploy, and again before any deploy that adds a migration.
+- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0008` in order (verified on an empty Postgres 16 at stage 11 by `scripts/test-db.sh`). Run it before the first deploy, and again before any deploy that adds a migration.
 - [ ] Do not run `scripts/create-dev-user.ts` against Neon (it refuses anything but localhost).
 - [ ] Turn on Neon point-in-time restore / backups for the branch.
 
