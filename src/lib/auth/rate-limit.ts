@@ -5,7 +5,7 @@ import { hmacHex } from "./crypto";
 import { RATE_LIMITS } from "./config";
 import { rowsOf } from "./sql";
 
-export type AttemptKind = "login" | "forgot" | "toggle";
+export type AttemptKind = "login" | "forgot" | "toggle" | "push";
 
 export type RateLimitKeys = { identifierHash: string; ipHash: string | null };
 

@@ -40,6 +40,26 @@ export const REMINDERS = Object.freeze({
   openPath: "/today",
 });
 
+/**
+ * מפגשי הלייב (שלב 9). הקישור נשלח ללקוח רק בתוך החלון: מ־linkOpensBeforeMinutes לפני תחילת המפגש
+ * ועד linkOpenAfterStartMinutes אחריה (אורך משוער + גרייס). אורך המפגש בפועל לא נקבע: calendarDurationMinutes
+ * משמש רק לסוף האירוע בקובץ היומן. אלה קבועים טכניים, לא התחייבות לציבור.
+ */
+export const LIVE = Object.freeze({
+  /** הקישור נפתח שעה לפני המפגש (כמו ב־copy.live.linkOpensLater). */
+  linkOpensBeforeMinutes: 60,
+  /** הקישור נשאר גלוי עד 150 דקות אחרי תחילת המפגש (אורך משוער 90 + גרייס 60 למצטרפים מאוחרים). */
+  linkOpenAfterStartMinutes: 150,
+  /** משך האירוע בקובץ היומן. */
+  calendarDurationMinutes: 90,
+});
+
+/** התראות דחיפה (שלב 9). תקרת המנויים למשתמש (מכשירים) היא REMINDERS.maxSubscriptionsPerUser: המנוי הוותיק ביותר נמחק בהוספת חדש מעבר לה. */
+export const PUSH = Object.freeze({
+  /** גודל גוף בקשה מרבי, בבתים (מנוי תקין הוא פחות מ־1KB). */
+  maxBodyBytes: 4096,
+});
+
 export const SYNC = Object.freeze({
   /** מספר הניסיונות המרבי לפני שהשורה הופכת ל־dead. */
   maxAttempts: 8,

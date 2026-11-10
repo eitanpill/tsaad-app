@@ -127,3 +127,16 @@ describe("push senders", () => {
     expect(transport).not.toHaveBeenCalled();
   });
 });
+
+describe("push payload as the service worker reads it", () => {
+  it("is JSON with title, body, a same-origin path url, and a tag (what public/sw.js expects)", () => {
+    const m = buildReminderMessage(5, {});
+    const parsed = JSON.parse(JSON.stringify(m)) as Record<string, unknown>;
+    expect(Object.keys(parsed).sort()).toEqual(["body", "tag", "title", "url"]);
+    expect(parsed.url).toBe("/today");
+    expect(String(parsed.url).startsWith("/")).toBe(true);
+    expect(String(parsed.url).startsWith("//")).toBe(false);
+    expect((parsed.title as string).length).toBeLessThanOrEqual(100);
+    expect((parsed.body as string).length).toBeLessThanOrEqual(300);
+  });
+});

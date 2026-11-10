@@ -22,6 +22,8 @@ export const RATE_LIMITS = Object.freeze({
   forgotPerAccount: Object.freeze({ windowSeconds: 60 * 60, max: 5 }),
   /** סימוני פעולות (כל קריאה נספרת), לפי משתמש. שימוש רגיל: כמה בודדים ביום. נגד הצפת כתיבות. */
   toggle: Object.freeze({ windowSeconds: 10 * 60, perIdentifier: 60, perIp: 1_000_000 }),
+  /** רישום וביטול מנוי התראות (כל קריאה נספרת), לפי משתמש. שימוש רגיל: פעם־פעמיים בחיים של מכשיר. */
+  push: Object.freeze({ windowSeconds: 10 * 60, perIdentifier: 20, perIp: 1_000_000 }),
 });
 
 /** זמן מינימלי לתגובת "שכחתי סיסמה", כדי שהתזמון לא יגלה אם יש חשבון. */

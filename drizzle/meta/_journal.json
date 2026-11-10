@@ -36,6 +36,13 @@
       "when": 1794122300169,
       "tag": "0004_toggle_rate_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794317544417,
+      "tag": "0005_push_rate_kind",
+      "breakpoints": true
     }
   ]
 }
