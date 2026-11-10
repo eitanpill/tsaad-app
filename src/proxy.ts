@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isInvalidDayPath } from "@/lib/path/day-param";
-import { buildCsp, newNonce } from "@/lib/security/csp";
+import { CSP_REPORT_GROUP, CSP_REPORT_PATH, buildCsp, newNonce } from "@/lib/security/csp";
 
 /** נתיב שאין לו דף: שכתוב אליו נותן את דף ה־404 של האפליקציה (src/app/not-found.tsx) עם סטטוס 404 אמיתי. */
 const NOT_FOUND_PATH = "/__not-found";
@@ -25,6 +25,8 @@ export function proxy(request: NextRequest) {
     ? NextResponse.rewrite(new URL(NOT_FOUND_PATH, request.url), { request: { headers: requestHeaders } })
     : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
+  // report-to: הקבוצה "csp" שב־CSP מצביעה לכאן (כתובת מלאה באותו origin).
+  response.headers.set("Reporting-Endpoints", `${CSP_REPORT_GROUP}="${request.nextUrl.origin}${CSP_REPORT_PATH}"`);
   return response;
 }
 
