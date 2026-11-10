@@ -18,9 +18,10 @@ function isCurrent(pathname: string, href: string): boolean {
   return href === "/path" && pathname.startsWith("/day/");
 }
 
-/** ניווט תחתון. המסכים של הלייב והתזכורות מגיעים בשלב הבא (עד אז הקישורים מובילים ל־404). */
+/** ניווט תחתון. מסך ההתקנה (/install) הוא צעד הדרכה בלי ניווט, כמו בעיצוב. */
 export function BottomNav() {
   const pathname = usePathname();
+  if (pathname === "/install") return null;
   return (
     <nav className="bnav" aria-label={copy.a11y.mainNav}>
       {ITEMS.map(({ href, label, Icon }) => (

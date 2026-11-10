@@ -9,6 +9,7 @@ import { getSchedule } from "@/lib/today/schedule";
 import { todayModel } from "@/lib/today/view";
 import { BottomNav } from "./BottomNav";
 import { MotionToggle } from "./MotionToggle";
+import { PwaBoot } from "./PwaBoot";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
   // הדפים בודקים את הסשן בעצמם; כאן זה בשביל הכותרת (ה־layout לא רץ מחדש בכל ניווט).
@@ -39,6 +40,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         </form>
       </main>
       <BottomNav />
+      <PwaBoot />
     </div>
   );
 }
