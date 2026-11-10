@@ -125,3 +125,16 @@
 @media (max-width: 340px) {
   .pt-ring-tile, .pt-cup-tile { grid-column: span 2; }
 }
+
+/* 200% browser zoom on a 390px phone (CSS viewport ~195px): one column, wrapping bars, no horizontal scroll. */
+@media (max-width: 260px) {
+  .pub-shell { padding-inline: 6px; }
+  .pt { padding-inline: 12px; }
+  .pt-bar, .pt-bar .by, .pt-path-top { flex-wrap: wrap; }
+  .pt-path-top h2 { white-space: normal; }
+  .pt-how ul { grid-template-columns: 1fr; }
+  .pt-act--done { grid-column: auto; flex-wrap: wrap; }
+  .pt-act--done b { min-width: 0; }
+  .pt-act { min-width: 0; overflow-wrap: anywhere; }
+  .cta { padding-inline: 14px; }
+}

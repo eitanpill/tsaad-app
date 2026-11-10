@@ -243,3 +243,8 @@
 
 .center { align-self: center; text-align: center; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* Legal links under every pre-login screen (the accessibility statement must be reachable from each page). */
+.auth-foot { margin-top: 14px; padding: 0 2px; font-size: 14px; }
+.auth-foot ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 6px; }
+.auth-foot a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 6px; color: var(--terracotta-text); text-decoration: underline; text-underline-offset: 3px; }

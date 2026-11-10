@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { T, axe, clock, createUser, expectReflowAndTargets, open, pool, shot } from "./helpers";
+import { T, axe, clock, createUser, expectReflowAndTargets, open, overflowingElements, pool, shot } from "./helpers";
 
 /**
  * Stage 10 on server A (offer window, payment links and contacts unset): the landing page, legal pages, health, robots,
@@ -57,12 +57,42 @@ test.describe("landing /tsaad (public)", () => {
     await ctx.close();
   });
 
-  test("200% zoom equivalent (CSS width 195px) has no horizontal scroll", async ({ browser }) => {
-    const ctx = await browser.newContext({ viewport: { width: 320, height: 640 } });
+  test("200% browser zoom at 390px (CSS viewport 195px, DPR 2): no horizontal scroll, heading and CTA stay in view", async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 195, height: 422 }, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
     await page.goto("/tsaad");
-    await page.evaluate(() => { document.documentElement.style.fontSize = "200%"; });
+    expect(await overflowingElements(page)).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    for (const loc of [page.getByRole("heading", { level: 1 }), page.locator("button.cta--off").first()]) {
+      const box = (await loc.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(195.5);
+    }
+    if (process.env.SHOTS_DIR) await page.screenshot({ path: `${process.env.SHOTS_DIR}/landing-zoom200-390.png`, fullPage: true });
+    await ctx.close();
+  });
+
+  test("keyboard order: skip link, pause animation, CTA (focusable while disabled), login", async ({ page }) => {
+    await page.goto("/tsaad");
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("link", { name: "דילוג לתוכן" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "עצירת אנימציה" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.locator("button.cta--off").first()).toBeFocused();
+    expect(await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle)).toBe("solid");
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("link", { name: "כניסה", exact: true })).toBeFocused();
+  });
+
+  test("reduced motion: the water and the glow do not animate", async ({ browser }) => {
+    const ctx = await browser.newContext({ reducedMotion: "reduce", viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    await page.goto("/tsaad");
+    const names = await page.locator(".pub-wv, .pub-glow, .pub-ring").evaluateAll((els) => els.map((e) => getComputedStyle(e).animationName));
+    expect(names.length).toBeGreaterThan(0);
+    for (const n of names) expect(n).toBe("none");
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
     await ctx.close();
   });
 
@@ -79,6 +109,17 @@ test.describe("landing /tsaad (public)", () => {
     await page.goto("/tsaad");
     for (const [name, url] of [["הצהרת נגישות", "/legal/accessibility"], ["מדיניות פרטיות", "/legal/privacy"], ["תנאי שימוש", "/legal/terms"]] as const) {
       await expect(page.getByRole("contentinfo").getByRole("link", { name })).toHaveAttribute("href", url);
+    }
+  });
+
+  test("the pre-login screens link to the accessibility statement and privacy, without sending a Referer", async ({ page }) => {
+    for (const path of ["/login", "/forgot"]) {
+      await page.goto(path);
+      const a = page.getByRole("contentinfo").getByRole("link", { name: "הצהרת נגישות" });
+      await expect(a).toHaveAttribute("href", "/legal/accessibility");
+      await expect(a).toHaveAttribute("referrerpolicy", "no-referrer");
+      await expect(page.getByRole("contentinfo").getByRole("link", { name: "מדיניות פרטיות" })).toBeVisible();
+      await expectReflowAndTargets(page);
     }
   });
 
@@ -135,6 +176,13 @@ test.describe("legal pages (public)", () => {
     expect(t).toContain("כתוביות בעברית");
   });
 
+  test("the account-deleted page sends a signed-in visitor to /today (a link to it cannot drop a live user's push)", async ({ browser }) => {
+    const s = await createUser(browser, "delpg");
+    const o = await open(browser, s, T.day4Noon, "/account/deleted");
+    await expect(o.page).toHaveURL(/\/today$/);
+    await o.ctx.close();
+  });
+
   test("the legal index and the account-deleted page pass axe", async ({ page }) => {
     await page.goto("/legal");
     await axe(page);
@@ -143,6 +191,23 @@ test.describe("legal pages (public)", () => {
     await shot(page, "account-deleted");
     await axe(page);
   });
+});
+
+test("CSP: every script tag on the stage-10 pages carries this request's nonce (public and signed-in)", async ({ browser, request }) => {
+  const check = async (get: (u: string) => ReturnType<typeof request.get>, url: string) => {
+    const res = await get(url);
+    expect(res.status(), url).toBe(200);
+    const nonce = /'nonce-([^']+)'/.exec(res.headers()["content-security-policy"] ?? "")?.[1];
+    expect(nonce, url).toBeTruthy();
+    const scripts = (await res.text()).match(/<script\b[^>]*>/g) ?? [];
+    expect(scripts.length, url).toBeGreaterThan(0);
+    for (const tag of scripts) expect(tag, `${url} ${tag}`).toContain(`nonce="${nonce}"`);
+  };
+  for (const url of ["/tsaad", "/legal", "/legal/accessibility", "/legal/privacy", "/legal/terms", "/account/deleted"]) await check((u) => request.get(u), url);
+  const s = await createUser(browser, "csp10");
+  const ctx = await browser.newContext({ storageState: s.storageState, extraHTTPHeaders: clock(T.day14Noon) });
+  for (const url of ["/offer", "/yesodot", "/account"]) await check((u) => ctx.request.get(u), url);
+  await ctx.close();
 });
 
 test.describe("health", () => {

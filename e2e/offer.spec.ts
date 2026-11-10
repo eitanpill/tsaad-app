@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { axe, createUser, expectReflowAndTargets, open, shot, type Session } from "./helpers";
+import { axe, clock, createUser, expectReflowAndTargets, open, overflowingElements, shot, type Session } from "./helpers";
 
 /**
  * Stage 10 on server B (day 14 live at 20:00, window 48h, session and Yesodot links set, bundle link unset, contacts set).
@@ -63,6 +63,22 @@ test("open: window text with the server deadline, session and bundle cards, Yeso
   await expectReflowAndTargets(page);
   await shot(page, "offer-open");
   await axe(page);
+  await ctx.close();
+});
+
+test("open offer at 200% browser zoom on a 390px phone (CSS viewport 195px): no horizontal scroll, CTAs fit", async ({ browser }) => {
+  const ctx = await browser.newContext({ storageState: s.storageState, viewport: { width: 195, height: 422 }, deviceScaleFactor: 2, extraHTTPHeaders: clock(TT.open) });
+  const page = await ctx.newPage();
+  await page.goto("/offer");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההמשך אחרי 14 הימים");
+  expect(await overflowingElements(page)).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  for (const el of await page.locator(".ofr-cta").all()) {
+    const b = (await el.boundingBox())!;
+    expect(b.x).toBeGreaterThanOrEqual(0);
+    expect(b.x + b.width).toBeLessThanOrEqual(195.5);
+  }
+  if (process.env.SHOTS_DIR) await page.screenshot({ path: `${process.env.SHOTS_DIR}/offer-open-zoom200-390.png`, fullPage: true });
   await ctx.close();
 });
 

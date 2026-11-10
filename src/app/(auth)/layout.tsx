@@ -12,7 +12,10 @@ export const metadata: Metadata = {
   referrer: "same-origin",
 };
 
-/** מעטפת המסכים שלפני ההתחברות: כותרת (לוגו ושורת שם), דילוג לתוכן ו־main. אין סרגל ניווט. */
+/**
+ * מעטפת המסכים שלפני ההתחברות: כותרת (לוגו ושורת שם), דילוג לתוכן, main, ותחתית עם הקישורים המשפטיים (הצהרת הנגישות
+ * צריכה להיות נגישה מכל עמוד). אין סרגל ניווט. הקישורים הם <a> רגיל (ניווט מלא, לא fetch של Link) עם no-referrer, כך שהטוקן מ־/activate לא נרשם גם ביומני הבקשות של האתר.
+ */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="auth-shell">
@@ -28,6 +31,21 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <main id="main" className="auth-main">
         {children}
       </main>
+      <footer className="auth-foot">
+        <nav aria-label={copy.legal.indexTitle}>
+          <ul>
+            <li>
+              <a href="/legal/accessibility" referrerPolicy="no-referrer">{copy.landing.footer.accessibility}</a>
+            </li>
+            <li>
+              <a href="/legal/privacy" referrerPolicy="no-referrer">{copy.landing.footer.privacy}</a>
+            </li>
+            <li>
+              <a href="/legal/terms" referrerPolicy="no-referrer">{copy.landing.footer.terms}</a>
+            </li>
+          </ul>
+        </nav>
+      </footer>
     </div>
   );
 }

@@ -701,8 +701,9 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t-ofr { background: var(--sand); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
 .t-ofr--sage { background: var(--sage); color: var(--forest); }
 .t-ofr p { margin: 0; font-size: 15px; line-height: 1.45; }
-.ofr-price { font-family: var(--font-heading), sans-serif; font-size: 32px; line-height: 1; font-weight: 900; }
-.ofr-note { font-size: 13px; line-height: 1.4; color: var(--muted); }
+/* .t-ofr .x: same specificity as ".t-ofr p", which would otherwise set the price and the notes to 15px. */
+.t-ofr .ofr-price { font-family: var(--font-heading), sans-serif; font-size: 32px; line-height: 1; font-weight: 900; }
+.ofr-note, .t-ofr .ofr-note { font-size: 13px; line-height: 1.4; color: var(--muted); }
 .t-ofr--sage .ofr-note { color: var(--forest); }
 .ofr-spots { font-weight: 700; }
 .ofr-cta {
