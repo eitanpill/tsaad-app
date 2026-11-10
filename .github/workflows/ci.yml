@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# A newer run on the same ref replaces the one still running (cheap).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: typecheck, lint, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: tsaad_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # No secrets are used anywhere in this workflow. These are throwaway values for CI only.
+      DATABASE_URL: postgres://postgres:ci-only-password@localhost:5432/tsaad_test
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests (no database)
+        run: env -u DATABASE_URL npx vitest run
+      - name: Migrate the test database
+        run: npx drizzle-kit migrate
+      - name: Database tests (Postgres 16)
+        run: npx vitest run --no-file-parallelism
+        env:
+          TSAAD_TEST_DB: "1"
+      - name: Build
+        run: npx next build
+        env:
+          # Dummy values so the build does not depend on real configuration. Nothing is deployed.
+          APP_ORIGIN: https://ci.example.test
+          SESSION_SECRET: ci-only-session-secret-0123456789abcdef
+          ACTIVATION_LINK_TTL_MINUTES: "60"
+
+  e2e:
+    name: browser tests (Playwright)
+    # Optional and heavier: runs on the default branch and when started by hand.
+    if: github.event_name == 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: tsaad_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # localhost on purpose: the app and the tests only accept a local host with the node-postgres driver (src/db/local-url.ts).
+      DATABASE_URL: postgres://postgres:ci-only-password@localhost:5432/tsaad_test
+      TSAAD_TEST_DB: "1"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx drizzle-kit migrate
+      # Installs the browser that matches the locked @playwright/test version (this is GitHub's runner, not a sandbox).
+      - run: npx playwright install --with-deps chromium
+      - name: Playwright
+        run: npx playwright test
