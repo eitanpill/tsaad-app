@@ -342,6 +342,7 @@ test.describe("day screen", () => {
     await expect(page.getByText("הסימון של יום 2 נסגר, ולכן הוא לא נספר. אפשר לצפות בסרטון.")).toBeVisible();
     // the day's own content is shown, but nothing can be marked
     await expect(page.getByText(DAYS[1].habit.title)).toBeVisible();
+    await expect(page.locator("p.opening")).toHaveText(DAYS[1].opening);
     await expect(page.getByRole("button", { name: /^(הרגל|תנועה|מדיטציה)/ })).toHaveCount(0);
     await expect(page.locator(".ro-item")).toHaveCount(3);
     await expect(page.getByText("לא סומן")).toHaveCount(3);
@@ -561,6 +562,8 @@ test.describe("locked days never leak their content", () => {
         expect(html, `HTML has "${t}"`).not.toContain(t);
         expect(scripts, `JS has "${t}"`).not.toContain(t);
       }
+      expect(html, "opening line").not.toContain(DAYS[day - 1].opening);
+      expect(scripts, "opening line in JS").not.toContain(DAYS[day - 1].opening);
       expect(html).not.toContain("e2evid");
       expect(html).not.toContain("mediadelivery");
       expect(html).not.toContain("iframe");

@@ -127,8 +127,11 @@ test.describe("states (axe, copy, server clock)", () => {
   test("day 1 morning: hero, chip, video placeholder, empty cup, axe", async ({ browser }) => {
     await seed([]);
     const { ctx, page } = await open(browser, T.day1Morning);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("הבוקר: מים חמימים עם לימון");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("הבוקר: כוס מים חמימים עם לימון כשקמים");
     await expect(page.locator(".chip")).toHaveText("יום 1 מתוך 14");
+    await expect(page.locator("p.opening")).toHaveText(
+      "יום 1. ההרגל של היום: כוס מים חמימים עם לימון כשקמים. קחו נשימה אחת איתי, ומתחילים.",
+    );
     await expect(page.getByRole("img", { name: "הכוס של היום, ריקה" })).toBeVisible();
     await expect(page.getByRole("img", { name: "0 מתוך 14 ימים" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^הרגל/ })).toHaveAttribute("aria-pressed", "false");
@@ -140,7 +143,7 @@ test.describe("states (axe, copy, server clock)", () => {
   test("day 4 afternoon: 'היום:' hero, a marked habit, half cup, 4 of 14", async ({ browser }) => {
     await seed([[1, "habit"], [2, "habit"], [3, "move"], [4, "habit"]]);
     const { ctx, page } = await open(browser, T.day4Noon);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("היום: שבע דקות אור שמש");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("היום: 7 דקות של אמבטיית שמש");
     await expect(habit(page)).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("img", { name: "הכוס של היום, חצי מלאה" })).toBeVisible();
     await expect(page.getByRole("img", { name: "4 מתוך 14 ימים" })).toBeVisible();

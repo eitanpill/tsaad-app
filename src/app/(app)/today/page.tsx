@@ -9,7 +9,7 @@ import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { fill, withStartDate } from "@/lib/format";
 import { serverNow } from "@/lib/today/clock";
-import { dayTitles } from "@/lib/today/titles";
+import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listCompletions } from "@/lib/today/completions";
 import { getSchedule } from "@/lib/today/schedule";
 import { getVideoConfig, hasVideo } from "@/lib/today/video";
@@ -79,6 +79,7 @@ export default async function TodayPage() {
         showYesterday={yesterday !== null && yesterdayDone === 0}
         greeting={copy.today.greeting[greetingKey(now, tz)]}
         hero={hero}
+        opening={day !== null ? dayOpening(day) : null}
         titles={titles}
         videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
         nextChangeIso={next ? next.toISOString() : null}

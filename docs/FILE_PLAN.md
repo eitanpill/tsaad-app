@@ -10,6 +10,8 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 - `zod` validates the environment, the webhook payloads and the forms. `web-push` sends push messages, using VAPID keys.
 - There is no auth framework and no date library. Time zone handling uses `Intl` with Asia/Jerusalem.
 
+See `docs/CONTENT.md` for where the day content and the Bunny video ids (`BUNNY_VIDEO_IDS`) live.
+
 ## Routes
 | Route | Kind | Who can reach it |
 |---|---|---|

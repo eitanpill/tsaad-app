@@ -14,7 +14,7 @@ import {
 import { fill } from "@/lib/format";
 import { actionKey, doneActionsFor } from "@/lib/today/view";
 import { AlertCircle, CheckIcon, WifiOffIcon } from "../_components/icons";
-import { actionTitle, type DayTitles } from "./action-labels";
+import { actionDetail, actionTitle, type DayTitles } from "./action-labels";
 import { ActionButton } from "./ActionButton";
 import { toggleAction } from "./actions";
 import { Cup } from "./Cup";
@@ -34,6 +34,8 @@ export type BoardProps = {
   showYesterday: boolean;
   greeting: string;
   hero: string;
+  /** משפט הפתיחה בצילום של היום (רק כשיש יום פתוח), או null. */
+  opening: string | null;
   videoAvailable: boolean;
   /** כותרות הפעולות של היום ושל אתמול בלבד (לא של ימים נעולים). */
   titles: Record<number, DayTitles>;
@@ -179,6 +181,7 @@ export function TodayBoard(p: BoardProps) {
       <section className="t t-hero" aria-labelledby="hero-h">
         <span className="eyebrow-s">{p.greeting}</span>
         <h1 id="hero-h">{p.hero}</h1>
+        {p.opening ? <p className="opening">{p.opening}</p> : null}
       </section>
 
       {p.showYesterday && p.yesterday ? (
@@ -198,7 +201,7 @@ export function TodayBoard(p: BoardProps) {
             <div ref={yestGroup} id={`${yestId}-g`} className="grp" role="group" aria-label={fill(copy.today.yesterdayDayLabel, { n: p.yesterday })}>
               <span className="grp-label">{fill(copy.common.dayLabel, { n: p.yesterday })}</span>
               {actionsForDay(p.yesterday).map((a, i) => (
-                <ActionButton key={a} day={p.yesterday!} action={a} title={actionTitle(p.titles[p.yesterday!], a)} pressed={optimistic.includes(actionKey(p.yesterday!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
+                <ActionButton key={a} day={p.yesterday!} action={a} title={actionTitle(p.titles[p.yesterday!], a)} detail={actionDetail(p.titles[p.yesterday!], a)} pressed={optimistic.includes(actionKey(p.yesterday!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
               ))}
             </div>
           )}
@@ -241,7 +244,7 @@ export function TodayBoard(p: BoardProps) {
         <div className="t t-actions">
           <div className="act-grid">
             {actions.map((a, i) => (
-              <ActionButton key={a} day={p.day!} action={a} title={actionTitle(p.titles[p.day!], a)} pressed={optimistic.includes(actionKey(p.day!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
+              <ActionButton key={a} day={p.day!} action={a} title={actionTitle(p.titles[p.day!], a)} detail={actionDetail(p.titles[p.day!], a)} pressed={optimistic.includes(actionKey(p.day!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
             ))}
           </div>
           <p className="act-hint">{p.live ? copy.today.cupExplainLive : copy.today.cupExplain}</p>

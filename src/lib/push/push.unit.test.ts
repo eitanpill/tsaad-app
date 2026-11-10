@@ -63,6 +63,12 @@ describe("buildReminderMessage", () => {
     expect(m.title).toBe(copy.push.title);
     expect(m.url).toBe("/today");
   });
+  it("keeps every day's reminder short enough for a notification (the longest habit included)", () => {
+    for (const d of DAYS) {
+      const m = buildReminderMessage(d.day, { 7: "20:00", 14: "19:30" });
+      expect(m.body.length, `day ${d.day}: ${m.body}`).toBeLessThanOrEqual(100);
+    }
+  });
   it("uses liveDay with the configured time on live days", () => {
     expect(buildReminderMessage(7, { 7: "20:00" }).body).toBe(
       copy.push.liveDay.replace("{day}", "7").replace("{time}", "20:00"),

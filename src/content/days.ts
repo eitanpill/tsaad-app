@@ -1,19 +1,10 @@
 /**
- * 14 ימי האתגר "צעד קטן ביום", כפי שסוכמו במפרט. הכותרות מועתקות כלשונן.
- * הסדר בכל יום: הרגל, תנועה, מדיטציה. אלה שמות ותקצירי תוכן, לא הנחיות ולא סרטונים.
+ * 14 ימי האתגר "צעד קטן ביום". התוכן לפי קובץ התוכן של פיט מ־2026-11-10 (pit-content.docx),
+ * והכותרות מועתקות כלשונן. הסדר בכל יום: הרגל, תנועה, מדיטציה. אלה שמות ותקצירי תוכן, לא הנחיות ולא סרטונים.
  * בימים 7 ו־14 הלייב מחליף את רכיבי התנועה והמדיטציה (הכותרת "לייב" בשניהם).
- *
- * הבדלים מול עמוד המעקב הישן (לתיעוד; התוכן כאן לפי המפרט, חוץ מהמצוין):
- * 1. הניסוחים שונים כמעט בכל שורה. דוגמאות: יום 1 "מים חמימים עם לימון" מול
- *    "כוס מים חמימים עם לימון כשקמים"; יום 4 "שבע דקות אור שמש" מול
- *    "7 דקות אמבטיית שמש"; יום 10 "פתיחת בית החזה" מול "פתיחת לב"; יום 13
- *    "יין לפני השינה" מול "יין יוגה לפני השינה". כאן הכול לפי המפרט.
- * 2. יום 13, מדיטציה: הנוסח המאושר הוא "7 דקות מודרכות: לבחור הרגלים מיטיבים"
- *    (אושר בסקירה של 2026-11-08, במקום הנוסח מהמפרט).
- * 3. עמוד המעקב הישן ספר יום רק כששלוש הפעולות סומנו, והמפרט קובע שפעולה
- *    אחת מספיקה. כאן אין לוגיקה, רק תוכן.
- * 4. בימים 7 ו־14 הכותרת היא "לייב" (לפי המפרט). הוחלט 2026-11-08: סימון
- *    הלייב נספר כשני צעדים בכוס, במקום התנועה והמדיטציה.
+ * לכל יום יש גם "opening": משפט הפתיחה שנאמר בצילום, כלשונו בקובץ.
+ * יוצא דופן: יום 13, מדיטציה. הכותרת הקצרה המאושרת (סקירה 2026-11-08) נשארת כותרת,
+ * והנוסח הארוך מהקובץ נמצא ב־detail ומוצג כשורה משנית מתחתיה.
  */
 
 export type ActionType = "habit" | "move" | "meditate";
@@ -21,12 +12,16 @@ export type ActionType = "habit" | "move" | "meditate";
 export type DayAction = {
   readonly type: ActionType;
   readonly title: string;
+  /** נוסח ארוך יותר, אופציונלי; מוצג כשורה משנית מתחת לכותרת. */
+  readonly detail?: string;
 };
 
 export type DayContent = {
   readonly day: number;
   /** יום עם מפגש לייב (7 ו־14). */
   readonly live: boolean;
+  /** משפט הפתיחה בצילום, כלשונו (בלי מרכאות החיצוניות). */
+  readonly opening: string;
   readonly habit: DayAction;
   readonly movement: DayAction;
   readonly meditation: DayAction;
@@ -38,98 +33,112 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 1,
     live: false,
-    habit: { type: "habit", title: "מים חמימים עם לימון" },
-    movement: { type: "move", title: "מתיחות עדינות בעמידה" },
-    meditation: { type: "meditate", title: "דקת נשימה עם הכוס" },
+    opening: "יום 1. ההרגל של היום: כוס מים חמימים עם לימון כשקמים. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "כוס מים חמימים עם לימון כשקמים" },
+    movement: { type: "move", title: "מתיחת בוקר עדינה בעמידה" },
+    meditation: { type: "meditate", title: "דקה של נשימה עם כוס המים" },
   },
   {
     day: 2,
     live: false,
-    habit: { type: "habit", title: "חמש נשימות במיטה" },
+    opening: "יום 2. ההרגל של היום: חמש נשימות עמוקות במיטה. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "5 נשימות עמוקות במיטה" },
     movement: { type: "move", title: "חימום עמוד השדרה ושיווי משקל" },
-    meditation: { type: "meditate", title: "סריקת גוף" },
+    meditation: { type: "meditate", title: "סריקת גוף קצרה, מהראש לרגליים" },
   },
   {
     day: 3,
     live: false,
-    habit: { type: "habit", title: "בלי טלפון בחצי השעה הראשונה בבוקר" },
-    movement: { type: "move", title: "כפיפה קדימה ופתיחת חזה" },
-    meditation: { type: "meditate", title: "תחושות הגוף" },
+    opening: "יום 3. ההרגל של היום: חצי שעה בלי טלפון מרגע שקמים. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "חצי שעה בלי טלפון מרגע ההתעוררות" },
+    movement: { type: "move", title: "כפיפה קדימה רכה ופתיחת חזה" },
+    meditation: { type: "meditate", title: "לשים לב לתחושות בגוף" },
   },
   {
     day: 4,
     live: false,
-    habit: { type: "habit", title: "שבע דקות אור שמש" },
-    movement: { type: "move", title: "פלג גוף תחתון" },
-    meditation: { type: "meditate", title: "שלושה צלילים" },
+    opening: "יום 4. ההרגל של היום: שבע דקות של אמבטיית שמש. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "7 דקות של אמבטיית שמש" },
+    movement: { type: "move", title: "חיזוק פלג גוף תחתון" },
+    meditation: { type: "meditate", title: "להקשיב ל־3 צלילים סביבכם" },
   },
   {
     day: 5,
     live: false,
-    habit: { type: "habit", title: "לקום בכל שעה" },
-    movement: { type: "move", title: "פלג גוף עליון" },
-    meditation: { type: "meditate", title: "הכרת תודה" },
+    opening: "יום 5. ההרגל של היום: לקום מהכיסא פעם בשעה. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "לקום מהכיסא פעם בשעה" },
+    movement: { type: "move", title: "חיזוק פלג גוף עליון" },
+    meditation: { type: "meditate", title: "הודיה" },
   },
   {
     day: 6,
     live: false,
+    opening: "יום 6. ההרגל של היום: בדיקת יציבה. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "בדיקת יציבה" },
-    movement: { type: "move", title: "תנועה דינמית" },
-    meditation: { type: "meditate", title: "נשימה להארכת הגב" },
+    movement: { type: "move", title: "תנועה דינמית להזרמת הדם" },
+    meditation: { type: "meditate", title: "נשימה שמאריכה את הגב" },
   },
   {
     day: 7,
     live: true,
-    habit: { type: "habit", title: "ארוחה בלי מסכים" },
+    opening: "יום 7. ההרגל של היום: ארוחה אחת בלי מסכים. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "ארוחה אחת בלי מסכים" },
     movement: { type: "move", title: "לייב" },
     meditation: { type: "meditate", title: "לייב" },
   },
   {
     day: 8,
     live: false,
-    habit: { type: "habit", title: "שלושה ביסים בתשומת לב" },
+    opening: "יום 8. ההרגל של היום: שלושת הביסים הראשונים לאט. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "אכילה קשובה, 3 ביסים ראשונים לאט" },
     movement: { type: "move", title: "ברכת השמש" },
     meditation: { type: "meditate", title: "הליכה מודעת" },
   },
   {
     day: 9,
     live: false,
-    habit: { type: "habit", title: "מים לפני הארוחות" },
-    movement: { type: "move", title: "תנוחות לוחם" },
-    meditation: { type: "meditate", title: "חמש דקות על אי־פגיעה" },
+    opening: "יום 9. ההרגל של היום: כוס מים לפני הארוחות. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "כוס מים לפני הארוחות" },
+    movement: { type: "move", title: "תנוחות הלוחם" },
+    meditation: { type: "meditate", title: "5 דקות מודרכות על אי־פגיעה" },
   },
   {
     day: 10,
     live: false,
-    habit: { type: "habit", title: "שלוש תודות" },
-    movement: { type: "move", title: "פתיחת בית החזה" },
-    meditation: { type: "meditate", title: "חמש דקות חמלה" },
+    opening: "יום 10. ההרגל של היום: שלוש הודיות. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "3 הודיות" },
+    movement: { type: "move", title: "פתיחת לב, ידיים לאחור וחזה קדימה" },
+    meditation: { type: "meditate", title: "5 דקות מודרכות בנושא חמלה" },
   },
   {
     day: 11,
     live: false,
-    habit: { type: "habit", title: "טעינת הטלפון מחוץ לחדר השינה" },
+    opening: "יום 11. ההרגל של היום: הטלפון נטען מחוץ לחדר השינה. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "הטלפון נטען מחוץ לחדר השינה" },
     movement: { type: "move", title: "תנוחות הפוכות עדינות" },
-    meditation: { type: "meditate", title: "שאיפה בספירה עד 4 ונשיפה עד 6" },
+    meditation: { type: "meditate", title: "נשימה: שאיפה ב־4, נשיפה ב־6 לפני השינה" },
   },
   {
     day: 12,
     live: false,
-    habit: { type: "habit", title: "בלי מסכים לפחות חצי שעה לפני השינה" },
-    movement: { type: "move", title: "שלוש תנוחות ערב" },
-    meditation: { type: "meditate", title: "שחרור הגוף" },
+    opening: "יום 12. ההרגל של היום: חצי שעה בלי מסכים לפני השינה. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "חצי שעה בלי מסכים לפני השינה, ומי שיכול/ה, יותר" },
+    movement: { type: "move", title: "רצף ערב קצר של 3 תנוחות" },
+    meditation: { type: "meditate", title: "שחרור הגוף, איבר אחרי איבר" },
   },
   {
     day: 13,
     live: false,
+    opening: "יום 13. ההרגל של היום: שעת שינה קבועה. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "שעת שינה קבועה" },
-    movement: { type: "move", title: "יין לפני השינה" },
-    meditation: { type: "meditate", title: "7 דקות מודרכות: לבחור הרגלים מיטיבים" },
+    movement: { type: "move", title: "יין יוגה לפני השינה" },
+    meditation: { type: "meditate", title: "7 דקות מודרכות: לבחור הרגלים מיטיבים", detail: "7 דקות מודרכות על הרגלים: מה עומד מאחוריהם ולמה חשוב לבחור בהרגלים מיטיבים" },
   },
   {
     day: 14,
     live: true,
-    habit: { type: "habit", title: "בחירת הרגלים להמשך" },
+    opening: "יום 14. ההרגל של היום: לבחור את ההרגלים שממשיכים איתם. קחו נשימה אחת איתי, ומתחילים.",
+    habit: { type: "habit", title: "לבחור את ההרגלים שממשיכים איתם" },
     movement: { type: "move", title: "לייב" },
     meditation: { type: "meditate", title: "לייב" },
   },

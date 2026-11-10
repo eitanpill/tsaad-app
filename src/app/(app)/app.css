@@ -85,6 +85,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   overflow-wrap: break-word;
 }
 .t-hero p { margin: 8px 0 0; font-size: 15px; line-height: 1.45; }
+.t-hero .opening { font-size: 14px; line-height: 1.45; font-weight: 500; color: var(--muted); overflow-wrap: break-word; }
 
 /* Video */
 .t-video { background: var(--forest); color: var(--cream); padding: 10px; }
@@ -200,6 +201,9 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .act[aria-pressed='true'] { background: var(--forest); border-color: var(--forest); color: #fff; }
 .act[aria-pressed='true'] .dot { background: var(--cream); border-color: var(--cream); color: var(--forest); }
 .act-sub { font-size: 14px; }
+.act-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.act--wide .act-text { flex: 1 1 auto; }
+.act-detail { display: block; font-size: 12px; line-height: 1.35; font-weight: 400; }
 .act-hint { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
 
 /* Yesterday */
