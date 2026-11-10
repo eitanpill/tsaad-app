@@ -77,6 +77,12 @@ export const SYNC = Object.freeze({
   maxErrorLength: 300,
 });
 
+/** ה־webhook של GHL (שלב 9א). ערכים טכניים, לא עסקיים. */
+export const WEBHOOK = Object.freeze({
+  /** גודל גוף מרבי, בבתים (גוף תקין הוא פחות מ־2KB). */
+  maxBodyBytes: 16 * 1024,
+});
+
 /** שמירת נתונים (ימים). */
 export const RETENTION = Object.freeze({
   /** מזהי webhook: מספיק לחלון ה־retry של השולח. */

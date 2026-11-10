@@ -24,6 +24,10 @@ export const RATE_LIMITS = Object.freeze({
   toggle: Object.freeze({ windowSeconds: 10 * 60, perIdentifier: 60, perIp: 1_000_000 }),
   /** רישום וביטול מנוי התראות (כל קריאה נספרת), לפי משתמש. שימוש רגיל: פעם־פעמיים בחיים של מכשיר. */
   push: Object.freeze({ windowSeconds: 10 * 60, perIdentifier: 20, perIp: 1_000_000 }),
+  /** כשלי אימות ב־webhook של GHL, לפי IP (רק כשה־IP אמין; ראו clientIp). בדיקה מוקדמת לפני האימות. */
+  webhook: Object.freeze({ windowSeconds: 15 * 60, perIdentifier: 20, perIp: 20 }),
+  /** הרשמה חוזרת של חשבון שלא הופעל: הנפקה מחדש של קישור לכל איש קשר (הנפקה ראשונה אינה נספרת). */
+  webhookReissue: Object.freeze({ windowSeconds: 60 * 60, perIdentifier: 3, perIp: 1_000_000 }),
 });
 
 /** זמן מינימלי לתגובת "שכחתי סיסמה", כדי שהתזמון לא יגלה אם יש חשבון. */

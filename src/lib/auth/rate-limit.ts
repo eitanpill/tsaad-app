@@ -5,7 +5,7 @@ import { hmacHex } from "./crypto";
 import { RATE_LIMITS } from "./config";
 import { rowsOf } from "./sql";
 
-export type AttemptKind = "login" | "forgot" | "toggle" | "push";
+export type AttemptKind = "login" | "forgot" | "toggle" | "push" | "webhook";
 
 export type RateLimitKeys = { identifierHash: string; ipHash: string | null };
 
@@ -74,4 +74,26 @@ export async function clearAttempts(
   await db.execute(
     sql`delete from login_attempts where kind = ${kind} and identifier_hash = ${keys.identifierHash}`,
   );
+}
+
+/**
+ * האם הניסיון הבא כבר ייחסם (ספירה בלבד, בלי לרשום). משמש לבדיקה מוקדמת לפני אימות, כשרושמים רק כשלים.
+ */
+export async function isBlocked(
+  db: Pick<Db, "execute">,
+  kind: AttemptKind,
+  keys: RateLimitKeys,
+  limits: Limits = RATE_LIMITS[kind],
+): Promise<boolean> {
+  const counts = await db.execute(
+    sql`select
+          (select count(*)::int from login_attempts
+            where kind = ${kind} and identifier_hash = ${keys.identifierHash}
+              and attempted_at > now() - make_interval(secs => ${limits.windowSeconds})) as by_id,
+          (select count(*)::int from login_attempts
+            where kind = ${kind} and ${keys.ipHash}::text is not null and ip_hash = ${keys.ipHash}
+              and attempted_at > now() - make_interval(secs => ${limits.windowSeconds})) as by_ip`,
+  );
+  const row = rowsOf<{ by_id: number; by_ip: number }>(counts)[0];
+  return row.by_id >= limits.perIdentifier || row.by_ip >= limits.perIp;
 }

@@ -17,26 +17,35 @@ export async function issueToken(
   db: Db,
   args: { userId: string; purpose: TokenPurpose; ttlMinutes: number },
 ): Promise<IssuedToken> {
+  return db.transaction((tx) => issueTokenIn(tx, args));
+}
+
+/**
+ * אותה הנפקה, בתוך טרנזקציה קיימת של הקורא (למשל יצירת משתמש והנפקת קישור באותה טרנזקציה).
+ * הנעילה על שורת המשתמש נמשכת עד סוף הטרנזקציה של הקורא.
+ */
+export async function issueTokenIn(
+  tx: Pick<Db, "execute">,
+  args: { userId: string; purpose: TokenPurpose; ttlMinutes: number },
+): Promise<IssuedToken> {
   if (!Number.isInteger(args.ttlMinutes) || args.ttlMinutes <= 0) {
     throw new Error("ttlMinutes must be a positive integer");
   }
   const token = newToken();
   const tokenHash = sha256Hex(token);
-  const expiresAt = await db.transaction(async (tx) => {
-    // נעילת שורת המשתמש: שתי הנפקות במקביל מתבצעות בזו אחר זו.
-    await tx.execute(sql`select 1 from users where id = ${args.userId} for update`);
-    await tx.execute(
-      sql`delete from activation_tokens
-          where user_id = ${args.userId} and purpose = ${args.purpose} and used_at is null`,
-    );
-    const res = await tx.execute(
-      sql`insert into activation_tokens (user_id, token_hash, purpose, expires_at)
-          values (${args.userId}, ${tokenHash}, ${args.purpose},
-                  now() + make_interval(mins => ${args.ttlMinutes}))
-          returning expires_at`,
-    );
-    return rowsOf<{ expires_at: Date | string }>(res)[0].expires_at;
-  });
+  // נעילת שורת המשתמש: שתי הנפקות במקביל מתבצעות בזו אחר זו.
+  await tx.execute(sql`select 1 from users where id = ${args.userId} for update`);
+  await tx.execute(
+    sql`delete from activation_tokens
+        where user_id = ${args.userId} and purpose = ${args.purpose} and used_at is null`,
+  );
+  const res = await tx.execute(
+    sql`insert into activation_tokens (user_id, token_hash, purpose, expires_at)
+        values (${args.userId}, ${tokenHash}, ${args.purpose},
+                now() + make_interval(mins => ${args.ttlMinutes}))
+        returning expires_at`,
+  );
+  const expiresAt = rowsOf<{ expires_at: Date | string }>(res)[0].expires_at;
   return { token, expiresAt: new Date(expiresAt) };
 }
 

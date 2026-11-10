@@ -1,4 +1,7 @@
 import { createECDH, randomBytes } from "node:crypto";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 /**
@@ -11,6 +14,11 @@ const ORIGIN = `http://localhost:${PORT}`;
 // Per-run key for the test-clock header (src/lib/today/test-clock.ts). Set once in the runner process so the
 // worker processes (which inherit the env and re-read this file) and the web server share the same value.
 process.env.TSAAD_TEST_CLOCK_KEY ??= randomBytes(32).toString("hex");
+
+// GHL signup webhook (stage 9א): a per-run fake secret, and a file where the e2e-only capture delivery (guarded like the
+// test clock, see src/lib/webhooks/ghl/delivery.ts) writes the activation link, since real sending is off.
+process.env.GHL_WEBHOOK_SECRET ??= randomBytes(32).toString("hex");
+process.env.TSAAD_WEBHOOK_CAPTURE_FILE ??= join(mkdtempSync(join(tmpdir(), "tsaad-webhook-")), "capture.jsonl");
 
 // Ephemeral VAPID public key for the reminders screen (a fresh P-256 point per run; the private half is never kept).
 const ecdh = createECDH("prime256v1");
@@ -40,6 +48,8 @@ export default defineConfig({
       TSAAD_E2E: "1",
       TSAAD_TEST_NOW: "2026-12-04T14:00:00+02:00",
       TSAAD_TEST_CLOCK_KEY: process.env.TSAAD_TEST_CLOCK_KEY,
+      GHL_WEBHOOK_SECRET: process.env.GHL_WEBHOOK_SECRET,
+      TSAAD_WEBHOOK_CAPTURE_FILE: process.env.TSAAD_WEBHOOK_CAPTURE_FILE,
       START_DATE: "2026-12-01",
       BUNNY_LIBRARY_ID: "e2e-library",
       BUNNY_TOKEN_KEY: "e2e-not-a-real-key",
