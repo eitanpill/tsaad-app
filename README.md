@@ -18,7 +18,7 @@ APP_ORIGIN=http://localhost:3000
 npm ci
 npx drizzle-kit migrate      # applies drizzle/*.sql to DATABASE_URL
 npm run dev                  # http://localhost:3000
-npm run dev:create-user      # a local test account and its activation link (refuses anything but localhost)
+npm run dev:create-user -- --username dana --name "דנה" --email dana@example.test   # local test account, prints its activation link (refuses anything but localhost)
 ```
 
 Every variable is documented in `.env.example` and `docs/LAUNCH_CHECKLIST.md`. All server-side configuration is read and validated in `src/config`.
