@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { copy } from "@/content/copy.he";
 import { actionsForDay, type Action } from "@/lib/days";
 import { actionKey } from "@/lib/today/view";
-import { AlertCircle, CheckIcon } from "../../_components/icons";
+import { ToastDock } from "../../_components/ToastDock";
 import { toggleAction } from "../../today/actions";
 import { actionDetail, actionTitle, type DayTitles } from "../../today/action-labels";
 import { ActionButton } from "../../today/ActionButton";
@@ -25,15 +25,6 @@ export function DayActions({ day, titles, done }: { day: number; titles: DayTitl
   );
   const [, startTransition] = useTransition();
   const [toast, setToast] = useState<Toast | null>(null);
-  const hold = useRef(false);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setInterval(() => {
-      if (!hold.current) setToast(null);
-    }, 7000);
-    return () => clearInterval(t);
-  }, [toast]);
 
   function setAction(action: Action, to: boolean) {
     const key = actionKey(day, action);
@@ -71,37 +62,29 @@ export function DayActions({ day, titles, done }: { day: number; titles: DayTitl
           />
         ))}
       </div>
-      <div
-        className="toast-region"
-        role="status"
-        aria-live="polite"
-        onMouseEnter={() => (hold.current = true)}
-        onMouseLeave={() => (hold.current = false)}
-        onFocus={() => (hold.current = true)}
-        onBlur={() => (hold.current = false)}
-      >
-        {toast ? (
-          <div className={`toast${toast.kind === "error" ? " toast--err" : ""}`}>
-            <span className="tick" aria-hidden="true">
-              {toast.kind === "error" ? <AlertCircle /> : <CheckIcon size={16} />}
-            </span>
-            <span className="msg">{toast.text}</span>
-            {toast.kind === "error" ? (
-              <button
-                type="button"
-                onClick={() => {
-                  const r = toast.retry;
-                  setToast(null);
-                  focusAction(r.action);
-                  setAction(r.action, r.to);
-                }}
-              >
-                {copy.common.retry}
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+      <ToastDock
+        source={toast}
+        onExpire={() => setToast(null)}
+        toast={
+          !toast
+            ? null
+            : toast.kind === "error"
+              ? {
+                  error: true,
+                  text: toast.text,
+                  action: {
+                    label: copy.common.retry,
+                    run: () => {
+                      const r = toast.retry;
+                      setToast(null);
+                      focusAction(r.action);
+                      setAction(r.action, r.to);
+                    },
+                  },
+                }
+              : { text: toast.text }
+        }
+      />
     </>
   );
 }

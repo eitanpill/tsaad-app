@@ -75,14 +75,14 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t--half { grid-column: span 1; }
 
 .t-hero { position: relative; background: var(--sky); padding: 16px 18px; }
-.hero-sun { float: left; margin: -4px 0 0 8px; pointer-events: none; }
+.hero-sun { float: left; float: inline-end; margin-block: -4px 0; margin-inline: 0 8px; pointer-events: none; }
 /* The sun sits in the corner on the start side of the line; the title and the opening line leave it room. */
 .t-hero:has(.hero-sun) .eyebrow-s, .t-hero:has(.hero-sun) h1 { padding-inline-end: 0; }
 .eyebrow-s { font-size: 14px; font-weight: 500; color: var(--muted); }
 .t-hero h1 {
   margin: 2px 0 0;
-  font-size: 26px;
-  line-height: 1.1;
+  font-size: 30px;
+  line-height: 1.08;
   font-weight: 900;
   letter-spacing: -0.02em;
   overflow-wrap: break-word;
@@ -94,8 +94,8 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t-video { background: var(--cream); color: var(--maroon); padding: 10px; border: 2px solid var(--line); }
 .video-box {
   position: relative;
-  height: 200px;
-  border-radius: 18px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--sky);
 }
@@ -110,7 +110,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   height: 64px;
   margin: -32px 0 0 -32px;
   padding: 0;
-  border: 3px solid #fff;
+  border: 3px solid var(--white);
   border-radius: 50%;
   background: var(--terracotta);
   display: flex;
@@ -121,6 +121,19 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   animation: appulse 2.4s ease-in-out infinite;
 }
 .play[aria-disabled='true'] { cursor: default; animation: none; opacity: 0.7; }
+/* Loading: a ring turns around the play button; the text under the video says the same in words. */
+.play[aria-busy='true'] { opacity: 1; cursor: progress; }
+.play[aria-busy='true']::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: var(--terracotta-text);
+  border-inline-start-color: var(--terracotta-text);
+  animation: apspin 0.9s linear infinite;
+}
+@keyframes apspin { to { transform: rotate(360deg); } }
 .video-cap {
   display: flex;
   justify-content: space-between;
@@ -129,12 +142,14 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   padding: 10px 6px 4px;
 }
 .video-cap h2 { margin: 0; font-size: 18px; font-weight: 800; }
-.video-cap span { font-size: 13px; }
+.video-cap span { flex-shrink: 0; padding: 3px 10px; border-radius: var(--radius-pill); background: var(--sand); color: var(--terracotta-text); font-size: 13px; font-weight: 700; }
 .video-note { margin: 0; padding: 0 6px 6px; font-size: 14px; }
+.video-loading { font-weight: 700; color: var(--forest); }
+.video-loading:empty { padding: 0; } /* stays in the DOM (a live region), takes no room while idle */
 
 .video-err {
   grid-column: span 2;
-  background: #fff;
+  background: var(--sand);
   color: var(--maroon);
   border: 2px solid var(--terracotta-text);
   border-radius: var(--radius-tile);
@@ -143,7 +158,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   gap: 10px;
   align-items: flex-start;
 }
-.video-err h2 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 800; }
+.video-err h1, .video-err h2 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 800; }
 .video-err p { margin: 2px 0 8px; font-size: 14px; line-height: 1.4; }
 
 /* Ring + cup tiles */
@@ -177,6 +192,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 [data-motion='off'] .play { animation-play-state: paused; }
 [data-motion='off'] .cup-water { transition: none; }
 [data-motion='off'] .cup-burst .sp { animation: none; }
+[data-motion='off'] .play[aria-busy='true']::after { animation-play-state: paused; }
 
 /* Actions */
 .t-actions { background: var(--sand); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -190,14 +206,15 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   justify-content: center;
   gap: 2px;
   min-height: 64px;
-  padding: 0 14px 0 44px;
+  padding-block: 0;
+  padding-inline: 14px 44px;
   border: 2px solid var(--terracotta);
   border-radius: var(--radius-btn);
   background: #fff;
   color: var(--maroon);
   font: inherit;
   font-size: 14px;
-  text-align: right;
+  text-align: start;
   cursor: pointer;
 }
 .act b { font-size: 15px; font-weight: 800; }
@@ -205,7 +222,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .act--wide b { min-width: 62px; }
 .act .dot {
   position: absolute;
-  left: 12px;
+  inset-inline-end: 12px;
   top: 50%;
   margin-top: -11px;
   width: 22px;
@@ -218,7 +235,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   align-items: center;
   justify-content: center;
 }
-.act--wide .dot { margin-top: -12px; width: 24px; height: 24px; left: 16px; }
+.act--wide .dot { margin-top: -12px; width: 24px; height: 24px; inset-inline-end: 16px; }
 .act[aria-pressed='true'] { background: var(--forest); border-color: var(--forest); color: #fff; }
 .act[aria-pressed='true'] .dot { background: var(--cream); border-color: var(--cream); color: var(--forest); }
 .act-sub { font-size: 14px; }
@@ -247,6 +264,9 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   text-decoration: none;
   cursor: pointer;
 }
+.btn-s:disabled { opacity: 0.6; cursor: not-allowed; }
+/* Busy (aria-busy while a request runs): a visible wait state, the text stays readable. */
+.btn-s[aria-busy='true'], .btn-p[aria-busy='true'] { cursor: progress; opacity: 0.75; }
 /* Primary action: terracotta fill with dark text (4.8:1). */
 .btn-p {
   display: inline-flex;
@@ -307,8 +327,8 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   gap: 4px;
   padding: 6px;
   border-radius: 26px;
-  background: #fff;
-  box-shadow: 0 10px 30px -12px rgba(46, 8, 8, 0.35);
+  background: var(--white);
+  box-shadow: var(--shadow-float);
 }
 .bnav a {
   flex: 1;
@@ -324,10 +344,10 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   font-weight: 500;
   color: var(--maroon);
 }
-.bnav a[aria-current='page'] { background: var(--forest); color: var(--cream); font-weight: 700; }
+.bnav a[aria-current='page'] { background: var(--sage); color: var(--forest); font-weight: 800; box-shadow: inset 0 0 0 2px var(--forest); }
 
-/* Toast (always-present polite live region) */
-.toast-region {
+/* Toast: a fixed dock; inside it the always-present polite live region (.toast-region, the message only) and the button. */
+.toast-dock {
   position: fixed;
   left: 12px;
   right: 12px;
@@ -343,22 +363,24 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   gap: 10px;
   align-items: center;
   min-height: 52px;
-  padding: 4px 6px 4px 14px;
+  padding-block: 4px;
+  padding-inline: 6px 14px;
   border-radius: 26px;
-  background: #fff;
+  background: var(--white);
   color: var(--maroon);
   border: 2px solid var(--forest);
-  box-shadow: 0 12px 24px -12px rgba(46, 8, 8, 0.45);
+  box-shadow: var(--shadow-pop);
 }
-.toast--err { background: #fff; color: var(--maroon); border: 2px solid var(--terracotta-text); }
+.toast-region { flex: 1; min-width: 0; display: flex; gap: 10px; align-items: center; }
+.toast--err { background: var(--white); color: var(--maroon); border: 2px solid var(--terracotta-text); }
 .toast .tick {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
-  margin-right: 4px;
+  margin-inline-start: 4px;
   border-radius: 50%;
   background: var(--forest);
-  color: #fff;
+  color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -400,11 +422,11 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .skel { grid-column: span 2; background: #fff; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
 .skel .status { font-size: 14px; font-weight: 500; color: var(--muted); }
 .skel .bars { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.skel i { display: block; background: #ededE0; border-radius: 14px; height: 34px; }
+.skel i { display: block; background: var(--skeleton); border-radius: 14px; height: 34px; }
 .skel i.w { grid-column: span 2; height: 56px; border-radius: 16px; }
 
 @media (max-width: 340px) {
-  .t-hero h1 { font-size: 23px; }
+  .t-hero h1 { font-size: 25px; }
   .act-grid { grid-template-columns: 1fr; }
 }
 
@@ -534,7 +556,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t-back, .t-past { padding: 16px; display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-height: 150px; }
 .t-back { background: var(--terracotta); color: var(--maroon); }
 .t-past { background: var(--sky); }
-.t-back b, .t-past b { font-size: 20px; line-height: 1.15; font-weight: 800; }
+.t-back b, .t-past b, .t-back h2, .t-past h2 { margin: 0; font-size: 20px; line-height: 1.15; font-weight: 800; }
 .btn-light {
   display: inline-flex;
   align-items: center;
@@ -595,7 +617,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   text-align: center;
   text-decoration: none;
 }
-.lv-join--off { border: 2px dashed #8E7B6F; background: var(--cream); color: var(--muted); cursor: default; }
+.lv-join--off { border: 2px dashed var(--dash); background: var(--cream); color: var(--muted); cursor: default; }
 .lv-join--on { border: 2px solid var(--terracotta); background: var(--terracotta); color: var(--maroon); cursor: pointer; }
 .lv-cal {
   display: flex;
@@ -614,7 +636,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   text-decoration: none;
   cursor: pointer;
 }
-.lv-cal--off { background: var(--cream); color: var(--muted); border: 2px dashed #8E7B6F; cursor: default; }
+.lv-cal--off { background: var(--cream); color: var(--muted); border: 2px dashed var(--dash); cursor: default; }
 .lv-note { font-size: 13px; line-height: 1.4; color: var(--muted); text-align: center; }
 .lv-attend { display: flex; flex-direction: column; gap: 4px; }
 .lv-attend-msg { margin: 0; min-height: 0; font-size: 13px; color: var(--muted); text-align: center; }
@@ -629,9 +651,9 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t-live-cant span { font-size: 14px; line-height: 1.4; margin-top: auto; }
 .t-live-other .lv-cal { min-height: 44px; font-size: 14px; padding: 0 10px; }
 /* The compact tile is half width: stack the label above its hint instead of the wide row layout. */
-.t-live-other .act { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 8px 10px 8px 38px; min-height: 64px; }
+.t-live-other .act { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding-block: 8px; padding-inline: 10px 38px; min-height: 64px; }
 .t-live-other .act .act-sub { font-size: 13px; }
-.t-live-other .act--wide .dot { left: 10px; margin-top: -12px; }
+.t-live-other .act--wide .dot { inset-inline-end: 10px; margin-top: -12px; }
 .t-live-other .act--wide b { min-width: 0; }
 .t-live-other .lv-note { text-align: start; }
 @media (max-width: 340px) {
@@ -653,7 +675,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   padding: 12px 14px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 12px 24px -14px rgba(46, 8, 8, 0.45);
+  box-shadow: var(--shadow-pop);
 }
 .rm-notif-icon { flex-shrink: 0; width: 40px; height: 40px; border-radius: 10px; background: var(--terracotta); display: flex; align-items: center; justify-content: center; }
 .rm-notif-text { font-size: 14px; line-height: 1.35; }
@@ -667,13 +689,13 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .rm-switch[aria-disabled='true'] { cursor: default; opacity: 0.6; }
 .rm-track { box-sizing: border-box; width: 52px; height: 30px; border-radius: 15px; border: 2px solid var(--muted); background: #fff; position: relative; transition: background 0.15s; }
 .rm-track--on { border-color: var(--forest); background: var(--forest); }
-/* The knob sits on the inline-end side when off (right in RTL) and on the start side when on, as in the design. */
-.rm-knob { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; background: #6B4B45; display: flex; align-items: center; justify-content: center; color: var(--forest); }
-.rm-track--on .rm-knob { right: auto; left: 3px; background: #fff; }
+/* The knob sits on the inline-start side when off (right in RTL) and on the end side when on, as in the design. */
+.rm-knob { position: absolute; top: 3px; inset-inline-start: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); display: flex; align-items: center; justify-content: center; color: var(--forest); }
+.rm-track--on .rm-knob { inset-inline-start: auto; inset-inline-end: 3px; background: #fff; }
 .rm-status { margin: 0; padding: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--forest); }
 .rm-status:empty { display: none; }
 .rm-status--bad { color: var(--terracotta-text); }
-.rm-time { font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700; padding: 8px 12px; border-radius: 12px; background: var(--sand); }
+.rm-time { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--sand); }
 .t-rem-ios { background: var(--sage); color: var(--forest); padding: 14px 16px; display: flex; gap: 12px; align-items: center; font-size: 14px; line-height: 1.4; }
 .rm-i { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--terracotta-text); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; }
 .rm-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--forest); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
@@ -759,7 +781,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; min-height: 54px; margin: 4px 0 0; padding: 8px 14px;
   border: 2px solid var(--terracotta); border-radius: 27px; background: var(--terracotta); color: var(--maroon); font: inherit; font-size: 16px; font-weight: 800; text-align: center; text-decoration: none; cursor: pointer;
 }
-.ofr-cta--off { border: 2px dashed #8E7B6F; background: var(--cream); color: var(--muted); cursor: default; }
+.ofr-cta--off { border: 2px dashed var(--dash); background: var(--cream); color: var(--muted); cursor: default; }
 .ofr-expired { font-weight: 700; }
 .t-entry { background: var(--sky); color: var(--maroon); padding: 14px 18px; display: flex; flex-direction: column; gap: 6px; }
 .t-entry h2 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 800; }
@@ -772,8 +794,8 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   .act-grid { grid-template-columns: minmax(0, 1fr); }
   .act--wide { grid-column: auto; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 64px; }
   .act--wide b { min-width: 0; }
-  .act { padding: 8px 10px 8px 40px; }
-  .act--wide .dot, .act .dot { left: 9px; }
+  .act { padding-block: 8px; padding-inline: 10px 40px; }
+  .act--wide .dot, .act .dot { inset-inline-end: 9px; }
   .path-hero-row { flex-wrap: wrap; }
   /* the ring and cup half tiles clipped their text at this width: stack them */
   .t--half { grid-column: span 2; }
@@ -806,7 +828,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 [data-motion='off'] .sstone--today .sstone-dot { animation-play-state: paused; }
 
 /* Celebration tile (12 days counted) and the end-of-challenge summary. */
-.t-finish { position: relative; background: var(--sky); padding: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; overflow: hidden; }
+.t-finish { position: relative; background: var(--olive); padding: 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; overflow: hidden; }
 .finish-head { align-self: stretch; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .today:has(.t-finish) .hero-sun { display: none; }
 .t-finish h2 { margin: 0; font-size: 30px; line-height: 1.05; font-weight: 900; letter-spacing: -0.02em; }
@@ -870,12 +892,11 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   .today .t-hero { padding: 22px 26px; }
   .today .t-hero h1 { font-size: 40px; }
   .today .t-hero p { max-width: 640px; font-size: 17px; }
-  .today .hero-sun { width: 110px; height: 110px; margin: -6px 0 0 24px; }
+  .today .hero-sun { width: 110px; height: 110px; margin-block: -6px 0; margin-inline: 0 24px; }
   .today .ar-hero, .ar-strip > .t, .ar-yest { grid-column: 1 / -1; }
   .ar-acts { grid-column: 1; }
   .ar-video > .t { grid-column: 1; }
   .ar-cup, .ar-ring { grid-column: 2; }
-  .today .video-box { height: 330px; }
   .today .t-cup { flex-direction: column; justify-content: center; text-align: center; gap: 12px; padding: 22px; }
   .today .t-cup .cup-svg { width: 104px; height: auto; }
   .today .t-cup span { font-size: 18px; }
@@ -884,8 +905,8 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   .ar-acts .act-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .ar-acts .act--wide { grid-column: auto; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; min-height: 76px; }
   .ar-acts .act--wide b { min-width: 0; }
-  .ar-acts .act--wide .dot, .ar-acts .act .dot { left: 14px; margin-top: -11px; width: 22px; height: 22px; }
-  .ar-acts .act { padding: 10px 14px 10px 46px; min-height: 76px; }
+  .ar-acts .act--wide .dot, .ar-acts .act .dot { inset-inline-end: 14px; margin-top: -11px; width: 22px; height: 22px; }
+  .ar-acts .act { padding-block: 10px; padding-inline: 14px 46px; min-height: 76px; }
   .strip-link { padding: 16px 24px 12px; }
   .sstone-dot { width: 34px; }
   .sstone--today .sstone-dot { width: 38px; height: 38px; }

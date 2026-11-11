@@ -8,7 +8,7 @@ test.beforeAll(async ({ browser }) => {
 
 test("content: iPhone steps, Android with conditional wording, the reminder reason, done and later; no bottom nav", async ({ browser }) => {
   const { ctx, page } = await open(browser, s, T.day4Noon, "/install");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("צעד קטן ביום, על המסך שלך");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("צעד קטן ביום, על המסך שלכם");
   await expect(page.getByRole("heading", { level: 2, name: "באייפון, בספארי" })).toBeVisible();
   const steps = page.getByRole("list", { name: "שלבי ההוספה למסך הבית" }).getByRole("listitem");
   await expect(steps).toHaveCount(3);
@@ -80,7 +80,7 @@ test("already installed (standalone): the steps are hidden and the page only lea
     window.matchMedia = (q: string) => (q.includes("display-mode: standalone") ? ({ ...orig(q), matches: true } as MediaQueryList) : orig(q));
   };
   const { ctx, page } = await open(browser, s, T.day4Noon, "/install", { init: standalone });
-  await expect(page.getByText("האפליקציה כבר על המסך שלך.")).toBeVisible();
+  await expect(page.getByText("האפליקציה כבר על המסך שלכם.")).toBeVisible();
   await expect(page.getByRole("list", { name: "שלבי ההוספה למסך הבית" })).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 2 })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "חזרה להיום" })).toHaveAttribute("href", "/today");

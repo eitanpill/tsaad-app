@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth/dal";
 import { fill } from "@/lib/format";
 import { timeTokens } from "@/lib/times";
 import { RemindersControls } from "./RemindersControls";
+import { paint } from "@/components/paint";
 
 export const metadata: Metadata = { title: `${copy.nav.reminders} | ${copy.brand.name}` };
 
@@ -32,8 +33,8 @@ export default async function RemindersPage() {
         <div className="rm-notif" aria-hidden="true">
           <span className="rm-notif-icon">
             <svg width="22" height="26" viewBox="0 0 40 48" focusable="false">
-              <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="none" stroke="#FFFFFF" strokeWidth="3.5" strokeLinejoin="round" />
-              <path d="M8 26 Q14 22 20 26 T32 26 L31 44 L9 44 Z" fill="#FFFFFF" />
+              <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="none" strokeWidth="3.5" strokeLinejoin="round" style={paint(null, "white")} />
+              <path d="M8 26 Q14 22 20 26 T32 26 L31 44 L9 44 Z" style={paint("white")} />
             </svg>
           </span>
           <span className="rm-notif-text">

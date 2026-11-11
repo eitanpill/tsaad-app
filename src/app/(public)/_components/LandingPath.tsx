@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
+import { paint } from "@/components/paint";
 
 /** איור בלבד (לא נתוני משתמש): שביל של 14 אבנים בצורת המסך האמיתי, 4 ימים "נספרו" כדוגמה. כל הצורות תחת תווית אחת. */
 const POINTS: ReadonlyArray<readonly [number, number]> = [
@@ -19,9 +20,17 @@ export function LandingPath() {
       <path
         d="M336 70 C 200 60, 60 56, 38 118 C 26 160, 330 146, 330 190 C 330 226, 110 222, 30 226"
         fill="none"
-        stroke="#FAF8F4"
         strokeWidth="16"
         strokeLinecap="round"
+        style={paint(null, "cream")}
+      />
+      <path
+        d="M336 70 C 200 60, 60 56, 38 118 C 26 160, 330 146, 330 190 C 330 226, 110 222, 30 226"
+        fill="none"
+        strokeWidth="3.5"
+        strokeDasharray="0.1 11"
+        strokeLinecap="round"
+        style={paint(null, "stone-done")}
       />
       {POINTS.map(([x, y], i) => {
         const f = FILLS[i];
@@ -36,31 +45,30 @@ export function LandingPath() {
               <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="rgba(255,255,255,0.7)" />
               <g clipPath={`url(#${id})`}>
                 <g transform={`translate(0 ${f ? (44 - f * 40).toFixed(1) : 60})`}>
-                  <path className="pub-wv" d="M-40 0 Q-30 -4 -20 0 T0 0 T20 0 T40 0 T60 0 V60 H-40 Z" fill="#6F8A6E" />
+                  <path className="pub-wv" d="M-40 0 Q-30 -4 -20 0 T0 0 T20 0 T40 0 T60 0 V60 H-40 Z" style={paint("water")} />
                 </g>
               </g>
               <path
                 d="M5 4 L35 4 L31 44 L9 44 Z"
                 fill="none"
-                stroke="#123021"
                 strokeWidth="2.6"
                 strokeLinejoin="round"
                 strokeDasharray={f ? undefined : "3.5 3"}
+                style={paint(null, "forest")}
               />
             </g>
-            {today ? <ellipse className="pub-glow" cx="20" cy="36" rx="19" ry="6.5" fill="none" stroke="#BB6F51" strokeWidth="3" /> : null}
+            {today ? <ellipse className="pub-glow" cx="20" cy="36" rx="19" ry="6.5" fill="none" strokeWidth="3" style={paint(null, "terracotta")} /> : null}
             <ellipse
               cx="20"
               cy="36"
               rx="19"
               ry="6.5"
-              fill={today ? "#BB6F51" : f ? "#D9C7B8" : "#FAF8F4"}
-              stroke={today ? "#8A4A33" : "#6B4B45"}
+              style={paint(today ? "terracotta" : f ? "stone-done" : "cream", today ? "terracotta-text" : "muted")}
               strokeWidth="2"
               strokeDasharray={f || today ? undefined : "4 3"}
             />
             {LIVE_STONES.has(i) ? (
-              <text x="20" y="58" textAnchor="middle" fontSize="11" fontWeight="700" fill="#8A4A33" fontFamily="inherit">
+              <text x="20" y="58" textAnchor="middle" fontSize="11" fontWeight="700" fontFamily="inherit" style={paint("terracotta-text")}>
                 {copy.path.liveTag}
               </text>
             ) : null}
@@ -74,10 +82,10 @@ export function LandingPath() {
 export function LandingRing() {
   return (
     <svg width="116" height="116" viewBox="0 0 100 100" role="img" aria-label={fill(copy.a11y.ring, { n: COUNTED })} focusable="false">
-      <circle cx="50" cy="50" r="42" fill="none" stroke="#F0E8E1" strokeWidth="10" />
-      <circle className="pub-ring" cx="50" cy="50" r="42" fill="none" stroke="#BB6F51" strokeWidth="10" strokeLinecap="round" strokeDasharray="264" strokeDashoffset="188.6" transform="rotate(-90 50 50)" />
-      <text x="50" y="52" textAnchor="middle" fontWeight="900" fontSize="30" fill="#2E0808" fontFamily="inherit">{COUNTED}</text>
-      <text x="50" y="68" textAnchor="middle" fontWeight="500" fontSize="10" fill="#6B4B45" fontFamily="inherit">{copy.common.countOfTotal.replace("{n}", "").trim()}</text>
+      <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" style={paint(null, "sand")} />
+      <circle className="pub-ring" cx="50" cy="50" r="42" fill="none" strokeWidth="10" strokeLinecap="round" strokeDasharray="264" strokeDashoffset="188.6" transform="rotate(-90 50 50)" style={paint(null, "terracotta")} />
+      <text x="50" y="52" textAnchor="middle" fontWeight="900" fontSize="30" fontFamily="inherit" style={paint("maroon")}>{COUNTED}</text>
+      <text x="50" y="68" textAnchor="middle" fontWeight="500" fontSize="10" fontFamily="inherit" style={paint("muted")}>{copy.common.countOfTotal.replace("{n}", "").trim()}</text>
     </svg>
   );
 }
@@ -92,11 +100,11 @@ export function LandingCup() {
       <path d="M8 6 L72 6 L64 90 L16 90 Z" fill="rgba(255,255,255,0.55)" />
       <g clipPath={`url(#${id})`}>
         <g transform="translate(0 48)">
-          <path className="pub-wv" d="M-40 0 Q-30 -5 -20 0 T0 0 T20 0 T40 0 T60 0 T80 0 T100 0 V60 H-40 Z" fill="#123021" />
+          <path className="pub-wv" d="M-40 0 Q-30 -5 -20 0 T0 0 T20 0 T40 0 T60 0 T80 0 T100 0 V60 H-40 Z" style={paint("forest")} />
         </g>
       </g>
-      <path d="M16 14 L21 80" stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="3" strokeLinecap="round" />
-      <path d="M8 6 L72 6 L64 90 L16 90 Z" fill="none" stroke="#123021" strokeWidth="3" strokeLinejoin="round" />
+      <path d="M16 14 L21 80" strokeOpacity="0.8" strokeWidth="3" strokeLinecap="round" style={paint(null, "white")} />
+      <path d="M8 6 L72 6 L64 90 L16 90 Z" fill="none" strokeWidth="3" strokeLinejoin="round" style={paint(null, "forest")} />
     </svg>
   );
 }

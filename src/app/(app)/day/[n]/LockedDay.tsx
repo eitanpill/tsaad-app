@@ -3,6 +3,7 @@ import { copy } from "@/content/copy.he";
 import { fill, withStartDate } from "@/lib/format";
 import { timeTokens } from "@/lib/times";
 import { BellIcon, LockIcon } from "../../_components/icons";
+import { paint } from "@/components/paint";
 
 export type LockedReason = "before_start" | "tomorrow" | "far";
 
@@ -45,7 +46,7 @@ export function LockedDay({
         >
           <svg width="96" height="115" viewBox="0 0 40 48" aria-hidden="true" focusable="false">
             <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="rgba(255,255,255,0.75)" />
-            <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="none" stroke="#123021" strokeWidth="1.6" strokeLinejoin="round" strokeDasharray="3 2.5" />
+            <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="none" strokeWidth="1.6" strokeLinejoin="round" strokeDasharray="3 2.5" style={paint(null, "forest")} />
           </svg>
           <i className="lock-stone" />
           <span className="lock-badge">
@@ -56,14 +57,14 @@ export function LockedDay({
         <p>{body}</p>
       </section>
 
-      <section className="t t--half t-back">
-        {previousDay !== null ? <b>{fill(copy.locked.previousOpen, { prev: previousDay })}</b> : null}
+      <section className="t t--half t-back" aria-labelledby={previousDay !== null ? "locked-back-h" : undefined}>
+        {previousDay !== null ? <h2 id="locked-back-h">{fill(copy.locked.previousOpen, { prev: previousDay })}</h2> : null}
         <Link href="/today" className="btn-light">
           {copy.locked.backToToday}
         </Link>
       </section>
-      <section className="t t--half t-past">
-        <b>{copy.locked.pastDays}</b>
+      <section className="t t--half t-past" aria-labelledby="locked-past-h">
+        <h2 id="locked-past-h">{copy.locked.pastDays}</h2>
         <Link href="/path" className="link-s">
           {copy.locked.pastDaysLink}
         </Link>

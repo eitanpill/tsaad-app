@@ -3,6 +3,7 @@ import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
 import type { Stone, StoneState } from "@/lib/path/view";
 import { StoneCup } from "./StoneCup";
+import { paint } from "@/components/paint";
 
 /**
  * מיקום כל אבן במפה (מערכת הקואורדינטות של הלוח: 366 על 474). x באחוזים מהרוחב, y בפיקסלים.
@@ -46,6 +47,9 @@ function StoneBody({ stone }: { stone: Stone }) {
   );
 }
 
+/** The road under the stones (board coordinates). */
+const ROAD = "M300 54 C 200 62, 90 60, 52 124 C 30 168, 250 160, 300 220 C 330 262, 160 286, 80 300 C 30 312, 60 380, 130 386";
+
 /**
  * המפה: רשימה מסודרת של 14 אבנים על שביל מתפתל. אבן שנפתחה היא קישור ליום שלה (היום הנוכחי ל־/today);
  * אבן נעולה אינה קישור, חוץ מהיום שנפתח מחר, שיש לו מסך משלו. הרשימה נקראת כרשימה, עם סיכום טקסטואלי.
@@ -63,11 +67,22 @@ export function PathMap({ stones, counted }: { stones: Stone[]; counted: number 
         <path
           transform="scale(1 1.13)"
           vectorEffect="non-scaling-stroke"
-          d="M300 54 C 200 62, 90 60, 52 124 C 30 168, 250 160, 300 220 C 330 262, 160 286, 80 300 C 30 312, 60 380, 130 386"
+          d={ROAD}
           fill="none"
-          stroke="#FAF8F4"
           strokeWidth="18"
           strokeLinecap="round"
+          style={paint(null, "cream")}
+        />
+        {/* small round steps along the middle of the road, so it reads as a walk and not a plain stroke */}
+        <path
+          transform="scale(1 1.13)"
+          vectorEffect="non-scaling-stroke"
+          d={ROAD}
+          fill="none"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray="0.1 13"
+          style={paint(null, "stone-done")}
         />
       </svg>
       <ol className="stones" role="list" aria-label={fill(copy.a11y.path.summary, { counted })}>
@@ -156,8 +171,8 @@ function ClockBadge({ small = false }: { small?: boolean }) {
   return (
     <span className={`stone-badge${small ? " stone-badge--s" : ""}`}>
       <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-        <circle cx="8" cy="8" r="7" fill="#8A4A33" stroke="#FFFFFF" strokeWidth="1.5" />
-        <path d="M8 4.2 V8 L10.6 9.6" fill="none" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="8" cy="8" r="7" strokeWidth="1.5" style={paint("terracotta-text", "white")} />
+        <path d="M8 4.2 V8 L10.6 9.6" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={paint(null, "white")} />
       </svg>
     </span>
   );

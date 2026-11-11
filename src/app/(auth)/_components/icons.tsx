@@ -1,3 +1,5 @@
+import { paint } from "@/components/paint";
+
 /** כל האייקונים דקורטיביים (aria-hidden); המשמעות נמסרת בטקסט. */
 type P = { size?: number };
 const base = (size: number) => ({
@@ -45,7 +47,7 @@ export const AlertIcon = ({ size = 18 }: P) => (
 export const CheckDiscIcon = ({ size = 18 }: P) => (
   <svg {...base(size)}>
     <circle cx="12" cy="12" r="10" fill="currentColor" stroke="none" />
-    <path d="M7.5 12.5l3 3 6-6.5" stroke="#fff" />
+    <path d="M7.5 12.5l3 3 6-6.5" style={paint(null, "white")} />
   </svg>
 );
 

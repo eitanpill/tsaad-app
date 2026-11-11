@@ -5,6 +5,7 @@ import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
 import { MeadowDoodle } from "@/components/Doodles";
 import { AlertCircle } from "../_components/icons";
+import { paint } from "@/components/paint";
 
 type Phase = "idle" | "loading" | "ready" | "error";
 
@@ -72,7 +73,7 @@ export function VideoTile({
           </div>
         </section>
       ) : null}
-      <section className="t t-video" aria-label={title}>
+      <section className="t t-video" aria-label={title} aria-busy={phase === "loading" ? true : undefined}>
         <div className="video-box">
           {phase === "ready" && src ? (
             <iframe
@@ -98,11 +99,12 @@ export function VideoTile({
                 className="play"
                 aria-label={fill(copy.a11y.video.play, { n: day })}
                 aria-disabled={!available || phase === "loading" ? true : undefined}
+                aria-busy={phase === "loading" ? true : undefined}
                 aria-describedby={available ? undefined : "video-pending"}
                 onClick={load}
               >
                 <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M8.5 5.5 L19 12 L8.5 18.5 Z" fill="#FFFFFF" stroke="#FFFFFF" strokeWidth="1.6" strokeLinejoin="round" />
+                  <path d="M8.5 5.5 L19 12 L8.5 18.5 Z" strokeWidth="1.6" strokeLinejoin="round" style={paint("white", "white")} />
                 </svg>
               </button>
             </>
@@ -116,7 +118,12 @@ export function VideoTile({
           <p id="video-pending" className="video-note">
             {copy.today.videoPending}
           </p>
-        ) : null}
+        ) : (
+          // Always present while the video can play, so the words are announced when loading starts (aria-busy alone is silent).
+          <p className="video-note video-loading" role="status">
+            {phase === "loading" ? copy.today.videoLoading : null}
+          </p>
+        )}
       </section>
     </>
   );
