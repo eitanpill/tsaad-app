@@ -154,6 +154,15 @@ test("/go/[offer] counts a click and redirects only to the configured https URL 
   expect(loc.searchParams.has("to")).toBe(false);
   expect(await count("session")).toBe(before + 1);
 
+  // a HEAD, a browser prefetch and a link-preview bot get the same redirect but are not counted
+  const head = await request.head("/go/session", { maxRedirects: 0 });
+  expect(head.status()).toBe(302);
+  const pre = await request.get("/go/session", { maxRedirects: 0, headers: { "sec-purpose": "prefetch" } });
+  expect(pre.status()).toBe(302);
+  const bot = await request.get("/go/session", { maxRedirects: 0, headers: { "user-agent": "WhatsApp/2.23.20" } });
+  expect(bot.status()).toBe(302);
+  expect(await count("session")).toBe(before + 1);
+
   const c = await request.get("/go/challenge", { maxRedirects: 0 });
   expect(c.status()).toBe(302);
   expect(c.headers()["location"]).toBe("https://pay.example.test/challenge79");
