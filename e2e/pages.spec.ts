@@ -8,7 +8,11 @@ import { T, axe, clock, createUser, expectReflowAndTargets, open, overflowingEle
 test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
 const RAW = /\[[A-Z_*0-9]+\]/;
 
+// Registration closes at day 3 05:00 (D2); these tests look at the open landing page, on day 2.
+const LANDING_OPEN = "2026-12-02T12:00:00+02:00";
+
 test.describe("landing /tsaad (public)", () => {
+  test.use({ extraHTTPHeaders: clock(LANDING_OPEN) });
   test("renders without login: heading, disabled CTA with the reason, neutral start line, no raw placeholders, axe", async ({ page }) => {
     await page.goto("/tsaad");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("צעד קטן ביום");
@@ -58,7 +62,7 @@ test.describe("landing /tsaad (public)", () => {
   });
 
   test("200% browser zoom at 390px (CSS viewport 195px, DPR 2): no horizontal scroll, heading and CTA stay in view", async ({ browser }) => {
-    const ctx = await browser.newContext({ viewport: { width: 195, height: 422 }, deviceScaleFactor: 2 });
+    const ctx = await browser.newContext({ viewport: { width: 195, height: 422 }, deviceScaleFactor: 2, extraHTTPHeaders: clock(LANDING_OPEN) });
     const page = await ctx.newPage();
     await page.goto("/tsaad");
     expect(await overflowingElements(page)).toEqual([]);
