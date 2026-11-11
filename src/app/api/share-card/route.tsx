@@ -2,10 +2,12 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
 import { copy } from "@/content/copy.he";
+import { CHALLENGE } from "@/config/constants";
 import { daysFromMask } from "@/lib/path/finish";
+import { visualHebrew as flip } from "@/lib/share/visual-hebrew";
 
 /**
- * כרטיס השיתוף (PNG, 1080x1350): השביל של 14 האבנים עם הימים שנספרו, והשורה "השלמתי 14 ימים של צעד קטן ביום".
+ * כרטיס השיתוף (PNG, 1080x1350): השביל של 14 האבנים עם הימים שנספרו, והשורה "השלמתי את צעד קטן ביום".
  * בלי שם ובלי נתונים אישיים: הכתובת נושאת רק מסכת ביטים של הימים (m), והיא נבנית ללא התחברות, ללא עוגיות וללא מעקב.
  * הגופנים נטענים מקבצים מקומיים (satori לא קורא woff2).
  */
@@ -13,17 +15,33 @@ const fontDir = path.join(process.cwd(), "src/assets/fonts");
 let fonts: Promise<[Buffer, Buffer]> | null = null;
 const loadFonts = () => (fonts ??= Promise.all([readFile(path.join(fontDir, "NotoSansHebrew-ExtraBold.ttf")), readFile(path.join(fontDir, "Rubik-Medium.ttf"))]));
 
+/** תשובות שכבר רונדרו במופע הזה (לכל היותר 106 מסכות אפשריות, ראו parseCardMask). */
+const rendered = new Map<number, ArrayBuffer>();
+const PNG_HEADERS = { "content-type": "image/png", "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" };
+const bad = () => new Response("bad request", { status: 400, headers: { "cache-control": "no-store" } });
+
 /**
- * satori מסדר את המילים מימין לשמאל אבל מצייר את אותיות המילה העברית משמאל לימין, ולכן הופכים כאן את אותיות כל מילה עברית
- * (מספרים ולטינית נשארים כמו שהם). התוצאה בתמונה נראית ונקראת נכון.
+ * קלט קשיח: הפרמטר m בלבד (כל פרמטר אחר = 400, כדי שלא ייווצרו גרסאות שעוקפות את המטמון), בצורה קנונית (בלי אפסים מובילים),
+ * ורק מסכה של מי שהשלים (לפחות CHALLENGE.daysToComplete ימים): הכרטיס אומר "השלמתי", ולכן אין כרטיס למסכה אחרת.
+ * כך יש לכל היותר 106 תמונות שונות, וכל אחת נשמרת במטמון (CDN ודפדפן) לשנה.
  */
-const flip = (t: string) => t.split(" ").map((w) => (/[\u0590-\u05FF]/.test(w) ? [...w].reverse().join("") : w)).join(" ");
+function parseCardMask(url: URL): number[] | null {
+  const keys = [...url.searchParams.keys()];
+  if (keys.length !== 1 || keys[0] !== "m") return null;
+  const raw = url.searchParams.get("m")!;
+  if (!/^(0|[1-9]\d{0,4})$/.test(raw)) return null;
+  const days = daysFromMask(raw);
+  return days && days.length >= CHALLENGE.daysToComplete ? days : null;
+}
 
 const C = { cream: "#FAF8F4", sky: "#EDF5FD", sand: "#F0E8E1", sage: "#D2DCD1", terra: "#BB6F51", terraText: "#8A4A33", forest: "#123021", maroon: "#2E0808", muted: "#6B4B45" };
 
 export async function GET(req: Request) {
-  const days = daysFromMask(new URL(req.url).searchParams.get("m"));
-  if (!days) return new Response("bad request", { status: 400, headers: { "cache-control": "no-store" } });
+  const days = parseCardMask(new URL(req.url));
+  if (!days) return bad();
+  const mask = days.reduce((m, d) => m | (1 << (d - 1)), 0);
+  const hit = rendered.get(mask);
+  if (hit) return new Response(hit, { headers: PNG_HEADERS });
   const counted = new Set(days);
   const [noto, rubik] = await loadFonts();
 
@@ -55,7 +73,7 @@ export async function GET(req: Request) {
     </div>
   );
 
-  return new ImageResponse(
+  const image = new ImageResponse(
     (
       <div style={{ width: 1080, height: 1350, display: "flex", flexDirection: "column", background: C.cream, fontFamily: "Card", padding: 54 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: C.sky, borderRadius: 64, padding: "70px 50px 60px" }}>
@@ -71,8 +89,9 @@ export async function GET(req: Request) {
           {row(8)}
         </div>
         <div style={{ display: "flex", flex: 1, alignItems: "flex-end", justifyContent: "space-between", color: C.maroon, fontSize: 40, fontWeight: 800 }}>
-          <div style={{ display: "flex" }}>{flip(copy.brand.name)}</div>
+          {/* ימין לשמאל: שם האתגר בצד ימין */}
           <div style={{ display: "flex", color: C.muted }}>{`${flip(copy.brand.byline)} · YOGIT`}</div>
+          <div style={{ display: "flex" }}>{flip(copy.brand.name)}</div>
         </div>
       </div>
     ),
@@ -83,7 +102,9 @@ export async function GET(req: Request) {
         { name: "Card", data: noto, weight: 800, style: "normal" },
         { name: "Card", data: rubik, weight: 800, style: "normal" },
       ],
-      headers: { "cache-control": "public, max-age=86400, immutable" },
     },
   );
+  const buf = await image.arrayBuffer();
+  rendered.set(mask, buf);
+  return new Response(buf, { headers: PNG_HEADERS });
 }

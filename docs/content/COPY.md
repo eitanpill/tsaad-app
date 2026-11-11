@@ -123,7 +123,7 @@
 | `finish.cups` | הכוסות שלכם |  |
 | `finish.share` | שתפו |  |
 | `finish.download` | להורדת התמונה |  |
-| `finish.shareText` | השלמתי 14 ימים של צעד קטן ביום |  |
+| `finish.shareText` | השלמתי את צעד קטן ביום |  |
 | `finish.toast` | האתגר הושלם. תודה שהייתם איתנו. |  |
 
 ## before

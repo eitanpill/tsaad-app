@@ -104,7 +104,11 @@ test.describe("share card", () => {
     expect(ok.status()).toBe(200);
     expect(ok.headers()["content-type"]).toBe("image/png");
     expect((await ok.body()).subarray(1, 4).toString()).toBe("PNG");
-    for (const bad of ["", "?m=abc", "?m=16384", "?m=-1"]) expect((await request.get(`/api/share-card${bad}`)).status()).toBe(400);
+    expect(ok.headers()["cache-control"]).toContain("immutable");
+    // only a completed mask (12+ days), canonical, and nothing but m: the card says "השלמתי"
+    for (const bad of ["", "?m=abc", "?m=16384", "?m=-1", "?m=7", "?m=0", "?m=04095", "?m=4095&x=1", "?m=4095&m=4095"]) {
+      expect((await request.get(`/api/share-card${bad}`)).status(), bad).toBe(400);
+    }
 
     await seed(habits([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]));
     const { ctx, page } = await open(browser, s, T.day12, "/today", {
@@ -120,7 +124,7 @@ test.describe("share card", () => {
       },
     });
     await page.getByRole("button", { name: "שתפו" }).click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __shared: unknown }).__shared)).toMatchObject({ n: 1, type: "image/png", text: "השלמתי 14 ימים של צעד קטן ביום" });
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __shared: unknown }).__shared)).toMatchObject({ n: 1, type: "image/png", text: "השלמתי את צעד קטן ביום" });
     await expect(page.getByRole("link", { name: "להורדת התמונה" })).toHaveAttribute("href", "/api/share-card?m=4095");
     await ctx.close();
   });
