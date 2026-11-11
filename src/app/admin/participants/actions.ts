@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { refresh } from "next/cache";
 import { getConfig } from "@/config";
 import { copy } from "@/content/copy.he";
 import { getDb } from "@/db";
@@ -55,6 +56,7 @@ export async function addParticipantAction(_prev: AdminState, formData: FormData
     });
     if (!r.ok) return err(r.error === "invalid_name" ? "invalidName" : r.error === "invalid_contact" ? "invalidContact" : "generic");
     logger.info("admin: participant created", { actorId: gate.actor.userId, targetId: r.userId });
+    refresh(); // the list shows the new participant; the form keeps its one-time link in memory
     return {
       status: "link",
       link: `${await linkBase()}/activate?token=${r.link.token}`,
@@ -105,6 +107,7 @@ export async function setDisabledAction(_prev: AdminState, formData: FormData): 
       : await enableParticipant(getDb(), { userId: id });
     if (!r.ok) return err(r.error === "self" ? "self" : "notFound");
     logger.info(disable ? "admin: participant disabled" : "admin: participant enabled", { actorId: gate.actor.userId, targetId: id });
+    refresh(); // the row's state, tag and button change at once (focus stays on the same button)
     return { status: "done", message: fill(disable ? copy.admin.participants.done.disabled : copy.admin.participants.done.enabled, { name }) };
   } catch (e) {
     logger.error("admin: set disabled failed", { error: e });

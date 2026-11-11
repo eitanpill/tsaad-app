@@ -21,14 +21,15 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         {copy.a11y.skipLink}
       </a>
       {previewDay !== null ? (
-        <div className="preview-banner" role="status" data-testid="preview-banner">
-          <span>{fill(copy.admin.previewBanner.text, { n: previewDay })}</span>
+        // a labelled region (landmark), not a live region: it is there from the first paint, on every app page
+        <section className="preview-banner" aria-label={copy.admin.previewBanner.label} data-testid="preview-banner">
+          <p>{fill(copy.admin.previewBanner.text, { n: previewDay })}</p>
           <form action={stopPreviewAction}>
             <button type="submit" className="linkbtn" aria-label={copy.admin.previewBanner.stopLabel}>
               {copy.admin.previewBanner.stop}
             </button>
           </form>
-        </div>
+        </section>
       ) : null}
       <header className="app-header">
         <Link href="/today" className="app-logo" aria-label={copy.a11y.logoHome}>

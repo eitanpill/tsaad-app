@@ -9,7 +9,7 @@ import { fill } from "@/lib/format";
 import { activePreviewDay } from "@/lib/preview/context";
 import { isAdminUsername } from "@/lib/stats/admin";
 import "../stats/stats.css";
-import { DeleteForm, DisableForm, AddForm, NewLinkForm, PreviewForm } from "./forms";
+import { DeleteForm, DisableForm, AddForm, FocusOnMount, NewLinkForm, PreviewForm } from "./forms";
 import { stopPreviewAction } from "./actions";
 
 const P = copy.admin.participants;
@@ -51,9 +51,7 @@ export default async function ParticipantsPage({ searchParams }: Props) {
       <h1>{P.title}</h1>
       <p className="adm-lead">{P.lead}</p>
       {one(sp.deleted) === "1" ? (
-        <p className="adm-msg" role="status">
-          {P.done.deleted}
-        </p>
+        <FocusOnMount className="adm-msg">{P.done.deleted}</FocusOnMount>
       ) : null}
 
       <section aria-labelledby="adm-prev-h">

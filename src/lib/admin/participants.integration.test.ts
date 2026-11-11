@@ -9,7 +9,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { requestPasswordReset } from "@/lib/auth/forgot";
 import { createSession, validateSession } from "@/lib/auth/session";
 import { rowsOf } from "@/lib/auth/sql";
-import { consumeToken, peekToken } from "@/lib/auth/tokens";
+import { consumeToken, issueToken, peekToken } from "@/lib/auth/tokens";
 import { getGhlConfig } from "@/lib/ghl/config";
 import { createLogger } from "@/lib/logger";
 import { createDryRunPushSender, runReminders } from "@/lib/push";
@@ -111,6 +111,18 @@ describe.skipIf(!runIntegration)("admin participants (integration)", () => {
     expect(await consumeToken(db, l2.link.token)).toBeNull();
     expect((await consumeToken(db, l3.link.token))?.purpose).toBe("reset");
     expect(await issueParticipantLink(db, { userId: "00000000-0000-0000-0000-000000000000", ttlMinutes: 60 })).toEqual({ ok: false, error: "not_found" });
+  });
+
+  it("new link kills every earlier unused link of the account, of either purpose", async () => {
+    const c = await createParticipant(db, { displayName: "רות", email: "rut@example.test", ttlMinutes: 60 });
+    if (!c.ok) throw new Error("create");
+    // a stray reset token (e.g. issued elsewhere) on a not-yet-activated account
+    const stray = await issueToken(db, { userId: c.userId, purpose: "reset", ttlMinutes: 60 });
+    const l = await issueParticipantLink(db, { userId: c.userId, ttlMinutes: 60 });
+    expect(l.ok && l.purpose).toBe("activate");
+    expect(await peekToken(db, stray.token)).toBeNull();
+    expect(await peekToken(db, c.link.token)).toBeNull();
+    expect(await count("activation_tokens", sql`user_id = ${c.userId} and used_at is null`)).toBe(1);
   });
 
   it("disable: login refused like a wrong password, sessions gone, no links, no reminders, no tracker sync", async () => {

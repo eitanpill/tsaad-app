@@ -9,6 +9,9 @@
  * (npm run משתמש ב־node --env-file=.env.local ... ; ראו package.json. התנאי react-server נחוץ כי המודולים המשותפים עם
  *  האפליקציה מייבאים "server-only".)
  *
+ * לפני כל כתיבה מוצג שם המארח של המסד, וצריך לאשר אותו: בהרצה אינטראקטיבית מקלידים אותו; בלי מסוף (סקריפט) חייבים
+ * --db-host <host> שתואם בדיוק. כך הרצה מול מסד לא נכון (‎.env.local של פרויקט אחר) נעצרת לפני שנכתב משהו.
+ *
  * --new-link: חשבון שלא הופעל מקבל קישור הפעלה חדש, חשבון שהופעל מקבל קישור איפוס סיסמה. הקישור הקודם מבוטל. חשבון מושבת לא מקבל.
  */
 import { pathToFileURL } from "node:url";
@@ -27,9 +30,11 @@ export type Args = {
   phone?: string;
   newLink: boolean;
   confirmProduction: boolean;
+  /** אישור לא־אינטראקטיבי של מארח המסד: חייב להיות זהה למארח שב־DATABASE_URL. */
+  dbHost?: string;
 };
 
-const VALUE_FLAGS = new Set(["--username", "--name", "--email", "--phone"]);
+const VALUE_FLAGS = new Set(["--username", "--name", "--email", "--phone", "--db-host"]);
 const BOOL_FLAGS = new Set(["--new-link", "--confirm-production"]);
 
 /** מנתח argv. זורק שגיאה ברורה על דגל לא מוכר, ערך חסר, או קלט לא תקין. מנרמל טלפון כמו ה־webhook. */
@@ -65,10 +70,11 @@ export function parseArgs(argv: string[]): Args {
   const rawName = values.get("--name");
   const rawEmail = values.get("--email");
   const rawPhone = values.get("--phone");
+  const dbHost = values.get("--db-host")?.trim().toLowerCase() || undefined;
 
   if (newLink) {
     if (rawName || rawEmail || rawPhone) throw new Error("--new-link takes only --username (the account already exists)");
-    return { username, newLink, confirmProduction };
+    return { username, newLink, confirmProduction, ...(dbHost ? { dbHost } : {}) };
   }
   if (!rawName || !cleanName(rawName)) throw new Error("--name required");
   const contact = normalizeContact({ email: rawEmail, phone: rawPhone });
@@ -80,6 +86,7 @@ export function parseArgs(argv: string[]): Args {
     phone: contact.phone ?? undefined,
     newLink,
     confirmProduction,
+    ...(dbHost ? { dbHost } : {}),
   };
 }
 
@@ -121,6 +128,30 @@ export function assertGuards(env: Record<string, string | undefined>, args: Pick
   return { databaseUrl, origin, ttlMinutes, dbHost };
 }
 
+/**
+ * אישור מארח המסד לפני כתיבה. typed: מה שהוקלד בתשובה לשאלה (מסוף), או ערך --db-host. בלי אף אחד מהם: סירוב.
+ * ההשוואה מדויקת (בלי הבדל גודל אותיות), כדי שמסד אחר לא יאושר בטעות.
+ */
+export function confirmDbHost(actual: string, typed: string | undefined): void {
+  if (typed === undefined) {
+    throw new Error(`Refusing to run: confirm the database host. Run in a terminal and type it, or pass --db-host ${actual}`);
+  }
+  if (typed.trim().toLowerCase() !== actual.toLowerCase()) {
+    throw new Error(`Refusing to run: the confirmed host does not match DATABASE_URL (${actual}). Nothing was written.`);
+  }
+}
+
+async function askHost(): Promise<string | undefined> {
+  if (!process.stdin.isTTY) return undefined;
+  const { createInterface } = await import("node:readline/promises");
+  const rl = createInterface({ input: process.stdin, output: process.stderr });
+  try {
+    return await rl.question("Type the database host above to write to it: ");
+  } finally {
+    rl.close();
+  }
+}
+
 export type RunResult = { kind: "created" | "activate" | "reset"; link: string; expiresAt: Date; username: string };
 
 /** הלוגיקה, בנפרד מ־main כדי שאפשר יהיה לבדוק אותה מול מסד בדיקות. לא מדפיסה ולא שולחת כלום. */
@@ -154,6 +185,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const g = assertGuards(process.env, args);
   console.error(`database host: ${g.dbHost}`);
+  confirmDbHost(g.dbHost, args.dbHost ?? (await askHost()));
   const pool = new Pool({ connectionString: g.databaseUrl });
   const db = drizzle(pool, { schema });
   try {

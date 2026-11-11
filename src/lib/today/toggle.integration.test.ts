@@ -176,4 +176,10 @@ describe.skipIf(!runIntegration)("toggleActionCore (integration)", () => {
     expect(kept).toBe(4); // 3 for u (the 2 blocked ones were removed) + 1 for v
     await db.execute(sql`delete from login_attempts where kind = 'toggle'`);
   });
+  it("syncTracker: false (owner day preview) saves the mark but queues nothing for GHL", async () => {
+    const u = await mkUser();
+    const r = await toggleActionCore(db, { userId: u, day: 4, action: "habit", now: NOON4, schedule, desired: true, syncTracker: false });
+    expect(r).toMatchObject({ ok: true, done: true, changed: true });
+    expect(rowsOf<{ n: number }>(await db.execute(sql`select count(*)::int as n from sync_outbox where user_id = ${u}`))[0].n).toBe(0);
+  });
 });

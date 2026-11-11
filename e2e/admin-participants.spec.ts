@@ -56,7 +56,9 @@ test("logged out and non-admin users get the normal 404 on /admin/participants",
 
 test("admin adds a participant by hand: link shown once with a copy button, and it really activates the account", async ({ browser }) => {
   const { ctx, page } = await adminCtx(browser);
-  await page.goto("/admin/participants");
+  const res = await page.goto("/admin/participants");
+  // personal data: never stored by the browser or a shared cache
+  expect(res!.headers()["cache-control"]).toMatch(/no-store/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("משתתפים");
   // the two owner pages link to each other
   await page.getByRole("navigation", { name: "דפי הבעלים" }).getByRole("link", { name: "סטטיסטיקה" }).click();
@@ -70,6 +72,11 @@ test("admin adds a participant by hand: link shown once with a copy button, and 
 
   const panel = page.getByTestId("one-time-link");
   await expect(panel).toBeVisible();
+  // focus moves to the link field, described by the intro and the show-once note
+  await expect(panel.getByRole("textbox")).toBeFocused();
+  await expect(panel.getByRole("textbox")).toHaveAccessibleDescription(/קישור הפעלה עבור דנה כהן.*הקישור מוצג פעם אחת/);
+  // the list already shows the new participant, without a reload
+  await expect(page.locator("li.adm-item", { hasText: "דנה כהן" }).first()).toBeVisible();
   await expect(panel.getByText("הקישור מוצג פעם אחת. שלחו אותו בעצמכם בוואטסאפ או במייל.")).toBeVisible();
   const link = await panel.getByRole("textbox").inputValue();
   expect(link).toMatch(/^http:\/\/localhost:3101\/activate\?token=[\w-]{20,}$/);
@@ -130,7 +137,9 @@ test("new link, disable (login refused, signed out at once), enable, and delete 
   await tpage.goto("/today");
   await expect(tpage.getByRole("heading", { level: 1 })).toBeVisible();
 
-  await row.getByRole("button", { name: /השבתת/ }).click();
+  await row.getByRole("button", { name: /^השבתה של / }).click();
+  // the list updates in place: the row is now marked disabled and the same button re-enables, keeping focus
+  await expect(row.getByRole("button", { name: /^הפעלה מחדש של / })).toBeFocused();
   await expect(row.getByRole("status").filter({ hasText: "הושבת" })).toBeVisible();
   await page.reload();
   const disabledRow = page.locator("li.adm-item", { hasText: target.username });
@@ -155,7 +164,10 @@ test("new link, disable (login refused, signed out at once), enable, and delete 
 
   // delete: first step is a confirmation page, a wrong confirmation deletes nothing
   await page.goto(`/admin/participants?q=${target.username}`);
-  await page.locator("li.adm-item", { hasText: target.username }).getByRole("link", { name: /מחיקת/ }).click();
+  await page.locator("li.adm-item", { hasText: target.username }).getByRole("link", { name: /^מחיקה של / }).click();
+  // focus lands on the typed confirmation, with the warning as its description
+  await expect(page.getByLabel("שם המשתמש לאישור")).toBeFocused();
+  await expect(page.getByLabel("שם המשתמש לאישור")).toHaveAccessibleDescription(/לצמיתות/);
   await expect(page.getByRole("heading", { name: "מחיקה לצמיתות" })).toBeVisible();
   await axe(page);
   await page.getByLabel("שם המשתמש לאישור").fill("wrong");
@@ -165,6 +177,7 @@ test("new link, disable (login refused, signed out at once), enable, and delete 
   await page.getByLabel("שם המשתמש לאישור").fill(target.username);
   await page.getByRole("button", { name: "מחיקה סופית" }).click();
   await expect(page.getByRole("status").filter({ hasText: "המשתתף נמחק" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "המשתתף נמחק" })).toBeFocused();
   expect((await pool.query("select count(*)::int n from users where id = $1", [target.userId])).rows[0].n).toBe(0);
   await ctx.close();
 });
@@ -240,7 +253,8 @@ test.describe("day preview", () => {
     await page.goto("/day/12"); // not yet open on day 9
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-    await banner.getByRole("button", { name: "הפסקת מצב התצוגה המקדימה" }).click();
+    await expect(page.getByRole("region", { name: "תצוגה מקדימה" })).toBeVisible();
+    await banner.getByRole("button", { name: "הפסקה של מצב התצוגה המקדימה" }).click();
     await page.waitForURL("**/admin/participants");
     await page.goto("/today");
     await expect(page.getByTestId("preview-banner")).toHaveCount(0);

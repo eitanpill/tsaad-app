@@ -302,11 +302,11 @@
 | `admin.participants.link.issueResetFor` | קישור איפוס סיסמה עבור {name} |  |
 | `admin.participants.disable.button` | השבתה |  |
 | `admin.participants.disable.enable` | הפעלה מחדש |  |
-| `admin.participants.disable.buttonFor` | השבתת {name} |  |
+| `admin.participants.disable.buttonFor` | השבתה של {name} |  |
 | `admin.participants.disable.enableFor` | הפעלה מחדש של {name} |  |
 | `admin.participants.disable.hint` | משתמש מושבת לא יכול להיכנס, נותקים אותו מיד, והוא לא מקבל תזכורות או קישורים. |  |
 | `admin.participants.remove.button` | מחיקה |  |
-| `admin.participants.remove.buttonFor` | מחיקת {name} |  |
+| `admin.participants.remove.buttonFor` | מחיקה של {name} |  |
 | `admin.participants.remove.heading` | מחיקה לצמיתות |  |
 | `admin.participants.remove.warning` | מחיקת {name} היא לצמיתות: כל הנתונים של המשתתף או המשתתפת נמחקים, ואי אפשר לשחזר. כדי לאשר, הקלידו את שם המשתמש ({username}). |  |
 | `admin.participants.remove.confirmLabel` | שם המשתמש לאישור |  |
@@ -334,8 +334,9 @@
 | `admin.participants.done.deleted` | המשתתף נמחק. |  |
 | `admin.participants.done.previewStopped` | התצוגה המקדימה הופסקה. |  |
 | `admin.previewBanner.text` | מצב תצוגה מקדימה: יום {n} |  |
+| `admin.previewBanner.label` | תצוגה מקדימה | aria-label of the banner region |
 | `admin.previewBanner.stop` | הפסקה |  |
-| `admin.previewBanner.stopLabel` | הפסקת מצב התצוגה המקדימה |  |
+| `admin.previewBanner.stopLabel` | הפסקה של מצב התצוגה המקדימה |  |
 
 ## כניסה
 

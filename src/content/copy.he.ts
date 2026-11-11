@@ -345,13 +345,13 @@ export const copy = {
       disable: {
         button: "השבתה",
         enable: "הפעלה מחדש",
-        buttonFor: "השבתת {name}",
+        buttonFor: "השבתה של {name}",
         enableFor: "הפעלה מחדש של {name}",
         hint: "משתמש מושבת לא יכול להיכנס, נותקים אותו מיד, והוא לא מקבל תזכורות או קישורים.",
       },
       remove: {
         button: "מחיקה",
-        buttonFor: "מחיקת {name}",
+        buttonFor: "מחיקה של {name}",
         heading: "מחיקה לצמיתות",
         warning: "מחיקת {name} היא לצמיתות: כל הנתונים של המשתתף או המשתתפת נמחקים, ואי אפשר לשחזר. כדי לאשר, הקלידו את שם המשתמש ({username}).",
         confirmLabel: "שם המשתמש לאישור",
@@ -388,8 +388,9 @@ export const copy = {
     },
     previewBanner: {
       text: "מצב תצוגה מקדימה: יום {n}",
+      label: "תצוגה מקדימה",
       stop: "הפסקה",
-      stopLabel: "הפסקת מצב התצוגה המקדימה",
+      stopLabel: "הפסקה של מצב התצוגה המקדימה",
     },
   },
 

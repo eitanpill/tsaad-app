@@ -41,6 +41,8 @@ export async function toggleAction(
       desired: typeof desired === "boolean" ? desired : undefined,
       now: clock.now,
       schedule: clock.schedule,
+      // marks made in an owner's day preview stay in the app: never queued for the GHL tracker
+      syncTracker: clock.previewDay === null,
     });
   } catch (e) {
     logger.error("toggleAction failed", { error: e });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertGuards, parseArgs } from "./admin-create-user";
+import { assertGuards, confirmDbHost, parseArgs } from "./admin-create-user";
 
 const ENV = { DATABASE_URL: "postgres://user:secret@ep-x-pooler.eu-central-1.aws.neon.tech/db?sslmode=require", APP_ORIGIN: "https://app.example.test" };
 
@@ -56,5 +56,22 @@ describe("admin-create-user guards", () => {
     const g = assertGuards(ENV, { confirmProduction: true });
     expect(g.dbHost).toBe("ep-x-pooler.eu-central-1.aws.neon.tech");
     expect(JSON.stringify({ host: g.dbHost })).not.toContain("secret");
+  });
+});
+
+describe("admin-create-user database host confirmation", () => {
+  const host = "ep-x-pooler.eu-central-1.aws.neon.tech";
+  it("parses --db-host", () => {
+    expect(parseArgs(["--username", "pit", "--new-link", "--confirm-production", "--db-host", host.toUpperCase()]).dbHost).toBe(host);
+    expect(parseArgs(["--username", "pit", "--new-link"]).dbHost).toBeUndefined();
+  });
+  it("refuses with no confirmation (no terminal, no --db-host) and with a different host", () => {
+    expect(() => confirmDbHost(host, undefined)).toThrow(/--db-host/);
+    expect(() => confirmDbHost(host, "")).toThrow(/does not match/);
+    expect(() => confirmDbHost(host, "ep-other.neon.tech")).toThrow(/does not match/);
+    expect(() => confirmDbHost(host, "127.0.0.1")).toThrow(/does not match/);
+  });
+  it("accepts the exact host, ignoring case and surrounding spaces", () => {
+    expect(() => confirmDbHost(host, ` ${host.toUpperCase()} `)).not.toThrow();
   });
 });

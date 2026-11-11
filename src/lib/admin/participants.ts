@@ -91,8 +91,8 @@ export type ParticipantLinkResult =
   | { ok: false; error: "not_found" | "disabled" };
 
 /**
- * קישור חדש: להפעלה למי שעוד לא הפעיל/ה, לאיפוס סיסמה למי שהפעיל/ה. קישורים קודמים שלא נוצלו מאותה מטרה מבוטלים
- * (issueTokenIn). חשבון מושבת לא מקבל קישור. הנעילה על שורת המשתמש מונעת מרוץ מול השבתה.
+ * קישור חדש: להפעלה למי שעוד לא הפעיל/ה, לאיפוס סיסמה למי שהפעיל/ה. כל הקישורים הקודמים שלא נוצלו
+ * (משתי המטרות) מבוטלים. חשבון מושבת לא מקבל קישור. הנעילה על שורת המשתמש מונעת מרוץ מול השבתה.
  */
 export async function issueParticipantLink(
   db: Db,
@@ -117,6 +117,8 @@ export async function issueParticipantLink(
     if (!u) return { ok: false as const, error: "not_found" as const };
     if (u.disabled_at) return { ok: false as const, error: "disabled" as const };
     const purpose: TokenPurpose = u.password_hash !== null || u.activated_at !== null ? "reset" : "activate";
+    // every earlier unused link of this account dies, of either purpose: only the link shown now works
+    await tx.execute(sql`delete from activation_tokens where user_id = ${u.id} and used_at is null`);
     const link = await issueTokenIn(tx, { userId: u.id, purpose, ttlMinutes: args.ttlMinutes });
     return { ok: true as const, purpose, userId: u.id, username: u.username, link };
   });

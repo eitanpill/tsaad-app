@@ -17,7 +17,10 @@ vi.mock("@/lib/auth/config", async (orig) => ({
   ...(await orig<typeof import("@/lib/auth/config")>()),
   getSessionSecret: () => "s".repeat(32),
 }));
-vi.mock("@/lib/preview/context", () => ({ getAppClock: async () => ({ now: new Date("2026-12-04T12:00:00Z"), schedule: null, previewDay: null }) }));
+const preview = vi.hoisted(() => ({ day: null as number | null }));
+vi.mock("@/lib/preview/context", () => ({
+  getAppClock: async () => ({ now: new Date("2026-12-04T12:00:00Z"), schedule: null, previewDay: preview.day }),
+}));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() } }));
 
 import { toggleAction } from "./actions";
@@ -28,6 +31,7 @@ describe("toggleAction (server action wrapper)", () => {
     rate.mockReset();
     rate.mockResolvedValue(true);
     hdrs.h.clear();
+    preview.day = null;
     vi.stubEnv("APP_ORIGIN", "http://localhost:3100");
   });
 
@@ -86,5 +90,15 @@ describe("toggleAction (server action wrapper)", () => {
     core.mockResolvedValue({ ok: true });
     await toggleAction(4, "habit", "yes" as never);
     expect(core.mock.calls[0][1].desired).toBeUndefined();
+  });
+  it("queues tracker sync normally, but never during an owner's day preview", async () => {
+    hdrs.h.set("origin", "http://localhost:3100");
+    hdrs.h.set("cookie", "x");
+    core.mockResolvedValue({ ok: true });
+    await toggleAction(4, "habit", true);
+    expect(core.mock.calls[0][1].syncTracker).toBe(true);
+    preview.day = 9;
+    await toggleAction(9, "habit", true);
+    expect(core.mock.calls[1][1].syncTracker).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
 import {
@@ -15,21 +15,55 @@ import { IDLE, type AdminState } from "./state";
 const P = copy.admin.participants;
 
 function Status({ state }: { state: AdminState }) {
-  // role=status: הודעות הצלחה ושגיאה מוקראות. הקישור עצמו בפאנל נפרד.
-  if (state.status === "error") return <p className="adm-msg adm-msg--err" role="alert">{P.errors[state.error]}</p>;
-  if (state.status === "done") return <p className="adm-msg" role="status">{state.message}</p>;
-  return null;
+  // אזור ה־status קיים תמיד (ריק במנוחה), כדי שקוראי מסך יקריאו את ההודעה כשהיא מופיעה; שגיאה היא alert.
+  // הקישור עצמו בפאנל נפרד.
+  return (
+    <>
+      <p className="adm-msg" role="status">
+        {state.status === "done" ? state.message : null}
+      </p>
+      {state.status === "error" ? (
+        <p className="adm-msg adm-msg--err" role="alert">
+          {P.errors[state.error]}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * בזמן שליחה הכפתור מסומן aria-disabled ולא disabled: כפתור שנעשה disabled מאבד את הפוקוס (הוא עובר ל־body), וקורא
+ * המסך מאבד את המקום. שליחה כפולה נחסמת כאן.
+ */
+const blockWhile = (pending: boolean) => (e: FormEvent) => {
+  if (pending) e.preventDefault();
+};
+
+/** הודעה שמקבלת את הפוקוס כשהיא מופיעה (למשל אחרי מחיקה, כשהכפתור שנלחץ כבר לא קיים). */
+export function FocusOnMount({ children, className }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  useEffect(() => ref.current?.focus(), []);
+  return (
+    <p ref={ref} tabIndex={-1} className={className} role="status">
+      {children}
+    </p>
+  );
 }
 
 /** הקישור החד־פעמי, עם הערה וכפתור העתקה. קיים רק בזיכרון הטופס: רענון הדף מעלים אותו. */
 function LinkPanel({ state }: { state: Extract<AdminState, { status: "link" }> }) {
   const [note, setNote] = useState("");
+  const input = useRef<HTMLInputElement>(null);
+  const id = useId();
+  // הפאנל מופיע אחרי הפעולה: הפוקוס עובר לשדה הקישור (שמסומן כולו), והתיאור שלו מוקרא איתו.
+  useEffect(() => input.current?.focus(), [state.link]);
   const intro = fill(state.purpose === "reset" ? P.link.forReset : P.link.forActivate, {
     name: state.name || state.username,
     username: state.username,
     until: state.until,
   });
   async function onCopy() {
+    setNote(""); // לחיצה חוזרת: ההודעה מתחלפת, ולכן מוקראת שוב
     try {
       await navigator.clipboard.writeText(state.link);
       setNote(P.link.copied);
@@ -39,10 +73,18 @@ function LinkPanel({ state }: { state: Extract<AdminState, { status: "link" }> }
   }
   return (
     <div className="adm-link" data-testid="one-time-link">
-      <p>{intro}</p>
+      <p id={`${id}-intro`}>{intro}</p>
       <label>
         {P.link.label}
-        <input className="adm-link-input" readOnly value={state.link} dir="ltr" onFocus={(e) => e.currentTarget.select()} />
+        <input
+          ref={input}
+          className="adm-link-input"
+          readOnly
+          value={state.link}
+          dir="ltr"
+          aria-describedby={`${id}-intro ${id}-once`}
+          onFocus={(e) => e.currentTarget.select()}
+        />
       </label>
       <button type="button" className="adm-btn" onClick={onCopy}>
         {P.link.copy}
@@ -50,7 +92,9 @@ function LinkPanel({ state }: { state: Extract<AdminState, { status: "link" }> }
       <p className="adm-msg" role="status">
         {note}
       </p>
-      <p className="adm-note">{P.link.showOnce}</p>
+      <p className="adm-note" id={`${id}-once`}>
+        {P.link.showOnce}
+      </p>
     </div>
   );
 }
@@ -58,7 +102,7 @@ function LinkPanel({ state }: { state: Extract<AdminState, { status: "link" }> }
 export function AddForm() {
   const [state, action, pending] = useActionState(addParticipantAction, IDLE);
   return (
-    <form action={action} className="adm-form" autoComplete="off">
+    <form action={action} onSubmit={blockWhile(pending)} className="adm-form" autoComplete="off">
       <label>
         {P.add.name}
         <input name="name" required maxLength={80} />
@@ -71,7 +115,7 @@ export function AddForm() {
         {P.add.email}
         <input name="email" type="email" dir="ltr" maxLength={254} />
       </label>
-      <button className="adm-btn adm-btn--primary" disabled={pending}>
+      <button className="adm-btn adm-btn--primary" aria-disabled={pending || undefined}>
         {P.add.submit}
       </button>
       <Status state={state} />
@@ -83,10 +127,10 @@ export function AddForm() {
 export function NewLinkForm({ id, name, activated }: { id: string; name: string; activated: boolean }) {
   const [state, action, pending] = useActionState(newLinkAction, IDLE);
   return (
-    <form action={action}>
+    <form action={action} onSubmit={blockWhile(pending)}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="name" value={name} />
-      <button className="adm-btn" disabled={pending} aria-label={fill(activated ? P.link.issueResetFor : P.link.issueActivateFor, { name })}>
+      <button className="adm-btn" aria-disabled={pending || undefined} aria-label={fill(activated ? P.link.issueResetFor : P.link.issueActivateFor, { name })}>
         {activated ? P.link.issueReset : P.link.issueActivate}
       </button>
       <Status state={state} />
@@ -98,11 +142,11 @@ export function NewLinkForm({ id, name, activated }: { id: string; name: string;
 export function DisableForm({ id, name, disabled }: { id: string; name: string; disabled: boolean }) {
   const [state, action, pending] = useActionState(setDisabledAction, IDLE);
   return (
-    <form action={action}>
+    <form action={action} onSubmit={blockWhile(pending)}>
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="name" value={name} />
       <input type="hidden" name="disable" value={disabled ? "0" : "1"} />
-      <button className="adm-btn" disabled={pending} aria-label={fill(disabled ? P.disable.enableFor : P.disable.buttonFor, { name })}>
+      <button className="adm-btn" aria-disabled={pending || undefined} aria-label={fill(disabled ? P.disable.enableFor : P.disable.buttonFor, { name })}>
         {disabled ? P.disable.enable : P.disable.button}
       </button>
       <Status state={state} />
@@ -112,15 +156,17 @@ export function DisableForm({ id, name, disabled }: { id: string; name: string; 
 
 export function DeleteForm({ id, name, username }: { id: string; name: string; username: string }) {
   const [state, action, pending] = useActionState(deleteParticipantAction, IDLE);
+  const warnId = useId();
   return (
-    <form action={action} className="adm-form">
+    <form action={action} onSubmit={blockWhile(pending)} className="adm-form">
       <input type="hidden" name="id" value={id} />
-      <p>{fill(P.remove.warning, { name, username })}</p>
+      <p id={warnId}>{fill(P.remove.warning, { name, username })}</p>
       <label>
         {P.remove.confirmLabel}
-        <input name="confirm" required dir="ltr" autoComplete="off" />
+        {/* the confirmation step appears after a navigation: focus goes straight to it, with the warning read out */}
+        <input name="confirm" required dir="ltr" autoComplete="off" autoFocus aria-describedby={warnId} />
       </label>
-      <button className="adm-btn adm-btn--danger" disabled={pending}>
+      <button className="adm-btn adm-btn--danger" aria-disabled={pending || undefined}>
         {P.remove.submit}
       </button>
       <Status state={state} />
@@ -131,7 +177,7 @@ export function DeleteForm({ id, name, username }: { id: string; name: string; u
 export function PreviewForm({ current }: { current: number | null }) {
   const [state, action, pending] = useActionState(startPreviewAction, IDLE);
   return (
-    <form action={action} className="adm-form">
+    <form action={action} onSubmit={blockWhile(pending)} className="adm-form">
       <label htmlFor="adm-preview-day">{P.preview.dayLabel}</label>
       <div>
         <select id="adm-preview-day" name="day" defaultValue={current ?? 1}>
@@ -142,7 +188,7 @@ export function PreviewForm({ current }: { current: number | null }) {
           ))}
         </select>
       </div>
-      <button className="adm-btn adm-btn--primary" disabled={pending}>
+      <button className="adm-btn adm-btn--primary" aria-disabled={pending || undefined}>
         {P.preview.start}
       </button>
       <Status state={state} />
