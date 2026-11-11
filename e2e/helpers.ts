@@ -110,3 +110,25 @@ export async function expectReflowAndTargets(page: Page) {
   });
   expect(small).toEqual([]);
 }
+
+/** אלמנטים שיוצאים מרוחב המסך (לבדיקת הגדלה ל־200%): מחזיר תיאור קצר של כל אחד, כדי שכישלון יצביע על הסיבה. */
+export async function overflowingElements(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const w = document.documentElement.clientWidth;
+    const out: string[] = [];
+    for (const el of document.querySelectorAll<HTMLElement>("body *")) {
+      if (el.closest("svg") && el.tagName.toLowerCase() !== "svg") continue;
+      const cs = getComputedStyle(el);
+      if (cs.position === "absolute" || cs.position === "fixed" || el.classList.contains("visually-hidden") || el.classList.contains("skip-link")) continue;
+      // content clipped by an ancestor with overflow hidden does not scroll the page
+      let clipped = false;
+      for (let p = el.parentElement; p; p = p.parentElement) if (getComputedStyle(p).overflowX === "hidden") { clipped = true; break; }
+      if (clipped) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0) continue;
+      if (r.left < -0.5 || r.right > w + 0.5) out.push(`${el.tagName.toLowerCase()}.${el.className} ${Math.round(r.left)}..${Math.round(r.right)}`);
+    }
+    return out;
+  });
+}
+

@@ -79,3 +79,22 @@ describe("buildConfig", () => {
     expect(c.startDate).toBe("2026-12-01");
   });
 });
+
+describe("stage 10 env", () => {
+  it("accepts offer links only as https, UTM values as safe tokens, and expiry as a date or an ISO instant", () => {
+    const e = parseEnv({
+      MORNING_URL_SESSION_271: "https://pay.example.test/s",
+      OFFER_UTM_SESSION: "session_271",
+      YESODOT_OFFER_EXPIRY: "2026-12-31",
+      PRIVACY_CONTACT: "privacy@example.test",
+    });
+    expect(e.MORNING_URL_SESSION_271).toBe("https://pay.example.test/s");
+    expect(e.YESODOT_OFFER_EXPIRY).toBe("2026-12-31");
+    expect(parseEnv({ YESODOT_OFFER_EXPIRY: "2026-12-31T20:00:00+02:00" }).YESODOT_OFFER_EXPIRY).toBeDefined();
+    expect(() => parseEnv({ MORNING_URL_BUNDLE_139: "http://pay.example.test" })).toThrow(/MORNING_URL_BUNDLE_139/);
+    expect(() => parseEnv({ MORNING_URL_BUNDLE_139: "[MORNING_URL_BUNDLE_139]" })).toThrow();
+    expect(() => parseEnv({ OFFER_UTM_YESODOT: "a b&c" })).toThrow(/OFFER_UTM_YESODOT/);
+    expect(() => parseEnv({ YESODOT_OFFER_EXPIRY: "31/12/2026" })).toThrow(/YESODOT_OFFER_EXPIRY/);
+    expect(() => parseEnv({ YESODOT_OFFER_EXPIRY: "2026-02-30" })).toThrow();
+  });
+});

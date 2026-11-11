@@ -4,6 +4,7 @@ import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { Pool as NeonPool } from "@neondatabase/serverless";
 import { Pool as PgPool } from "pg";
+import { getConfig } from "@/config";
 import { isLocalDatabaseUrl } from "./local-url";
 import * as schema from "./schema";
 
@@ -26,7 +27,7 @@ let cached: Db | undefined;
 
 export function getDb(): Db {
   if (!cached) {
-    const url = process.env.DATABASE_URL;
+    const url = getConfig().env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is not set");
     cached = createDb(url);
   }

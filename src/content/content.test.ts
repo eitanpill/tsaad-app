@@ -29,7 +29,9 @@ const ALLOWED_PLACEHOLDERS = new Set([
   "[YESODOT_OFFER_EXPIRY]",
   "[YESODOT_EMAIL_TIMING]",
   "[MEDIA_*]",
+  "[MORNING_URL_BUNDLE_139]",
   "[UTM_SESSION]",
+  "[UTM_BUNDLE]",
   "[UTM_YESODOT]",
   "[GHL_FIELD_MAP]",
   "[HOSTING_ENV]",
@@ -38,6 +40,10 @@ const ALLOWED_PLACEHOLDERS = new Set([
 
 // Variables the code fills in at render time.
 const ALLOWED_TOKENS = new Set([
+  "done",
+  "total",
+  "unlockTime",
+  "reminderTime",
   "n",
   "prev",
   "day",
@@ -50,6 +56,7 @@ const ALLOWED_TOKENS = new Set([
   "time",
   "text",
   "name",
+  "greeting",
   "username",
   "link",
   "sessionLink",
@@ -59,6 +66,7 @@ const ALLOWED_TOKENS = new Set([
   "deadline",
   "spots",
   "seconds",
+  "date",
 ]);
 
 // Forms that read as one gender only, or that put pressure on the reader.
@@ -87,6 +95,8 @@ const dayStrings = DAYS.flatMap((d) => [
   d.habit.title,
   d.movement.title,
   d.meditation.title,
+  d.opening,
+  ...[d.habit, d.movement, d.meditation].flatMap((a) => (a.detail ? [a.detail] : [])),
 ]);
 const allStrings = [...copyStrings, ...dayStrings];
 
@@ -113,12 +123,34 @@ describe("days", () => {
     }
   });
 
-  it("matches the spec for a few anchor days", () => {
-    expect(DAYS[0].habit.title).toBe("מים חמימים עם לימון");
-    expect(DAYS[3].habit.title).toBe("שבע דקות אור שמש");
-    expect(DAYS[3].movement.title).toBe("פלג גוף תחתון");
-    expect(DAYS[3].meditation.title).toBe("שלושה צלילים");
-    expect(DAYS[13].habit.title).toBe("בחירת הרגלים להמשך");
+  it("matches Pit's content file for a few anchor days", () => {
+    expect(DAYS[0].habit.title).toBe("כוס מים חמימים עם לימון כשקמים");
+    expect(DAYS[0].movement.title).toBe("מתיחת בוקר עדינה בעמידה");
+    expect(DAYS[3].habit.title).toBe("7 דקות של אמבטיית שמש");
+    expect(DAYS[3].movement.title).toBe("חיזוק פלג גוף תחתון");
+    expect(DAYS[3].meditation.title).toBe("להקשיב ל־3 צלילים סביבכם");
+    expect(DAYS[11].habit.title).toBe("חצי שעה בלי מסכים לפני השינה, ומי שיכול/ה, יותר");
+    expect(DAYS[13].habit.title).toBe("לבחור את ההרגלים שממשיכים איתם");
+  });
+
+  it("keeps the approved short title on day 13 meditation, with Pit's long wording as detail", () => {
+    expect(DAYS[12].meditation.title).toBe("7 דקות מודרכות: לבחור הרגלים מיטיבים");
+    expect(DAYS[12].meditation.detail).toBe(
+      "7 דקות מודרכות על הרגלים: מה עומד מאחוריהם ולמה חשוב לבחור בהרגלים מיטיבים",
+    );
+    const withDetail = DAYS.flatMap((d) => [d.habit, d.movement, d.meditation]).filter((a) => a.detail);
+    expect(withDetail).toHaveLength(1);
+  });
+
+  it("has a filmed opening line per day that names the day and the habit", () => {
+    for (const d of DAYS) {
+      expect(d.opening.startsWith(`יום ${d.day}. ההרגל של היום: `), d.opening).toBe(true);
+      expect(d.opening.endsWith("קחו נשימה אחת איתי, ומתחילים."), d.opening).toBe(true);
+      expect(d.opening.includes('"'), d.opening).toBe(false);
+    }
+    expect(DAYS[11].opening).toBe(
+      "יום 12. ההרגל של היום: חצי שעה בלי מסכים לפני השינה. קחו נשימה אחת איתי, ומתחילים.",
+    );
   });
 
   it("adds no sugar habit", () => {
@@ -244,5 +276,19 @@ describe("copy deck", () => {
     const count = section.split("\n").filter((l) => /^\d+\. /.test(l)).length;
     expect(count).toBeGreaterThan(0);
     expect(count).toBeLessThanOrEqual(6);
+  });
+});
+
+describe("times in copy come from config", () => {
+  it("no hard-coded HH:MM in the copy or the legal texts (use {unlockTime} / {reminderTime})", async () => {
+    const { legal } = await import("./legal.he");
+    const hits = (JSON.stringify(copy) + JSON.stringify(legal)).match(/\b\d{1,2}:\d{2}\b/g);
+    expect(hits).toBeNull();
+  });
+});
+
+describe("day video ids", () => {
+  it("a videoId, when set, is a plain Bunny id (letters, digits, _ and -)", () => {
+    for (const d of DAYS) if (d.videoId !== undefined) expect(d.videoId, `day ${d.day}`).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 });

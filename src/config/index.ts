@@ -35,3 +35,12 @@ export function getConfig(): AppConfig {
   cached ??= buildConfig(process.env);
   return cached;
 }
+
+/**
+ * מקור הסביבה הגולמי לקוד שצריך גם משתנים שאינם בסכמה (VERCEL) או ערכים כפי שהוגדרו. הקריאה היחידה ל־process.env
+ * מחוץ ל־src/config עוברת כאן, אחרי שהסביבה אומתה (getConfig זורק על ערך לא תקין, עם שמות משתנים בלבד).
+ */
+export function readEnv(): Record<string, string | undefined> {
+  getConfig();
+  return process.env;
+}

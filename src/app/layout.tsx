@@ -4,14 +4,14 @@ import "./globals.css";
 import { connection } from "next/server";
 import { PwaEarly } from "@/components/PwaEarly";
 
+// Variable fonts (no `weight` list): one file per subset instead of one per weight (3 files instead of 12).
+// Weights used in the CSS: headings 700/800/900 (Noto Sans Hebrew), body 400/500/700 (Rubik).
 const notoHebrew = Noto_Sans_Hebrew({
-  weight: ["700", "800", "900"],
   subsets: ["hebrew"],
   variable: "--font-heading",
 });
 
 const rubik = Rubik({
-  weight: ["400", "500", "700"],
   subsets: ["hebrew", "latin"],
   variable: "--font-body",
 });

@@ -6,7 +6,7 @@ import { actionsForDay, type Action } from "@/lib/days";
 import { actionKey } from "@/lib/today/view";
 import { AlertCircle, CheckIcon } from "../../_components/icons";
 import { toggleAction } from "../../today/actions";
-import { actionTitle, type DayTitles } from "../../today/action-labels";
+import { actionDetail, actionTitle, type DayTitles } from "../../today/action-labels";
 import { ActionButton } from "../../today/ActionButton";
 
 type Toast = { kind: "saved" | "undone"; text: string } | { kind: "error"; text: string; retry: { action: Action; to: boolean } };
@@ -64,6 +64,7 @@ export function DayActions({ day, titles, done }: { day: number; titles: DayTitl
             day={day}
             action={a}
             title={actionTitle(titles, a)}
+            detail={actionDetail(titles, a)}
             pressed={optimistic.includes(actionKey(day, a))}
             wide={i === 0 || a === "live"}
             onToggle={(_, action) => setAction(action, !optimistic.includes(actionKey(day, action)))}

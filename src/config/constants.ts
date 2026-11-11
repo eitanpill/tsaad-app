@@ -54,6 +54,29 @@ export const LIVE = Object.freeze({
   calendarDurationMinutes: 60,
 });
 
+/**
+ * הצעת יום 14 (שלב 10). סוף הלייב של יום 14 = תחילתו + calendarDurationMinutes (מפגש של כ־60 דקות לפי פית, 2026-11-10).
+ * אורך חלון ההצעה (OFFER_WINDOW_HOURS) ותחילת הלייב (LIVE_TIME_DAY14) מגיעים מהתצורה; בלי אחד מהם ההצעה לא נפתחת.
+ */
+export const OFFER = Object.freeze({
+  liveEndsAfterStartMinutes: LIVE.calendarDurationMinutes,
+});
+
+/**
+ * תוויות מעקב לקישורי ההצעות. אלה שמות טכניים (לא ערכים עסקיים). ה־utm_campaign של כל הצעה מגיע מהתצורה
+ * (OFFER_UTM_SESSION / OFFER_UTM_BUNDLE / OFFER_UTM_YESODOT); כשלא הוגדר, הפרמטר לא נוסף.
+ */
+export const UTM = Object.freeze({
+  source: "tsaad_app",
+  medium: "app",
+});
+
+/** תאריכים בדפים המשפטיים (טיוטה, ממתינה לבדיקה משפטית). תאריך הבדיקה האחרונה של הנגישות הוא תאריך הסקירה האחרון של שלב 10. */
+export const LEGAL = Object.freeze({
+  accessibilityLastChecked: "2026-11-10",
+  draftDate: "2026-11-10",
+});
+
 /** התראות דחיפה (שלב 9). תקרת המנויים למשתמש (מכשירים) היא REMINDERS.maxSubscriptionsPerUser: המנוי הוותיק ביותר נמחק בהוספת חדש מעבר לה. */
 export const PUSH = Object.freeze({
   /** גודל גוף בקשה מרבי, בבתים (מנוי תקין הוא פחות מ־1KB). */

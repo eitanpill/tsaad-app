@@ -28,6 +28,8 @@ import { GET as remindersGET } from "@/app/api/cron/reminders/route";
 // אם web-push היה נטען ונקרא, הבדיקה "לא נשלח כלום" הייתה נופלת.
 const webPushSend = vi.hoisted(() => vi.fn());
 vi.mock("web-push", () => ({ sendNotification: webPushSend, setVapidDetails: vi.fn() }));
+// The reminders route reads serverNow() (request headers, for the guarded test clock); outside a request: the real time.
+vi.mock("@/lib/today/clock", () => ({ serverNow: async () => new Date() }));
 
 const url = process.env.DATABASE_URL;
 const runIntegration = !!url && process.env.TSAAD_TEST_DB === "1" && isLocalDatabaseUrl(url);

@@ -3,6 +3,7 @@ import { getConfig } from "@/config";
 import { copy } from "@/content/copy.he";
 import { requireUser } from "@/lib/auth/dal";
 import { fill } from "@/lib/format";
+import { timeTokens } from "@/lib/times";
 import { RemindersControls } from "./RemindersControls";
 
 export const metadata: Metadata = { title: `${copy.nav.reminders} | ${copy.brand.name}` };
@@ -14,13 +15,14 @@ export const metadata: Metadata = { title: `${copy.nav.reminders} | ${copy.brand
 export default async function RemindersPage() {
   await requireUser();
   const vapidKey = getConfig().env.VAPID_PUBLIC_KEY ?? null;
+  const times = timeTokens();
   const previewText = fill(copy.push.generic, { day: copy.push.previewDay });
 
   return (
     <>
       <section className="t t-rem-hero" aria-labelledby="rem-h">
         <h1 id="rem-h">{copy.reminders.title}</h1>
-        <p>{copy.reminders.intro}</p>
+        <p>{fill(copy.reminders.intro, times)}</p>
       </section>
 
       <section className="t t-rem-preview" aria-label={fill(copy.a11y.reminders.preview, { text: previewText })}>
@@ -42,7 +44,7 @@ export default async function RemindersPage() {
         </div>
       </section>
 
-      <RemindersControls vapidKey={vapidKey} />
+      <RemindersControls vapidKey={vapidKey} unlockTime={times.unlockTime} reminderTime={times.reminderTime} />
     </>
   );
 }

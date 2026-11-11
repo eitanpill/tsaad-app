@@ -1,20 +1,24 @@
 import type { Metadata } from "next";
-import { Cup } from "./Cup";
+import { BeforeStart } from "./BeforeStart";
 import { TodayBoard } from "./TodayBoard";
 import type { DayTitles } from "./action-labels";
 import { getConfig } from "@/config";
 import { copy } from "@/content/copy.he";
-import { DAYS } from "@/content/days";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
-import { fill, withStartDate } from "@/lib/format";
+import { fill } from "@/lib/format";
 import { serverNow } from "@/lib/today/clock";
-import { dayTitles } from "@/lib/today/titles";
+import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listCompletions } from "@/lib/today/completions";
 import { getSchedule } from "@/lib/today/schedule";
-import { getVideoConfig, hasVideo } from "@/lib/today/video";
-import { actionKey, greetingKey, isMorning, nextBoundary, todayModel } from "@/lib/today/view";
-import { stepsFor } from "@/lib/days";
+import { getVideoConfig, hasVideo, posterUrl } from "@/lib/today/video";
+import { firstNameOf } from "@/lib/today/first-name";
+import { actionKey, greetingKey, nextBoundary, todayModel } from "@/lib/today/view";
+import { stepsFor, unlockInstant } from "@/lib/days";
+import { diffDays, localDate } from "@/lib/time/zone";
+import { getOfferModel } from "@/lib/offer/config";
+import { OfferEntry } from "./OfferEntry";
+import { OfferTiles } from "../offer/OfferTiles";
 
 export const metadata: Metadata = { title: `${copy.nav.today} | ${copy.brand.name}` };
 
@@ -26,19 +30,10 @@ export default async function TodayPage() {
   const model = todayModel(now, schedule);
 
   if (model.phase === "before_start" || !schedule) {
+    const first = schedule ? unlockInstant(1, schedule) : null;
+    const daysUntil = schedule ? diffDays(localDate(now, schedule.timeZone), schedule.startDate) : null;
     return (
-      <>
-        <section className="t t-hero" aria-labelledby="hero-h">
-          <h1 id="hero-h">{withStartDate(copy.locked.beforeStartTitle, cfg.startDate)}</h1>
-          <p>{withStartDate(copy.locked.beforeStartBody, cfg.startDate)}</p>
-        </section>
-        <section className="t t-locked" aria-hidden="true">
-          <Cup level="empty" width={96} height={115} />
-        </section>
-        <section className="t t-note">
-          <p>{copy.locked.schedule}</p>
-        </section>
-      </>
+      <BeforeStart startDate={cfg.startDate} daysUntil={daysUntil} nextChangeIso={first && first.getTime() > now.getTime() ? first.toISOString() : null} />
     );
   }
 
@@ -49,32 +44,54 @@ export default async function TodayPage() {
   const yesterdayDone = yesterday ? stepsFor(yesterday, rows.filter((r) => r.day === yesterday).map((r) => r.action)) : 0;
   const tz = schedule.timeZone;
 
-  let hero: string = copy.today.ended;
+  const greeting = copy.today.greeting[greetingKey(now, tz)];
+  const first = firstNameOf(user.displayName, user.username);
+  const greetText = first ? fill(copy.today.greetingName, { greeting, name: first }) : greeting;
+  // הכותרת היא הברכה (בשם הפרטי כשיש); שם ההרגל כבר בשורת הפתיחה ובכפתור, ולא חוזר בכותרת. ביום לייב: ההודעה על המפגש.
+  // מספר היום כבר בתג שבכותרת העליונה ובשורת הפתיחה ("יום 4. ההרגל של היום: ..."), ולכן אין שורה קטנה נוספת ביום רגיל.
+  let eyebrow: string | null = copy.today.ended;
+  let hero: string = greetText;
   if (day !== null) {
-    hero = model.live
-      ? copy.today.heroLive
-      : fill(isMorning(now, tz) ? copy.today.heroMorning : copy.today.heroDay, { habit: DAYS[day - 1].habit.title });
+    eyebrow = model.live ? greetText : null;
+    if (model.live) hero = copy.today.heroLive;
   }
   const next = nextBoundary(now, schedule);
   // רק היום ואתמול: כותרות של ימים נעולים לא נשלחות ללקוח.
   const titles: Record<number, DayTitles> = {};
   for (const d of [day, yesterday]) if (d !== null) titles[d] = dayTitles(d);
 
+  // יום 14 ואחריו: אריח קטן אל ההצעות (מצב ההצעה נקבע בשרת; בלי קישורים ובלי מחירים כאן).
+  const offerModel = day === 14 || model.phase === "ended" ? getOfferModel(now, schedule) : null;
+  const offerOpen = offerModel?.offer.state === "open";
+  // אחרי יום 14, כשחלון ההצעה פתוח: ההצעות עצמן על אותו מסך (אותם אריחים כמו ב־/offer). אחרת, האריח הקטן אל /offer.
+  const offerEntry = !offerModel ? null : model.phase === "ended" && offerOpen ? (
+    <OfferTiles m={offerModel} headingLevel={2} />
+  ) : (
+    <OfferEntry offer={offerModel.offer} />
+  );
+
   return (
-    <TodayBoard
-      schedule={schedule}
-      nowIso={now.toISOString()}
-      completions={completions}
-      phase={model.phase}
-      day={day}
-      live={model.live}
-      yesterday={yesterday}
-      showYesterday={yesterday !== null && yesterdayDone === 0}
-      greeting={copy.today.greeting[greetingKey(now, tz)]}
-      hero={hero}
-      titles={titles}
-      videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
-      nextChangeIso={next ? next.toISOString() : null}
-    />
+    <>
+      <TodayBoard
+        schedule={schedule}
+        nowIso={now.toISOString()}
+        completions={completions}
+        phase={model.phase}
+        day={day}
+        live={model.live}
+        yesterday={yesterday}
+        showYesterday={yesterday !== null && yesterdayDone === 0}
+        eyebrow={eyebrow}
+        hero={hero}
+        opening={day !== null ? dayOpening(day) : null}
+        titles={titles}
+        videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
+        poster={day !== null ? posterUrl(day, getVideoConfig(cfg.env), cfg.env.BUNNY_CDN_HOST) : null}
+        offerOpen={offerOpen}
+        nextChangeIso={next ? next.toISOString() : null}
+      >
+        {offerEntry}
+      </TodayBoard>
+    </>
   );
 }

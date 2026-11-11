@@ -176,6 +176,8 @@ test("logout removes this device's subscription on the server and in the browser
   // Another device of the same user stays registered.
   const o = fakeKeys();
   await pool.query("insert into push_subscriptions (user_id, endpoint, p256dh, auth) values ($1, $2, $3, $4)", [me.userId, o.endpoint, o.p256dh, o.auth]);
+  await page.getByRole("link", { name: "החשבון שלי" }).click(); // client navigation keeps the page state
+  await page.waitForURL("**/account");
   await page.getByRole("button", { name: "יציאה" }).click();
   await page.waitForURL("**/login");
   const left = await pool.query("select endpoint from push_subscriptions where user_id = $1", [me.userId]);

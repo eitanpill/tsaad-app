@@ -9,14 +9,14 @@ import { actionsForDay, stepsFor, type Action } from "@/lib/days";
 import { fill } from "@/lib/format";
 import { dayScreen, parseDayParam } from "@/lib/path/view";
 import { serverNow } from "@/lib/today/clock";
-import { dayTitles } from "@/lib/today/titles";
+import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listDayCompletions } from "@/lib/today/completions";
 import { getSchedule } from "@/lib/today/schedule";
 import { getVideoConfig, hasVideo } from "@/lib/today/video";
 import { nextBoundary, todayModel } from "@/lib/today/view";
 import { CheckIcon } from "../../_components/icons";
 import { RefreshAtBoundary } from "../../_components/RefreshAtBoundary";
-import { TYPE_LABEL, actionTitle } from "../../today/action-labels";
+import { TYPE_LABEL, actionDetail, actionTitle } from "../../today/action-labels";
 import { VideoTile } from "../../today/VideoTile";
 import { DayActions } from "./DayActions";
 import { LockedDay } from "./LockedDay";
@@ -78,6 +78,7 @@ export default async function DayPage({ params }: Props) {
       <section className="t t-hero" aria-labelledby="day-h">
         <span className="eyebrow-s">{stateText}</span>
         <h1 id="day-h">{fill(copy.common.dayLabel, { n })}</h1>
+        <p className="opening">{dayOpening(n)}</p>
       </section>
 
       <VideoTile day={n} available={available} title={fill(copy.day.videoTitle, { n })} />
@@ -96,7 +97,10 @@ export default async function DayPage({ params }: Props) {
                 return (
                   <li key={a} className="ro-item" data-marked={marked}>
                     <b>{TYPE_LABEL(a)}</b>
-                    <span>{actionTitle(titles, a)}</span>
+                    <span>
+                      {actionTitle(titles, a)}
+                      {actionDetail(titles, a) ? <small className="act-detail">{actionDetail(titles, a)}</small> : null}
+                    </span>
                     <span className="ro-state">
                       {marked ? <CheckIcon size={14} /> : null}
                       {marked ? copy.a11y.action.pressedHint : copy.day.notMarked}

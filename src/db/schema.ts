@@ -6,6 +6,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   smallint,
   text,
   timestamp,
@@ -84,10 +85,10 @@ export const sessions = pgTable(
   ],
 );
 
-export const ATTEMPT_KINDS = ["login", "forgot", "toggle", "push", "webhook"] as const;
+export const ATTEMPT_KINDS = ["login", "forgot", "toggle", "push", "webhook", "account"] as const;
 
 /**
- * ניסיונות להגבלת קצב: התחברות כושלת, בקשת "שכחתי סיסמה", סימון פעולה (toggle, לפי משתמש), או כשל אימות / חידוש קישור ב־webhook של GHL.
+ * ניסיונות להגבלת קצב: התחברות כושלת, בקשת "שכחתי סיסמה", סימון פעולה (toggle, לפי משתמש), כשל אימות / חידוש קישור ב־webhook של GHL, או ניסיון מחיקת חשבון (account, לפי משתמש).
  * המזהים הם HMAC (במפתח SESSION_SECRET), לא שם משתמש או IP גולמיים.
  */
 export const loginAttempts = pgTable(
@@ -97,14 +98,33 @@ export const loginAttempts = pgTable(
     kind: text("kind", { enum: ATTEMPT_KINDS }).notNull().default("login"),
     identifierHash: text("identifier_hash").notNull(),
     ipHash: text("ip_hash"),
-    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
     attemptedAt: ts("attempted_at").notNull().defaultNow(),
   },
   (t) => [
-    check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle','push','webhook')`),
+    check("login_attempts_kind", sql`${t.kind} in ('login','forgot','toggle','push','webhook','account')`),
     index("login_attempts_identifier_idx").on(t.kind, t.identifierHash, t.attemptedAt),
     index("login_attempts_ip_idx").on(t.kind, t.ipHash, t.attemptedAt),
-    index("login_attempts_user_idx").on(t.userId),
+  ],
+);
+
+/**
+ * ספירות מצטברות של לחיצות על כפתורי ההצעות (/go/[offer]): לפי הצעה ולפי יום מקומי. אין כאן אדם, IP, דפדפן או מזהה כלשהו,
+ * ולכן אין קישור ל־users והשורות לא נמחקות עם חשבון.
+ */
+export const OFFER_KEYS = ["challenge", "session", "bundle", "yesodot"] as const;
+
+export const offerClicks = pgTable(
+  "offer_clicks",
+  {
+    offer: text("offer", { enum: OFFER_KEYS }).notNull(),
+    /** התאריך המקומי (Asia/Jerusalem). */
+    day: date("day", { mode: "string" }).notNull(),
+    clicks: integer("clicks").notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.offer, t.day] }),
+    check("offer_clicks_offer", sql`${t.offer} in ('challenge','session','bundle','yesodot')`),
+    check("offer_clicks_clicks", sql`${t.clicks} >= 0`),
   ],
 );
 

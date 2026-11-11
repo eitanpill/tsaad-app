@@ -2,22 +2,29 @@
 
 import { useEffect, useId, useMemo, useOptimistic, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { CHALLENGE } from "@/config/constants";
 import { copy } from "@/content/copy.he";
+import { SunDoodle } from "@/components/Doodles";
 import {
   actionsForDay,
   computeProgress,
   cupLevel,
+  dayCounts,
   stepsFor,
   type Action,
   type Schedule,
 } from "@/lib/days";
 import { fill } from "@/lib/format";
+import { finishSummary } from "@/lib/path/finish";
+import { pathModel } from "@/lib/path/view";
 import { actionKey, doneActionsFor } from "@/lib/today/view";
 import { AlertCircle, CheckIcon, WifiOffIcon } from "../_components/icons";
-import { actionTitle, type DayTitles } from "./action-labels";
+import { actionDetail, actionTitle, type DayTitles } from "./action-labels";
 import { ActionButton } from "./ActionButton";
 import { toggleAction } from "./actions";
 import { Cup } from "./Cup";
+import { FinishTiles } from "./FinishTiles";
+import { PathStrip } from "./PathStrip";
 import { Ring } from "./Ring";
 import { VideoTile } from "./VideoTile";
 
@@ -32,9 +39,19 @@ export type BoardProps = {
   yesterday: number | null;
   /** אתמול עוד לא סומן בטעינה: מציגים את ההזמנה לסמן. */
   showYesterday: boolean;
-  greeting: string;
+  /** שורה קטנה מעל הכותרת (ביום לייב: הברכה; אחרי הסוף: "האתגר הסתיים"), או null. */
+  eyebrow: string | null;
+  /** הכותרת (h1): הברכה, עם השם הפרטי כשיש; ביום לייב: ההודעה על המפגש. */
   hero: string;
+  /** משפט הפתיחה בצילום של היום (רק כשיש יום פתוח), או null. */
+  opening: string | null;
   videoAvailable: boolean;
+  /** תמונה ממוזערת של סרטון היום (רק כשהוגדרו מארח ומזהה), או null. */
+  poster: string | null;
+  /** חלון ההצעה של יום 14 פתוח (נקבע בשרת): מוסיף קישור להצעות באריח הסיום. */
+  offerOpen: boolean;
+  /** תוכן שנקבע בשרת ומוצג בסוף המסך (אחרי יום 14: ההצעות). */
+  children?: React.ReactNode;
   /** כותרות הפעולות של היום ושל אתמול בלבד (לא של ימים נעולים). */
   titles: Record<number, DayTitles>;
   /** הרגע הקרוב שבו המסך משתנה (ISO), או null. */
@@ -55,6 +72,8 @@ const subscribeOnline = (cb: () => void) => {
 };
 
 export function TodayBoard(p: BoardProps) {
+  const [burst, setBurst] = useState(0);
+  const [justCompleted, setJustCompleted] = useState(false);
   const router = useRouter();
   const [saved, setSaved] = useState<string[]>(p.completions);
   const [optimistic, applyOptimistic] = useOptimistic(
@@ -102,8 +121,15 @@ export function TodayBoard(p: BoardProps) {
   function setAction(day: number, action: Action, to: boolean) {
     const key = actionKey(day, action);
     const before = stepsByDay[day];
+    // מה יקרה במילוי: כוס שהתמלאה זה עתה, ו"נספרו 12 ימים" שהושלמו זה עתה (רק מסימון, לא מביטול).
+    const doneNow = doneActionsFor(optimistic, day);
+    const after = stepsFor(day, to ? [...doneNow, action] : doneNow.filter((a) => a !== action));
+    const fills = to && cupLevel(before) !== "full" && cupLevel(after) === "full";
+    const completes = to && !progress.completed && !dayCounts(before) && dayCounts(after) && progress.counted + 1 >= CHALLENGE.daysToComplete;
     startTransition(async () => {
       applyOptimistic({ key, done: to });
+      if (fills) setBurst((b) => b + 1);
+      if (completes) setJustCompleted(true);
       let ok = false;
       try {
         const res = await toggleAction(day, action, to);
@@ -121,7 +147,7 @@ export function TodayBoard(p: BoardProps) {
       if (to) {
         setToast({
           kind: "saved",
-          text: before === 0 ? copy.today.toastFirst : copy.states.success.saved,
+          text: completes ? copy.finish.toast : fills ? copy.today.toastFull : before === 0 ? copy.today.toastFirst : copy.states.success.saved,
           undo: { day, action, to: false },
         });
       } else {
@@ -165,8 +191,12 @@ export function TodayBoard(p: BoardProps) {
         ? copy.today.remaining.unreachable
         : null;
 
+  const stones = pathModel(now, p.schedule, stepsByDay).stones;
+  const summary = finishSummary(stepsByDay, p.schedule.totalDays);
+  const finished = progress.completed;
+
   return (
-    <>
+    <div className="today">
       <div role="status" className={online ? "visually-hidden" : "offline"}>
         {online ? null : (
           <>
@@ -176,13 +206,25 @@ export function TodayBoard(p: BoardProps) {
         )}
       </div>
 
-      <section className="t t-hero" aria-labelledby="hero-h">
-        <span className="eyebrow-s">{p.greeting}</span>
+      <section className="t t-hero ar-hero" aria-labelledby="hero-h">
+        <SunDoodle className="hero-sun" size={64} />
+        {p.eyebrow ? <span className="eyebrow-s">{p.eyebrow}</span> : null}
         <h1 id="hero-h">{p.hero}</h1>
+        {p.opening ? <p className="opening">{p.opening}</p> : null}
       </section>
 
+      {finished || ended ? (
+        <div className="finish-wrap">
+          <FinishTiles completed={finished} stones={stones} summary={summary} ended={ended} offerOpen={p.offerOpen} pop={justCompleted} />
+        </div>
+      ) : (
+        <div className="ar-strip">
+          <PathStrip stones={stones} counted={progress.counted} day={p.day} />
+        </div>
+      )}
+
       {p.showYesterday && p.yesterday ? (
-        <section className="t t-yest" aria-labelledby={`${yestId}-p`}>
+        <section className="t t-yest ar-yest" aria-labelledby={`${yestId}-p`}>
           <p id={`${yestId}-p`}>{copy.today.yesterday.prompt}</p>
           {!yesterdayOpen ? (
             <button
@@ -198,31 +240,22 @@ export function TodayBoard(p: BoardProps) {
             <div ref={yestGroup} id={`${yestId}-g`} className="grp" role="group" aria-label={fill(copy.today.yesterdayDayLabel, { n: p.yesterday })}>
               <span className="grp-label">{fill(copy.common.dayLabel, { n: p.yesterday })}</span>
               {actionsForDay(p.yesterday).map((a, i) => (
-                <ActionButton key={a} day={p.yesterday!} action={a} title={actionTitle(p.titles[p.yesterday!], a)} pressed={optimistic.includes(actionKey(p.yesterday!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
+                <ActionButton key={a} day={p.yesterday!} action={a} title={actionTitle(p.titles[p.yesterday!], a)} detail={actionDetail(p.titles[p.yesterday!], a)} pressed={optimistic.includes(actionKey(p.yesterday!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
               ))}
             </div>
           )}
         </section>
       ) : null}
 
-      {p.day ? <VideoTile day={p.day} available={p.videoAvailable} /> : null}
-
-      <section className={`t t-ring${p.phase === "active" ? " t--half" : ""}`} aria-label={copy.today.counted}>
-        <Ring counted={progress.counted} />
-        <span>
-          {copy.today.counted}
-          {countLine ? (
-            <>
-              <br />
-              <b>{countLine}</b>
-            </>
-          ) : null}
-        </span>
-      </section>
+      {p.day ? (
+        <div className="ar-video">
+          <VideoTile day={p.day} available={p.videoAvailable} poster={p.poster} />
+        </div>
+      ) : null}
 
       {p.phase === "active" ? (
-        <section className="t t--half t-cup">
-          <Cup level={level} label={cupLabel} />
+        <section className="t t--half t-cup ar-cup">
+          <Cup level={level} label={cupLabel} burst={burst} width={64} height={77} />
           <span>
             {stepsText}
             <br />
@@ -231,22 +264,39 @@ export function TodayBoard(p: BoardProps) {
         </section>
       ) : null}
 
+      {!ended ? (
+        <section className="t t--half t-ring ar-ring" aria-label={copy.today.counted}>
+          <Ring counted={progress.counted} />
+          <span>
+            {copy.today.counted}
+            {countLine ? (
+              <>
+                <br />
+                <b>{countLine}</b>
+              </>
+            ) : null}
+          </span>
+        </section>
+      ) : null}
+
       {longNote ? (
-        <section className="t t-note t-progress-note">
+        <section className="t t-note t-progress-note ar-note">
           <p>{longNote}</p>
         </section>
       ) : null}
 
       {p.day ? (
-        <div className="t t-actions">
+        <div className="t t-actions ar-acts">
           <div className="act-grid">
             {actions.map((a, i) => (
-              <ActionButton key={a} day={p.day!} action={a} title={actionTitle(p.titles[p.day!], a)} pressed={optimistic.includes(actionKey(p.day!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
+              <ActionButton key={a} day={p.day!} action={a} title={actionTitle(p.titles[p.day!], a)} detail={actionDetail(p.titles[p.day!], a)} pressed={optimistic.includes(actionKey(p.day!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
             ))}
           </div>
           <p className="act-hint">{p.live ? copy.today.cupExplainLive : copy.today.cupExplain}</p>
         </div>
       ) : null}
+
+      {p.children}
 
       <div
         className="toast-region"
@@ -279,6 +329,6 @@ export function TodayBoard(p: BoardProps) {
           </div>
         ) : null}
       </div>
-    </>
+    </div>
   );
 }

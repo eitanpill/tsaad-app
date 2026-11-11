@@ -10,20 +10,26 @@ This plan was written in stage 0. Each stage builds only the files assigned to i
 - `zod` validates the environment, the webhook payloads and the forms. `web-push` sends push messages, using VAPID keys.
 - There is no auth framework and no date library. Time zone handling uses `Intl` with Asia/Jerusalem.
 
+See `docs/CONTENT.md` for where the day content and the Bunny video ids (`BUNNY_VIDEO_IDS`) live.
+
 ## Routes
 | Route | Kind | Who can reach it |
 |---|---|---|
-| /login, /activate, /forgot, /tsaad, /accessibility, /privacy, /terms | page | anyone (`/activate` needs a valid one-time link) |
-| /today, /path, /day/[n], /live, /reminders, /install, /offer | page | a logged-in user |
+| /login, /activate, /forgot, /tsaad, /legal, /legal/accessibility, /legal/privacy, /legal/terms, /account/deleted | page | anyone (`/activate` needs a valid one-time link; the legal texts are DRAFT, see `docs/LEGAL_REVIEW.md`) |
+| /today, /path, /day/[n], /live, /reminders, /install, /offer, /yesodot, /account | page | a logged-in user |
 | POST /api/webhooks/ghl/signup | handler | callers with `GHL_WEBHOOK_SECRET` (header `x-tsaad-webhook-secret`, or HMAC signature plus timestamp); 503 if the secret is unset or shorter than 32; 5-minute window when a timestamp header is sent; idempotent by event id; no `Origin` check (server to server) |
-| login, forgot, activate, logout | server actions (`src/app/(auth)/actions.ts`) | login and forgot are open but rate-limited; every action checks `Origin` against `APP_ORIGIN`; logout deletes the session row. There are no `/api/auth/*` handlers; handlers added later use `rejectCrossOrigin` |
+| login, forgot, activate, logout | server actions (`src/app/(auth)/actions.ts`) | login and forgot are open but rate-limited (a locked-out username sees a message pointing to "שכחתי סיסמה", whose link works during the lockout and lifts it once used); a database failure while creating the session shows the friendly "משהו לא עבד" error; every action checks `Origin` against `APP_ORIGIN`; logout deletes the session row. There are no `/api/auth/*` handlers; handlers added later use `rejectCrossOrigin` |
 | GET /api/video/[day] | handler | a session, and only once the server has unlocked that day |
 | GET /api/live/[day]/ics | handler | a session; day 7 or 14 only, and only when `START_DATE` and `LIVE_TIME_DAYn` are set (else 404). The join link is not in the file |
 | POST/DELETE /api/push | handler | a session, `Origin` check, rate limit, subscription validated (see Stage 9) |
 | POST /api/push/status | handler | a session, `Origin` check, size limit; no rate limit (read by key, called on each app load) |
 | GET /manifest.webmanifest, /sw.js, /offline.html | static / metadata | anyone (no personal data; the service worker caches no HTML) |
 | GET /api/cron/reminders, /api/cron/sync, /api/cron/cleanup | handler | requests that carry `Bearer CRON_SECRET` (constant-time check; 401 if the secret is unset or shorter than 16 characters) |
-| GET /api/health | handler | anyone |
+| POST /api/csp-report | handler | anyone (browser CSP reports); log only, rate-limited per instance, no DB (stage 11) |
+| GET /go/[offer] | handler | anyone; `offer` is `challenge`, `session`, `bundle` or `yesodot` and nothing else. Counts one click (`offer_clicks`, no personal data) unless it is a HEAD, a browser prefetch/prerender (`Purpose`, `Sec-Purpose`, `X-Moz`, `Next-Router-Prefetch`), a known bot or link preview, or over a light in-memory limit (3 per offer per IP hash per 10 minutes; without a trusted IP, 120 per offer per instance; `lib/offer/click-limit.ts`), and always answers 302 to the matching `MORNING_URL_*` (with the UTM parameters as before); 404 when the key is unknown or the URL is unset. No input of the request reaches the target |
+| /admin/stats | page | a logged-in user whose username is in `ADMIN_USERNAMES`. Everyone else, logged in or not, gets the normal 404 page with a real 404 status, decided in `proxy.ts` before anything streams (`lib/stats/admin-gate.ts`: one session lookup, only on `/admin` paths and only when a session cookie is present; fails closed). The `/admin` layout checks again. Server-rendered, aggregate numbers only, noindex |
+| GET /api/share-card?m=N | handler | anyone; renders the finish card (PNG, 1080x1350, next/og) from a 14-bit mask of counted days. Only `m`, in canonical form, and only a completed mask (12+ days, so at most 106 images); anything else is 400. Cached for a year (`immutable`) and kept in memory per instance. No cookies, no name, no tracking, no DB. Hebrew is laid out for satori by `lib/share/visual-hebrew.ts` (numbers, Latin and punctuation inside a Hebrew word stay correct). The Today finish tile's "שתפו" button fetches it (same origin) and shares it with the Web Share API, else downloads it. Fonts: `src/assets/fonts` (OFL TTFs; satori cannot read woff2). |
+| GET /api/health | handler | anyone; `{ok, db}` only (200, or 503 when the database is unreachable), `no-store`, result memoised 5 s |
 
 Access is enforced in the data-access layer (DAL) and in each route handler, not only in `proxy.ts`. The page never receives the content of a locked day.
 
@@ -33,7 +39,8 @@ Access is enforced in the data-access layer (DAL) and in each route handler, not
 | `users` | Accounts: lowercase unique `username` (enforced by a CHECK), display name, email, phone, nullable `email` (phone-only signups) and `phone` (E.164 for GHL signups), nullable unique `ghl_contact_id`, nullable `password_hash` (null until activation), `created_at`, `activated_at`. There is no `must_change_password` flag. |
 | `activation_tokens` | One-time activation and reset links (`purpose` is `activate` or `reset`). Only the SHA-256 hash of the token is stored, with `expires_at` and `used_at`. |
 | `sessions` | Login sessions. Only a hash of each token is stored, with `created_at`, `expires_at` and `last_seen_at`. |
-| `login_attempts` | Failed logins, used for the rate limit. Stores hashes of the identifier and IP, never the raw values. |
+| `login_attempts` | Failed logins and other rate-limited attempts. Stores hashes of the identifier and IP, never the raw values, and no link to a user (the unused `user_id` column was dropped in migration `0008`). |
+| `offer_clicks` | Aggregate counters of clicks on the offer buttons, one row per offer and local day (`clicks`). No user, IP or browser data; not tied to `users`. Read by `/admin/stats`. |
 | `webhook_events` | Incoming webhook event IDs (unique; a hash when derived from the contact id), used to make the signup webhook idempotent; purged after 30 days. No personal data. |
 | `action_completions` | Completed actions (`habit`, `move`, `meditate`, `live`), unique on (user, day, action), day 1 to 14. |
 | `push_subscriptions` | Browser push subscriptions, endpoint unique. |
@@ -47,6 +54,15 @@ Accounts are activated through a one-time link: the participant sets their own p
 Live attendance has a single source of truth: `action_completions` with action `live` on days 7 and 14 (the tracker payload reads it; the unused `live_attendance` table was dropped in migration `0006`).
 
 Completion of the challenge (12 of 14 days) is calculated when needed and not stored.
+
+Measurement is cookieless and first-party only. Signed up, activated, active per day, returned and days counted are derived from `users`, `action_completions` and `push_subscriptions` (`src/lib/stats/queries.ts`); only offer clicks have their own counter (`offer_clicks`, migration `0009`). "Returned on day N" means the user marked something on day N and also on an earlier day; visits themselves are not recorded.
+
+## Config, CI and tooling
+- All environment reads go through `src/config` (`getConfig()`, and `readEnv()` for the raw source after validation). `src/config/single-source.test.ts` fails if another file reads `process.env` (the allow-list: client code, `proxy.ts`, `instrumentation.ts`, the logger).
+- Times in texts (`{unlockTime}`, `{reminderTime}`) are filled from `UNLOCK_HOUR` and `REMINDER_TIME` (`src/lib/times.ts`); a test forbids a hard-coded HH:MM in the copy.
+- `npm run typecheck` runs `next typegen` first, so it works on a fresh clone.
+- `.github/workflows/ci.yml`: one job (typecheck, lint, unit tests, migrate and run the database tests against a Postgres 16 service, build with dummy env) on every push and pull request with cancel-in-progress; an optional Playwright job on the default branch and on manual runs.
+- Fonts are variable fonts via `next/font` (Noto Sans Hebrew: hebrew; Rubik: hebrew and latin), one file per subset rather than per weight. The Bunny player iframe loads only after a click on the play button (`src/app/(app)/today/VideoTile.tsx`).
 
 ## Stages and the files they create (revised at gate G1)
 - **Stage 2, design:**
@@ -137,10 +153,25 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
   - `/tsaad`, the day-14 offer, and `/yesodot` with server-side eligibility
   - the full accessibility statement
   - privacy, terms, and account deletion (new app pages, which need legal review)
+  - built (stage 10):
+    - Route groups: `src/app/(public)/` (own layout: skip link, footer with the legal links; `public.css`) holds `/tsaad`, `/legal*`, `/account/deleted`; `(app)/` gained `/offer`, `/yesodot`, `/account`.
+    - `/tsaad`: bento landing after `R5Bento` (hero with real logo, "who is it" tiles from `copy.landing`: path illustration, ring and cup, how it works with day-1 titles, audience, Avital, two lives (time from `LIVE_TIME_DAYn`, else `copy.live.timeTba`), FAQ as `details`, closing CTA). The CTA is a link only when `MORNING_URL_CHALLENGE_79` is a valid https URL; otherwise a disabled button with `copy.landing.hero.ctaDisabledNote`. Unset `START_DATE` shows `landing.hero.startTba` / `close.headingTba`. SEO: title, description, canonical (`metadataBase` from `APP_ORIGIN`), Open Graph, robots allow; `app/robots.ts`. The Avital image placeholder (`[MEDIA_*]`) is not rendered (no asset). The ring, cup and path are decoration (4 counted, as in the design).
+    - `/` now sends a signed-out visitor to `/tsaad` (they are mostly prospects); `/login` stays reachable from the landing page, and `/today` still redirects to it.
+    - Offer (`/offer`, `lib/offer/{model,links,config}.ts`): states from the server clock. "End of the day-14 live" is `LIVE_TIME_DAY14` + `OFFER.liveEndsAfterStartMinutes` (60, the calendar duration); the window is `OFFER_WINDOW_HOURS` from there. `notYet` also when the live time, the window or `START_DATE` is unset (nothing invented, no prices or links in the HTML), `open` (deadline shown, no countdown), `expired`. Session (271) and bundle (139) cards; Yesodot summary separate. Links come from `MORNING_URL_SESSION_271`, `MORNING_URL_BUNDLE_139`, `MORNING_URL_YESODOT_1265` (https only) with `utm_source=tsaad_app`, `utm_medium=app` and `utm_campaign` from `OFFER_UTM_SESSION|BUNDLE|YESODOT`; existing `utm_*` in a configured URL are kept. No link = disabled button with `copy.offer.day14.disabled`. `SESSION_SPOTS` shows a spots line only when set. Today shows a small tile (`OfferEntry`) on day 14 and after the end. `/live` has no day-14 offer copy, so no link there.
+    - `/yesodot`: open to every logged-in participant at any time (entry points start at day 14); own validity `YESODOT_OFFER_EXPIRY` (a date = through the end of that day in Israel, or an ISO instant); unset shows `offer.yesodot.expiryTba`; expired shows `offer.yesodot.expired` without a button.
+    - Legal: `src/content/legal.he.ts` (DRAFT) rendered by `LegalDocPage`; retention numbers are filled from `RETENTION` and `SESSION_POLICY`; contacts from `ACCESSIBILITY_CONTACT`, `PRIVACY_CONTACT`, `SUPPORT_CONTACT`. `docs/LEGAL_REVIEW.md` lists every clause and the open questions. The footer of the app has "החשבון שלי" and "פרטיות ונגישות" (to `/legal`) under logout.
+    - Account deletion (`/account`, `lib/account/delete.ts`, `(app)/account/actions.ts`): Origin check, session, password re-entry, rate limit (`RATE_LIMITS.account`, new `login_attempts.kind = 'account'`, migration `0007`), `delete from users` (cascade covers sessions, tokens, completions, push subscriptions, reminder log, outbox, attempts), cookie cleared, redirect to `/account/deleted`, which unsubscribes the browser push subscription client-side. Nothing is sent or queued for GHL; `deletion-notice.ts` is a dry-run port for G3.
+    - `GET /api/health`. Tests: `lib/offer/offer.test.ts`, `lib/account/delete.integration.test.ts`, `(app)/account/actions.test.ts`, `lib/legal/legal.test.ts`, `lib/health.test.ts`, env additions; e2e `pages.spec.ts` (server A: nothing configured) and `offer.spec.ts` (server B on port 3101, same build, offer and contacts configured; see `playwright.config.ts`).
 - **Stage 11, QA:**
   - Playwright with axe on every screen
   - keyboard, 200% zoom and screen-reader checks
   - a full security sweep
+  - built (stage 11):
+    - `POST /api/csp-report` (`lib/security/csp-report.ts`): target of `report-uri` and `report-to csp` (the proxy adds `Reporting-Endpoints`). Anyone; no DB, no session; report content types only; 8KB streaming cap; at most 30 logged reports a minute per instance; logs the directive, the blocked origin or keyword, the page path without query, the source file without query. Always 204 (413/415 for size/type).
+    - `src/instrumentation.ts` + `config/required.ts`: in production the server refuses to start without `DATABASE_URL`, `APP_ORIGIN`, `SESSION_SECRET`, `ACTIVATION_LINK_TTL_MINUTES` or with any invalid value (names only); missing recommended values are warnings.
+    - The reminders cron reads `serverNow()` (test clock only under its guard), so e2e runs a dry-run day.
+    - `vercel.json` pins functions to `fra1`. `docs/LAUNCH_CHECKLIST.md` lists every variable and the deploy and smoke steps.
+    - e2e: `qa.spec.ts` (every screen and state: axe, structure, 24px targets, real 195px/DPR 2 reflow, keyboard-only walk, headers) and `journey.spec.ts` (14 days with the test clock, cron dry-run, day content). The CRON_SECRET of the e2e run is random per run.
 - **Stage 12, report.**
 
 ## Notes for the coming stages
@@ -152,3 +183,12 @@ Completion of the challenge (12 of 14 days) is calculated when needed and not st
 - Test clock: `TSAAD_TEST_NOW` and the `x-tsaad-test-now` header work only under the guard in `lib/today/test-clock.ts` (never on Vercel; in production only with `TSAAD_E2E=1` and a loopback `APP_ORIGIN`).
 - Passwords and tokens never go into logs. Sending through GHL, WhatsApp or email stays off until gate G3.
 - Vercel must not be connected to this repo before a deploy gate, or every branch push creates a preview deployment.
+
+## Improvement round (design/UX)
+- Today is a mosaic: sky hero (greeting with the first name when `users.display_name` is a clean name that differs from the username, `src/lib/today/first-name.ts`), a thin path strip linking to `/path`, a light video tile (Bunny thumbnail as poster when `BUNNY_CDN_HOST` and the day's video id are set, else a drawn meadow), cup and ring tiles, and the actions. Terracotta is for interactive elements; dark forest only for marked/selected states and the bottom nav.
+- The cup water rises with a CSS transition; a full cup shows a short sparkle (hidden, not animated, under `prefers-reduced-motion` and the pause button). Reaching 12 counted days shows the completion tile and the whole path in place and announces it in the existing polite region; focus never moves.
+- After day 14 the Today screen is the end screen: personal summary, the whole path, share, and, while the offer window is open, the offer tiles (`offer/OfferTiles.tsx`, shared with `/offer`).
+- Before the start: welcome screen (days to `START_DATE` only when it is set, the three daily parts, links to `/reminders` and `/install`).
+- Logout moved from the foot of every screen to `/account` (the footer link "החשבון שלי" stays on every screen).
+- At 900px and wider the auth screens get a second column with the path drawing, and Today/finish use two columns.
+- CSP: `img-src` gains the single `BUNNY_CDN_HOST` host (validated `*.b-cdn.net` name) and nothing else.

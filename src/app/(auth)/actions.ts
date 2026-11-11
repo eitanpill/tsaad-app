@@ -19,6 +19,7 @@ import { IDENTIFIER_MAX_LENGTH, requestPasswordReset } from "@/lib/auth/forgot";
 import { authenticate } from "@/lib/auth/login";
 import { assertSameOrigin } from "@/lib/auth/origin";
 import { hashPassword, validatePassword } from "@/lib/auth/password";
+import { clearAttempts, rateLimitKeys } from "@/lib/auth/rate-limit";
 import { clientIp } from "@/lib/auth/request";
 import { deleteSession, rotateSession } from "@/lib/auth/session";
 import { peekToken } from "@/lib/auth/tokens";
@@ -54,8 +55,14 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   }
 
   // סיבוב: ההפעלה הקודמת של הדפדפן (אם יש) נמחקת, ונוצרת אחת חדשה.
-  const session = await rotateSession(getDb(), result.userId, await readSessionToken());
-  await setSessionCookie(session.token, session.expiresAt);
+  // כשל במסד כאן (אחרי שהסיסמה אומתה) מציג את אותה שגיאה ידידותית ולא דף קריסה. redirect מחוץ ל־try: הוא זורק.
+  try {
+    const session = await rotateSession(getDb(), result.userId, await readSessionToken());
+    await setSessionCookie(session.token, session.expiresAt);
+  } catch (e) {
+    logger.error("login: creating the session failed", { error: e });
+    return { error: "generic", username };
+  }
   redirect(POST_LOGIN_PATH);
 }
 
@@ -66,12 +73,14 @@ export async function activateAction(_prev: ActivateState, formData: FormData): 
   const password = str(formData.get("password"));
   const confirm = str(formData.get("confirm"));
 
-  const db = getDb();
   let setup;
+  let username = "";
   try {
+    const db = getDb();
     getSessionSecret();
     const peeked = await peekToken(db, token);
     if (!peeked) return { status: "expired" };
+    username = peeked.username;
 
     const issue = validatePassword(password, { username: peeked.username });
     if (issue) {
@@ -88,9 +97,22 @@ export async function activateAction(_prev: ActivateState, formData: FormData): 
   }
   if (!setup) return { status: "expired" };
 
+  // הקישור הוכיח בעלות על החשבון: אם החשבון נעול אחרי ניסיונות כושלים, הנעילה מתאפסת, כדי שהכניסה הבאה עם הסיסמה החדשה תעבוד.
+  try {
+    await clearAttempts(getDb(), "login", rateLimitKeys(getSessionSecret(), username, null));
+  } catch (e) {
+    logger.error("activation: clearing login attempts failed", { error: e });
+  }
+
   // התחברות חדשה; התחברות קודמת של הדפדפן הזה (גם של משתמש אחר) נמחקת.
-  const session = await rotateSession(db, setup.userId, await readSessionToken());
-  await setSessionCookie(session.token, session.expiresAt);
+  // הסיסמה כבר נשמרה והקישור נשרף; אם יצירת ההפעלה נכשלת (תקלת מסד), מציגים שגיאה ידידותית, ואפשר להיכנס עם הסיסמה החדשה.
+  try {
+    const session = await rotateSession(getDb(), setup.userId, await readSessionToken());
+    await setSessionCookie(session.token, session.expiresAt);
+  } catch (e) {
+    logger.error("activation: creating the session failed", { error: e });
+    return { error: { field: "form", code: "generic" } };
+  }
   redirect(POST_LOGIN_PATH);
 }
 

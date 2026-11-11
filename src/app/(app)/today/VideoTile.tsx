@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
+import { MeadowDoodle } from "@/components/Doodles";
 import { AlertCircle } from "../_components/icons";
 
 type Phase = "idle" | "loading" | "ready" | "error";
@@ -11,9 +12,21 @@ type Phase = "idle" | "loading" | "ready" | "error";
  * הסרטון של היום. כתובת ההטמעה החתומה מבוקשת מהשרת רק בלחיצה (GET /api/video/[day]), והשרת מנפיק אותה
  * רק ליום שנפתח. בלי autoplay. כשאין סרטון מוגדר ליום מוצג מצב ממתין (כפתור כבוי).
  */
-export function VideoTile({ day, available, title: heading }: { day: number; available: boolean; title?: string }) {
+export function VideoTile({
+  day,
+  available,
+  title: heading,
+  poster = null,
+}: {
+  day: number;
+  available: boolean;
+  title?: string;
+  /** כתובת תמונה ממוזערת (Bunny), רק כשהוגדר מארח ומזהה סרטון ליום. בלעדיה (או אם נכשלה): איור חמים במקומה. */
+  poster?: string | null;
+}) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [src, setSrc] = useState<string | null>(null);
+  const [posterOk, setPosterOk] = useState(true);
   const playRef = useRef<HTMLButtonElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
 
@@ -73,10 +86,12 @@ export function VideoTile({ day, available, title: heading }: { day: number; ava
             />
           ) : (
             <>
-              <svg className="scene" aria-hidden="true" viewBox="0 0 346 172" preserveAspectRatio="none" focusable="false">
-                <circle cx="270" cy="54" r="34" fill="#F0E8E1" opacity="0.22" />
-                <path d="M0 132 C 80 104, 150 140, 230 116 C 290 98, 320 110, 346 104 L346 172 L0 172 Z" fill="#123021" opacity="0.55" />
-              </svg>
+              {poster && posterOk ? (
+                // eslint-disable-next-line @next/next/no-img-element -- תמונה חיצונית קטנה; אין לה צורך באופטימיזציה
+                <img className="poster" src={poster} alt="" loading="lazy" decoding="async" onError={() => setPosterOk(false)} />
+              ) : (
+                <MeadowDoodle className="scene" aria-hidden="true" />
+              )}
               <button
                 ref={playRef}
                 type="button"
@@ -86,8 +101,8 @@ export function VideoTile({ day, available, title: heading }: { day: number; ava
                 aria-describedby={available ? undefined : "video-pending"}
                 onClick={load}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M8 5 L19 12 L8 19 Z" fill="#FFFFFF" />
+                <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M8.5 5.5 L19 12 L8.5 18.5 Z" fill="#FFFFFF" stroke="#FFFFFF" strokeWidth="1.6" strokeLinejoin="round" />
                 </svg>
               </button>
             </>

@@ -73,7 +73,19 @@ export function LoginForm() {
       {formError ? (
         <p id="login-form-err" role="alert" className="error">
           <AlertIcon />
-          <span>{formError}</span>
+          <span>
+            {formError}
+            {state.error === "tooMany" ? (
+              <>
+                {" "}
+                {copy.login.errors.tooManyReset}{" "}
+                <Link href="/forgot" className="link">
+                  {copy.login.forgot}
+                </Link>
+                .
+              </>
+            ) : null}
+          </span>
         </p>
       ) : null}
 

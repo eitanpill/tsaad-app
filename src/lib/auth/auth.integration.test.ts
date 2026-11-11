@@ -326,6 +326,29 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
     });
   });
 
+  describe("lockout and the reset link", () => {
+    it("while a username is locked for login, the reset link still goes out and sets a password that works", async () => {
+      await mkUser("locked1", { password: "right-pass-1", phone: "050-123-4567" });
+      const a = (p: string) => authenticate(db, { username: "locked1", password: p, secret: SECRET });
+      for (let i = 0; i < 5; i++) await a("bad");
+      expect(await a("right-pass-1")).toMatchObject({ ok: false, reason: "rate_limited" });
+
+      const sent: OutgoingMessage[] = [];
+      const sender: MessageSender = { async send(m) { sent.push(m); } };
+      const r = await requestPasswordReset(db, { identifier: "locked1", secret: SECRET, ip: "5.5.5.5", ttlMinutes: 30, sender, origin: "https://app.example.com" });
+      expect(r).toEqual({ status: "ok" });
+      expect(sent.length).toBeGreaterThan(0);
+      expect(await count("activation_tokens", sql`used_at is null`)).toBe(1);
+
+      const [u] = await db.select().from(users);
+      const { token } = await issueToken(db, { userId: u.id, purpose: "reset", ttlMinutes: 30 });
+      expect(await completePasswordSetup(db, { token, passwordHash: await hashPassword("new-pass-2") })).toMatchObject({ userId: u.id });
+      // what activateAction does next: the link proved ownership, so the lockout is lifted
+      await clearAttempts(db, "login", rateLimitKeys(SECRET, "locked1", null));
+      expect(await a("new-pass-2")).toMatchObject({ ok: true });
+    });
+  });
+
   describe("forgot password", () => {
     const recorder = () => {
       const sent: OutgoingMessage[] = [];

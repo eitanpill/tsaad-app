@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { copy } from "@/content/copy.he";
 import { fill, withStartDate } from "@/lib/format";
+import { timeTokens } from "@/lib/times";
 import { BellIcon, LockIcon } from "../../_components/icons";
 
 export type LockedReason = "before_start" | "tomorrow" | "far";
@@ -20,6 +21,7 @@ export function LockedDay({
   previousDay: number | null;
   startDate: string | undefined;
 }) {
+  const times = timeTokens();
   const title =
     reason === "before_start"
       ? withStartDate(copy.locked.beforeStartTitle, startDate)
@@ -28,17 +30,17 @@ export function LockedDay({
         : fill(copy.locked.farTitle, { n: day });
   const body =
     reason === "before_start"
-      ? withStartDate(copy.locked.beforeStartBody, startDate)
+      ? fill(withStartDate(copy.locked.beforeStartBody, startDate), times)
       : reason === "tomorrow"
-        ? copy.locked.body
-        : copy.locked.farBody;
+        ? fill(copy.locked.body, times)
+        : fill(copy.locked.farBody, times);
   return (
     <>
       <section className="t t-lockhero" aria-labelledby="locked-h">
         <div
           className="lock-art"
           role={reason === "tomorrow" ? "img" : undefined}
-          aria-label={reason === "tomorrow" ? copy.a11y.locked.time : undefined}
+          aria-label={reason === "tomorrow" ? fill(copy.a11y.locked.time, times) : undefined}
           aria-hidden={reason === "tomorrow" ? undefined : true}
         >
           <svg width="96" height="115" viewBox="0 0 40 48" aria-hidden="true" focusable="false">

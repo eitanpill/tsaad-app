@@ -1,4 +1,5 @@
 import "server-only";
+import { readEnv } from "@/config";
 /**
  * הגדרות האימות: קבועי מדיניות (הצעות עיצוב, ניתנות לשינוי במקום אחד) וקריאת סודות
  * עם סירוב בפרודקשן ("fail closed"). קבועים אלה אינם סודות.
@@ -26,6 +27,8 @@ export const RATE_LIMITS = Object.freeze({
   push: Object.freeze({ windowSeconds: 10 * 60, perIdentifier: 20, perIp: 1_000_000 }),
   /** כשלי אימות ב־webhook של GHL, לפי IP (רק כשה־IP אמין; ראו clientIp). בדיקה מוקדמת לפני האימות. */
   webhook: Object.freeze({ windowSeconds: 15 * 60, perIdentifier: 20, perIp: 20 }),
+  /** ניסיונות מחיקת חשבון (כל ניסיון נספר, גם מוצלח, לפי משתמש). שימוש רגיל: פעם אחת בחיים. נגד ניחוש סיסמה מתוך סשן גנוב. */
+  account: Object.freeze({ windowSeconds: 15 * 60, perIdentifier: 5, perIp: 30 }),
   /** הרשמה חוזרת של חשבון שלא הופעל: הנפקה מחדש של קישור לכל איש קשר (הנפקה ראשונה אינה נספרת). */
   webhookReissue: Object.freeze({ windowSeconds: 60 * 60, perIdentifier: 3, perIp: 1_000_000 }),
 });
@@ -47,10 +50,10 @@ export class AuthConfigError extends Error {
   }
 }
 
-export const isProduction = (env: Env = process.env) => env.NODE_ENV === "production";
+export const isProduction = (env: Env = readEnv()) => env.NODE_ENV === "production";
 
 /** סוד ההפעלה. בפרודקשן: חובה, ולפחות 32 בתים. בפיתוח/בדיקות: חובה גם כן (אין ערך ברירת מחדל). */
-export function getSessionSecret(env: Env = process.env): string {
+export function getSessionSecret(env: Env = readEnv()): string {
   const secret = env.SESSION_SECRET;
   if (!secret || Buffer.byteLength(secret, "utf8") < MIN_SECRET_BYTES) {
     throw new AuthConfigError(
@@ -61,7 +64,7 @@ export function getSessionSecret(env: Env = process.env): string {
 }
 
 /** תוקף קישור הפעלה/איפוס בדקות. אין ערך ברירת מחדל בפרודקשן. */
-export function getActivationTtlMinutes(env: Env = process.env): number {
+export function getActivationTtlMinutes(env: Env = readEnv()): number {
   const raw = env.ACTIVATION_LINK_TTL_MINUTES?.trim();
   if (!raw) {
     if (isProduction(env)) {
@@ -78,7 +81,7 @@ export function getActivationTtlMinutes(env: Env = process.env): number {
 }
 
 /** ה־origin של האפליקציה. בפרודקשן חובה. בפיתוח, אם חסר, אין אכיפה מול מארח. */
-export function getAppOrigin(env: Env = process.env): string | undefined {
+export function getAppOrigin(env: Env = readEnv()): string | undefined {
   const raw = env.APP_ORIGIN?.trim();
   if (!raw) {
     if (isProduction(env)) throw new AuthConfigError("APP_ORIGIN is not set.");
@@ -94,7 +97,7 @@ export function getAppOrigin(env: Env = process.env): string | undefined {
 const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 /** עוגיית Secure בכל מקום חוץ מפיתוח מקומי (http://localhost). */
-export function shouldUseSecureCookies(env: Env = process.env): boolean {
+export function shouldUseSecureCookies(env: Env = readEnv()): boolean {
   if (isProduction(env)) return true;
   const origin = env.APP_ORIGIN?.trim();
   if (!origin) return false;
@@ -107,6 +110,6 @@ export function shouldUseSecureCookies(env: Env = process.env): boolean {
 }
 
 /** `__Host-` דורש Secure, ולכן בפיתוח מקומי על http משתמשים בשם בלי הקידומת. */
-export function sessionCookieName(env: Env = process.env): string {
+export function sessionCookieName(env: Env = readEnv()): string {
   return shouldUseSecureCookies(env) ? "__Host-tsaad_session" : "tsaad_session";
 }

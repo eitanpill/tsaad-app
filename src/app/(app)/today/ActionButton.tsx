@@ -11,6 +11,7 @@ export function ActionButton({
   day,
   action,
   title,
+  detail,
   pressed,
   wide,
   onToggle,
@@ -18,6 +19,7 @@ export function ActionButton({
   day: number;
   action: Action;
   title: string;
+  detail?: string;
   pressed: boolean;
   wide?: boolean;
   onToggle: (day: number, action: Action) => void;
@@ -32,7 +34,14 @@ export function ActionButton({
       onClick={() => onToggle(day, action)}
     >
       <b>{TYPE_LABEL(action)}</b>
-      {isLive ? <span className="act-sub">{copy.today.liveActionHint}</span> : title}
+      {isLive ? (
+        <span className="act-sub">{copy.today.liveActionHint}</span>
+      ) : (
+        <span className="act-text">
+          {title}
+          {detail ? <small className="act-detail">{detail}</small> : null}
+        </span>
+      )}
       <span className="dot" aria-hidden="true">
         {pressed ? <CheckIcon /> : null}
       </span>

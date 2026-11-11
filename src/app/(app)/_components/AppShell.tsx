@@ -7,7 +7,6 @@ import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
 import { todayModel } from "@/lib/today/view";
 import { BottomNav } from "./BottomNav";
-import { LogoutForm } from "./LogoutForm";
 import { MotionToggle } from "./MotionToggle";
 import { PwaBoot } from "./PwaBoot";
 
@@ -33,7 +32,14 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <main id="main" className="app-main">
         {children}
-        <LogoutForm />
+        <nav className="app-foot app-foot--links" aria-label={copy.account.legal.heading}>
+          <Link href="/account" className="linkbtn">
+            {copy.account.footerLink}
+          </Link>
+          <Link href="/legal" className="linkbtn">
+            {copy.account.legalLink}
+          </Link>
+        </nav>
       </main>
       <BottomNav />
       <PwaBoot />
