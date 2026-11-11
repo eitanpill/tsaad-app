@@ -21,6 +21,8 @@ npm run dev                  # http://localhost:3000
 npm run dev:create-user -- --username dana --name "דנה" --email dana@example.test   # local test account, prints its activation link (refuses anything but localhost)
 ```
 
+Admin and reviewers: `/admin/participants` (list, add by hand, new link, disable/enable, delete, day preview) and `/admin/stats`, for the usernames in `ADMIN_USERNAMES`. The first production accounts are made with `npm run admin:create-user -- --confirm-production --username pit --name "..." --email ...` (needs `DATABASE_URL` and `APP_ORIGIN` in `.env.local`; prints a one-time activation link, sends nothing). Migration 0013 and the full steps: `docs/LAUNCH_CHECKLIST.md` section 6.
+
 Every variable is documented in `.env.example` and `docs/LAUNCH_CHECKLIST.md`. All server-side configuration is read and validated in `src/config`.
 
 ## Tests and checks
@@ -46,7 +48,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs typecheck, lint, tests, the dat
 ## Docs
 
 - `docs/FILE_PLAN.md`: stack, routes, data model and security decisions.
-- `docs/LAUNCH_CHECKLIST.md`: environment variables, database, deploy and smoke test.
+- `docs/LAUNCH_CHECKLIST.md`: environment variables, database, deploy, smoke test, and how the owner creates accounts and uses the admin page (section 6).
 - `docs/CONTENT.md`: where the day content and the video ids go.
 - `docs/GHL_SETUP.md`: the GoHighLevel signup webhook.
 - `docs/LEGAL_REVIEW.md`: what the lawyer should check.

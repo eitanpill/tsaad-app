@@ -48,7 +48,7 @@ The server refuses to start in production when a **required** variable is missin
 | `ACCESSIBILITY_CONTACT` | **Blocker before launch** (accessibility regulations, regulation 35): the accessibility coordinator's name and phone or email. Owner value: `support@yogit-yoga.co.il`. |
 | `PRIVACY_CONTACT` | **Blocker before launch**: contact for privacy access and correction requests. |
 | `SUPPORT_CONTACT` | General contact shown in the terms. Owner value: `support@yogit-yoga.co.il`. |
-| `ADMIN_USERNAMES` | Comma-separated usernames allowed to open `/admin/stats` (aggregate numbers: signed up, activated, active per day, days counted, completed 12 of 14, reminders opted in, offer button clicks). Empty = nobody. Everyone else, and anyone logged out, gets the normal 404. Use the owner's own participant username (an account created through the signup webhook). |
+| `ADMIN_USERNAMES` | Comma-separated usernames allowed to open `/admin/stats`, `/admin/participants` (manage participants, one-time links) and the day preview (see section 6). `/admin/stats` shows aggregate numbers: signed up, activated, active per day, days counted, completed 12 of 14, reminders opted in, offer button clicks). Empty = nobody. Everyone else, and anyone logged out, gets the normal 404. Use the owner's own usernames (accounts made with `npm run admin:create-user`, section 6, or through the signup webhook). |
 | `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` | Public half of the VAPID pair, and `mailto:<address>` or an https URL. Without the public key the reminders screen says reminders are not supported. |
 
 ### Switches that stay off until the owner approves (gate G3)
@@ -73,8 +73,8 @@ Order for turning on GHL sending (each step with Pit's approval): finish the GHL
 
 ## 2. Database (Neon, aws-eu-central-1)
 - [ ] Use the **unpooled** connection string (host without `-pooler`) for migrations only; the app uses the pooled one.
-- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0012` in order (verified on an empty Postgres 16 by `scripts/test-db.sh`). `0008` drops the unused `login_attempts.user_id`; `0009` adds the `offer_clicks` counter table. Run it before the first deploy, and again before any deploy that adds a migration.
-- [ ] Do not run `scripts/create-dev-user.ts` against Neon (it refuses anything but localhost).
+- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0013` in order (verified on an empty Postgres 16 by `scripts/test-db.sh`). `0008` drops the unused `login_attempts.user_id`; `0009` adds the `offer_clicks` counter table; `0013` (`users_disabled_at`) adds the nullable `users.disabled_at` column (no default, no rewrite; participants disabled from `/admin/participants`). Run it before the first deploy, and again before any deploy that adds a migration.
+- [ ] Do not run `scripts/create-dev-user.ts` against Neon (it refuses anything but localhost). The production script is `npm run admin:create-user` (section 6).
 - [ ] Turn on Neon point-in-time restore / backups for the branch.
 
 ## 3. Deploy
@@ -96,3 +96,35 @@ Order for turning on GHL sending (each step with Pit's approval): finish the GHL
 - [ ] Lawyer review of the legal texts (`docs/LEGAL_REVIEW.md`); the pages are marked DRAFT until then.
 - [ ] Accessibility statement: contact filled, check date still accurate.
 - [ ] Owner decisions still open: listed in `/mnt/project-files/app/stage11/review.md` ("Needs the owner").
+
+## 6. Owner and reviewer access before GHL is connected (Pit and Avital log in and review the app)
+Production runs with `GHL_DELIVERY_MODE=off`: the app sends nothing, so the owner creates the accounts and sends each link by hand. `START_DATE` may stay unset: the day preview lets reviewers see any day.
+
+Run everything below from `~/tsaad-app` on the Mac, with `.env.local` holding the production `DATABASE_URL` (pooled), `DATABASE_URL_UNPOOLED`, `APP_ORIGIN` (the production origin, `https://...`) and, optionally, `ACTIVATION_LINK_TTL_MINUTES` (the script defaults to 4320 = 3 days). Nothing here is sent anywhere.
+
+1. **Migration 0013** (once, before the deploy that contains this code; the unpooled URL is for migrations only):
+   ```bash
+   set -a; source .env.local; set +a
+   DATABASE_URL="$DATABASE_URL_UNPOOLED" npx drizzle-kit migrate
+   ```
+   It applies `drizzle/0013_users_disabled_at.sql` (and any earlier migration that is missing).
+2. **Deploy** this commit to production (Vercel).
+3. **Create the first two accounts.** The command prints the activation link once, on its own line (stdout); the rest goes to stderr. Open it, or send it to the person, to set a password:
+   ```bash
+   npm run admin:create-user -- --confirm-production --username pit --name "פיט" --email <Pit's email> --phone <Pit's phone>
+   npm run admin:create-user -- --confirm-production --username avital --name "אביטל" --email <Avital's email> --phone <Avital's phone>
+   ```
+   Email or phone may be left out if the other is given. `--confirm-production` and `APP_ORIGIN` are required, and the script prints the database host (not the password) before writing. If the username already exists: `npm run admin:create-user -- --confirm-production --username pit --new-link` prints a fresh activation link (account not yet activated) or a password-reset link (account already activated); the old unused link stops working. A disabled account gets no link.
+4. **Make them admins.** Vercel → Project → Settings → Environment Variables → Production: `ADMIN_USERNAMES=pit,avital`, then **redeploy** (a variable change applies only to new deployments). Until then, `/admin/*` answers 404 for everyone.
+5. **Log in** at `/login` with the username and the password chosen from the link, then open `/admin/participants`.
+
+### Using /admin/participants
+- **List and search**: name, username, phone, email, created, activated, disabled, last activity (latest mark or sign-in). Search by name, username, email or phone; 25 per page. `/admin/stats` and this page link to each other at the top.
+- **Add participant manually**: name plus phone and/or email; the username is generated like the signup webhook (email local part, else phone digits, else `yogi12345`, with a numeric suffix on conflict). The activation link is shown once, with a copy button. It is not stored anywhere: reload and it is gone. Send it yourself by WhatsApp or email.
+- **New link**: an activation link for someone who has not activated, a password-reset link for someone who has (it also signs them out everywhere once used). Shown once, same as above; the previous unused link of that kind stops working.
+- **Disable / enable**: a disabled participant cannot sign in (same "wrong details" message), is signed out immediately, gets no reminders, push, GHL reminder tags, tracker sync or new links. A GHL signup webhook for that contact never re-enables them. Enable brings them back (they sign in with their old password).
+- **Delete**: permanent, same cascade as self-deletion from `/account`. First click opens a confirmation panel; type the username to confirm. Nothing is deleted in GHL (do that by hand, `docs/LEGAL_REVIEW.md`).
+- You cannot disable or delete your own account. Every action checks admin status and `Origin` on the server, is rate limited (60 per 10 minutes per admin) and writes one audit log line with ids only, no names, contact details or links.
+
+### Day preview (reviewers)
+On `/admin/participants`, "תצוגה מקדימה של יום": pick day 1 to 14 and start. `/today`, `/day/N`, `/path`, `/live`, `/offer`, `/yesodot` and the video links then behave as if today were that day, only for that admin's own browser (a signed, httpOnly cookie bound to the admin account, valid 12 hours; re-checked against `ADMIN_USERNAMES` on every request, so a forged or copied cookie does nothing for anyone else). A banner "מצב תצוגה מקדימה: יום N" with a stop button shows on every app page; the same stop button is on the participants page. Marks made during a preview are saved on the admin's own account like normal marks. The e2e test clock (`TSAAD_TEST_NOW`) is separate and stays off on Vercel.
