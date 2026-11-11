@@ -19,7 +19,7 @@ export type LoginResult =
 
 export const USERNAME_MAX_LENGTH = 254;
 
-type Candidate = { id: string; password_hash: string | null };
+type Candidate = { id: string; username: string; password_hash: string | null };
 
 /**
  * אימות שם משתמש, טלפון או מייל, וסיסמה. כל הכשלים (לא קיים, לא מופעל, סיסמה שגויה, קלט לא תקין,
@@ -45,19 +45,23 @@ export async function authenticate(
 
   const tooLong =
     args.identifier.trim().length > USERNAME_MAX_LENGTH || [...args.password].length > PASSWORD_POLICY.maxLength;
+  const nameKey = id.kind === "phone" ? id.raw : id.normalized;
   let candidates: Candidate[] = [];
   if (!tooLong && id.normalized) {
     const byEmail = id.kind === "email" ? sql` or lower(email) = ${id.normalized}` : sql``;
     const byPhone = id.kind === "phone" ? sql` or phone = ${id.normalized}` : sql``;
     // שם משתמש מורכב מספרות (למשל 0521234567) נתפס גם כטלפון: מחפשים לפי שניהם.
-    const nameKey = id.kind === "phone" ? id.raw : id.normalized;
     const res = await db.execute(
-      sql`select id, password_hash from users where username = ${nameKey}${byEmail}${byPhone} limit 3`,
+      sql`select id, username, password_hash from users where username = ${nameKey}${byEmail}${byPhone}
+          order by (username = ${nameKey}) desc limit 3`,
     );
     candidates = rowsOf<Candidate>(res);
   }
-  const user = candidates.length === 1 ? candidates[0] : undefined;
-  if (candidates.length > 1) {
+  // שם משתמש ייחודי, ולכן התאמה מדויקת אליו קובעת גם כשהטלפון שהוקלד משותף: שם המשתמש שנגזר מספרות הטלפון
+  // (0521234567) נשאר שמיש גם כשבן/בת משפחה רשום/ה עם אותו טלפון.
+  const exact = candidates.filter((c) => c.username === nameKey);
+  const user = exact.length === 1 ? exact[0] : candidates.length === 1 ? candidates[0] : undefined;
+  if (!user && candidates.length > 1) {
     log.warn("login: identifier matches more than one account; refused", { kind: id.kind, matches: candidates.length });
   }
 

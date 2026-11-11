@@ -354,6 +354,15 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
       expect(await a("twin2")).toEqual({ ok: true, userId: t2.id });
     });
 
+    it("a username made of phone digits keeps working when a second account shares that phone (exact username wins)", async () => {
+      const owner = await mkUser("0547778888", { password: "right-pass-1", phone: "+972547778888" });
+      await mkUser("sibling", { password: "right-pass-1", phone: "+972547778888" });
+      expect(await a("0547778888")).toEqual({ ok: true, userId: owner.id });
+      // any other spelling of the shared phone is still ambiguous and refused
+      expect(await a("054-777-8888")).toEqual(INVALID);
+      expect(await a("+972547778888")).toEqual(INVALID);
+    });
+
     it("an unactivated account cannot sign in by email or phone", async () => {
       await mkUser("fresh", { email: "fresh@example.test", phone: "+972502223333" });
       expect(await a("fresh@example.test")).toEqual(INVALID);
