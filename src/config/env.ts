@@ -131,6 +131,8 @@ export const envSchema = z.object({
   MORNING_URL_SESSION_271: optional(httpsUrl),
   MORNING_URL_BUNDLE_139: optional(httpsUrl),
   MORNING_URL_YESODOT_1265: optional(httpsUrl),
+  /** אופציונלי: קישור (https) לעדכון על המחזור הבא, מוצג בדף הנחיתה רק אחרי שההרשמה נסגרה. לא הוגדר = לא מוצג כלום. */
+  NEXT_COHORT_URL: optional(httpsUrl),
   /** ערך utm_campaign לכל הצעה (מצייני המקום [UTM_SESSION] ו־[UTM_YESODOT]). */
   OFFER_UTM_SESSION: optional(utmValue),
   OFFER_UTM_BUNDLE: optional(utmValue),

@@ -392,6 +392,8 @@
 | `landing.hero.cta` | אני בפנים |  |
 | `landing.hero.ctaTarget` | [MORNING_URL_CHALLENGE_79] | הכפתור לא פעיל כל עוד זה מציין מקום. |
 | `landing.hero.ctaDisabledNote` | ההרשמה תיפתח כאן. |  |
+| `landing.hero.closed` | ההרשמה למחזור הזה נסגרה |  |
+| `landing.hero.closedNext` | לעדכון על המחזור הבא |  |
 | `landing.hero.price` | ההרשמה לאתגר היא 79 ₪. זה אינו מנוי. | 79 ₪ הרשמה לאתגר, לא מנוי. |
 | `landing.hero.start` | האתגר מתחיל ב־[START_DATE]. |  |
 | `landing.hero.startTba` | תאריך ההתחלה יפורסם בקרוב. | חדש בשלב 10. מוצג כש־START_DATE לא הוגדר, במקום השורה עם [START_DATE]. |
@@ -800,4 +802,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 650 מחרוזות.
+סך הכול 652 מחרוזות.

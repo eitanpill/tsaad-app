@@ -17,7 +17,8 @@ import { serverNow } from "@/lib/today/clock";
 import { getSchedule } from "@/lib/today/schedule";
 import { connection } from "next/server";
 import { getAppOrigin } from "@/lib/auth/config";
-import { LandingCta } from "../_components/LandingCta";
+import { registrationClosed } from "@/lib/days";
+import { LandingCta, LandingClosed } from "../_components/LandingCta";
 import { LandingCup, LandingPath, LandingRing } from "../_components/LandingPath";
 
 const L = copy.landing;
@@ -82,6 +83,8 @@ export default async function LandingPage() {
   const ctaHref = goHref("challenge", getOfferLinks(cfg.env).challenge);
   const day1 = DAYS[0];
   const startText = cfg.startDate ? withStartDate(L.hero.start, cfg.startDate) : L.hero.startTba;
+  const closed = registrationClosed(now, schedule);
+  const nextCohortUrl = cfg.env.NEXT_COHORT_URL ?? null;
   const closeHeading = cfg.startDate ? withStartDate(L.close.heading, cfg.startDate) : L.close.headingTba;
 
   return (
@@ -106,12 +109,18 @@ export default async function LandingPage() {
           <b>{L.hero.subtitle}</b>
           {L.hero.lead}
         </p>
-        <LandingCta href={ctaHref} label={L.hero.cta} noteId="cta-note-hero" />
-        <p className="pt-note">
-          {L.hero.price}
-          <br />
-          {startText}
-        </p>
+        {closed ? (
+          <LandingClosed nextUrl={nextCohortUrl} />
+        ) : (
+          <>
+            <LandingCta href={ctaHref} label={L.hero.cta} noteId="cta-note-hero" />
+            <p className="pt-note">
+              {L.hero.price}
+              <br />
+              {startText}
+            </p>
+          </>
+        )}
         <p className="pt-have">
           {L.hero.haveAccount}
           <Link href="/login" className="plink">
@@ -199,11 +208,13 @@ export default async function LandingPage() {
         ))}
       </section>
 
-      <section className="pt pt--forest pt-close pt-stack" aria-labelledby="land-close-h">
-        <h2 id="land-close-h">{closeHeading}</h2>
-        <p>{L.close.body}</p>
-        <LandingCta href={ctaHref} label={L.close.cta} noteId="cta-note-close" />
-      </section>
+      {closed ? null : (
+        <section className="pt pt--forest pt-close pt-stack" aria-labelledby="land-close-h">
+          <h2 id="land-close-h">{closeHeading}</h2>
+          <p>{L.close.body}</p>
+          <LandingCta href={ctaHref} label={L.close.cta} noteId="cta-note-close" />
+        </section>
+      )}
     </main>
   );
 }

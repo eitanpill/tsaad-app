@@ -466,6 +466,9 @@ export const copy = {
       cta: "אני בפנים",
       ctaTarget: "[MORNING_URL_CHALLENGE_79]",
       ctaDisabledNote: "ההרשמה תיפתח כאן.",
+      // ההרשמה נסגרת בסוף יום 2 (שעון ישראל). הקישור "המחזור הבא" מוצג רק כש־NEXT_COHORT_URL מוגדר.
+      closed: "ההרשמה למחזור הזה נסגרה",
+      closedNext: "לעדכון על המחזור הבא",
       price: "ההרשמה לאתגר היא 79 ₪. זה אינו מנוי.",
       start: "האתגר מתחיל ב־[START_DATE].",
       // START_DATE לא הוגדר: מוצג במקום השורה עם מציין המקום.
