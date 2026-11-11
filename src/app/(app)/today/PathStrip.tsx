@@ -10,12 +10,14 @@ import type { Stone } from "@/lib/path/view";
  * אבן שעוד לא נפתחה מקווקוות.
  */
 export function PathStrip({ stones, counted, day }: { stones: Stone[]; counted: number; day: number | null }) {
-  const label =
+  // השם הנגיש מתחיל במילה הנראית ("לשביל"), כדי ששליטה קולית ("ללחוץ על לשביל") תמצא את הקישור (WCAG 2.5.3), ואחריה הסיכום.
+  const summary =
     day === null
       ? fill(copy.a11y.strip.noDay, { counted })
       : counted === 1
         ? fill(copy.a11y.strip.oneCounted, { day })
         : fill(copy.a11y.strip.counted, { day, counted });
+  const label = `${copy.today.strip.link}, ${summary}`;
   return (
     <section className="t t-strip" aria-label={copy.a11y.strip.region}>
       <Link href="/path" className="strip-link" aria-label={label} prefetch={false}>

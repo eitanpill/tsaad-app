@@ -30,7 +30,7 @@ test.describe("path strip", () => {
   test("one link to /path whose name summarises progress; today highlighted; axe", async ({ browser }) => {
     await seed(habits([1, 2, 3]));
     const { ctx, page } = await open(browser, s, T.day4, "/today");
-    const link = page.getByRole("link", { name: "יום 4 מתוך 14, 3 ימים נספרו" });
+    const link = page.getByRole("link", { name: "לשביל, יום 4 מתוך 14, 3 ימים נספרו" });
     await expect(link).toHaveAttribute("href", "/path");
     await expect(page.locator(".sstone--today")).toHaveCount(1);
     await expect(page.locator(".sstone--counted")).toHaveCount(3);
