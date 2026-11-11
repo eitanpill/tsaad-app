@@ -46,7 +46,7 @@ test("signup webhook -> activation link -> choose password -> login", async ({ r
   await page.goto(link);
   await expect(page.getByLabel("בחירת סיסמה", { exact: true })).toHaveCount(0);
   await page.goto("/login");
-  await page.getByLabel("שם משתמש", { exact: true }).fill(username);
+  await page.getByLabel("שם משתמש, טלפון או מייל").fill(username);
   await page.getByLabel("סיסמה", { exact: true }).fill("webhook-flow-pass-1");
   await page.getByRole("button", { name: "כניסה", exact: true }).click();
   await page.waitForURL("**/today");

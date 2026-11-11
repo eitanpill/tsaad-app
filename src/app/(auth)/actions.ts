@@ -16,10 +16,9 @@ import {
 } from "@/lib/auth/config";
 import { clearSessionCookie, readSessionToken, setSessionCookie } from "@/lib/auth/cookies";
 import { IDENTIFIER_MAX_LENGTH, requestPasswordReset } from "@/lib/auth/forgot";
-import { authenticate } from "@/lib/auth/login";
+import { authenticate, clearLoginLimitsForUser } from "@/lib/auth/login";
 import { assertSameOrigin } from "@/lib/auth/origin";
 import { hashPassword, validatePassword } from "@/lib/auth/password";
-import { clearAttempts, rateLimitKeys } from "@/lib/auth/rate-limit";
 import { clientIp } from "@/lib/auth/request";
 import { deleteSession, rotateSession } from "@/lib/auth/session";
 import { peekToken } from "@/lib/auth/tokens";
@@ -29,7 +28,7 @@ import type { ActivateState, ForgotState, LoginState } from "./state";
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** כניסה. כל כשל זהה כלפי חוץ ("שם המשתמש או הסיסמה לא נכונים"). */
+/** כניסה עם שם משתמש, טלפון או מייל. כל כשל זהה כלפי חוץ. */
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const h = await headers();
   assertSameOrigin(h);
@@ -41,7 +40,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   let result;
   try {
     result = await authenticate(getDb(), {
-      username,
+      identifier: username,
       password,
       secret: getSessionSecret(),
       ip: clientIp(h),
@@ -74,13 +73,11 @@ export async function activateAction(_prev: ActivateState, formData: FormData): 
   const confirm = str(formData.get("confirm"));
 
   let setup;
-  let username = "";
   try {
     const db = getDb();
     getSessionSecret();
     const peeked = await peekToken(db, token);
     if (!peeked) return { status: "expired" };
-    username = peeked.username;
 
     const issue = validatePassword(password, { username: peeked.username });
     if (issue) {
@@ -99,7 +96,7 @@ export async function activateAction(_prev: ActivateState, formData: FormData): 
 
   // הקישור הוכיח בעלות על החשבון: אם החשבון נעול אחרי ניסיונות כושלים, הנעילה מתאפסת, כדי שהכניסה הבאה עם הסיסמה החדשה תעבוד.
   try {
-    await clearAttempts(getDb(), "login", rateLimitKeys(getSessionSecret(), username, null));
+    await clearLoginLimitsForUser(getDb(), setup.userId, getSessionSecret());
   } catch (e) {
     logger.error("activation: clearing login attempts failed", { error: e });
   }

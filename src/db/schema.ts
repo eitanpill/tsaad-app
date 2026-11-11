@@ -46,6 +46,8 @@ export const users = pgTable(
   (t) => [
     check("users_username_lower", sql`${t.username} = lower(${t.username})`),
     index("users_email_idx").on(sql`lower(${t.email})`),
+    /** כניסה לפי טלפון (E.164). לא ייחודי בכוונה: אנשי קשר שונים ב־GHL יכולים לחלוק טלפון או מייל, והרשמה ששולמה לא נחסמת. */
+    index("users_phone_idx").on(t.phone),
   ],
 );
 

@@ -6,7 +6,7 @@ import type { MessageSender, OutgoingMessage } from "@/lib/messaging/sender";
 import { completePasswordSetup } from "./accounts";
 import { sha256Hex } from "./crypto";
 import { requestPasswordReset } from "./forgot";
-import { authenticate } from "./login";
+import { authenticate, clearLoginLimitsForUser } from "./login";
 import { hashPassword } from "./password";
 import { clearAttempts, rateLimitKeys, registerAttempt } from "./rate-limit";
 import {
@@ -140,8 +140,8 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
       expect(await validateSession(db, s1.token)).toBeNull();
       expect(await count("sessions")).toBe(0);
       expect(await peekToken(db, other.token)).toBeNull();
-      expect((await authenticate(db, { username: "setup", password: "new-pass-2", secret: SECRET })).ok).toBe(true);
-      expect((await authenticate(db, { username: "setup", password: "old-pass-1", secret: SECRET })).ok).toBe(false);
+      expect((await authenticate(db, { identifier: "setup", password: "new-pass-2", secret: SECRET })).ok).toBe(true);
+      expect((await authenticate(db, { identifier: "setup", password: "old-pass-1", secret: SECRET })).ok).toBe(false);
     });
 
     it("first activation sets activated_at", async () => {
@@ -305,7 +305,7 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
     it("logs in with the right password only; every failure is the same", async () => {
       await mkUser("login1", { password: "right-pass-1" });
       await mkUser("pending"); // never activated
-      const a = (u: string, p: string) => authenticate(db, { username: u, password: p, secret: SECRET, ip: "7.7.7.7" });
+      const a = (u: string, p: string) => authenticate(db, { identifier: u, password: p, secret: SECRET, ip: "7.7.7.7" });
       expect(await a("login1", "right-pass-1")).toMatchObject({ ok: true });
       expect(await a(" LOGIN1 ", "right-pass-1")).toMatchObject({ ok: true });
       const wrong = await a("login1", "wrong-pass-1");
@@ -318,7 +318,7 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
 
     it("locks after repeated failures even for the right password, and success clears the count", async () => {
       await mkUser("login2", { password: "right-pass-1" });
-      const a = (p: string) => authenticate(db, { username: "login2", password: p, secret: SECRET });
+      const a = (p: string) => authenticate(db, { identifier: "login2", password: p, secret: SECRET });
       for (let i = 0; i < 4; i++) await a("bad");
       expect(await a("right-pass-1")).toMatchObject({ ok: true }); // 5th attempt, still allowed, clears
       for (let i = 0; i < 5; i++) await a("bad");
@@ -326,10 +326,125 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
     });
   });
 
+  describe("authenticate by phone or email", () => {
+    const a = (identifier: string, password = "right-pass-1", ip = "7.7.7.7") =>
+      authenticate(db, { identifier, password, secret: SECRET, ip });
+    const INVALID = { ok: false, reason: "invalid" };
+
+    it("signs in with email (any case), with every common phone spelling, or with the username", async () => {
+      const u = await mkUser("multi", { password: "right-pass-1", email: "Multi@Example.test", phone: "+972521234567" });
+      for (const id of ["multi", "MULTI@example.TEST", " multi@example.test ", "0521234567", "052-123-4567", "+972521234567", "972521234567"]) {
+        expect(await a(id), id).toEqual({ ok: true, userId: u.id });
+      }
+      expect(await a("multi@example.test", "wrong-pass-1")).toEqual(INVALID);
+      expect(await a("0529999999")).toEqual(INVALID);
+      expect(await a("other@example.test")).toEqual(INVALID);
+    });
+
+    it("a username made of digits still works next to phone matching", async () => {
+      const u = await mkUser("0541112222", { password: "right-pass-1", email: "d@example.test", phone: "+972541112222" });
+      expect(await a("0541112222")).toEqual({ ok: true, userId: u.id });
+    });
+
+    it("an email or phone shared by two accounts is refused with the generic error; the username still works", async () => {
+      await mkUser("twin1", { password: "right-pass-1", email: "shared@example.test", phone: "+972501110000" });
+      const t2 = await mkUser("twin2", { password: "right-pass-1", email: "shared@example.test", phone: "+972501110000" });
+      expect(await a("shared@example.test")).toEqual(INVALID);
+      expect(await a("050-111-0000")).toEqual(INVALID);
+      expect(await a("twin2")).toEqual({ ok: true, userId: t2.id });
+    });
+
+    it("an unactivated account cannot sign in by email or phone", async () => {
+      await mkUser("fresh", { email: "fresh@example.test", phone: "+972502223333" });
+      expect(await a("fresh@example.test")).toEqual(INVALID);
+      expect(await a("0502223333")).toEqual(INVALID);
+    });
+
+    it("rate limit counts every spelling of a phone together, and the account across identifiers", async () => {
+      await mkUser("limited", { password: "right-pass-1", email: "limited@example.test", phone: "+972503334444" });
+      for (const id of ["0503334444", "050-333-4444", "+972503334444", "972503334444", "0503334444"]) await a(id, "bad");
+      expect(await a("+972 50 333 4444")).toMatchObject({ ok: false, reason: "rate_limited" });
+      // a different identifier of the same account hits the account limit, not a fresh quota
+      expect(await a("limited@example.test")).toMatchObject({ ok: false, reason: "rate_limited" });
+      expect(await a("limited")).toMatchObject({ ok: false, reason: "rate_limited" });
+    });
+
+    it("the account limit also accumulates across mixed identifiers", async () => {
+      await mkUser("mixed", { password: "right-pass-1", email: "mixed@example.test", phone: "+972504445555" });
+      await a("mixed", "bad");
+      await a("mixed@example.test", "bad");
+      await a("0504445555", "bad");
+      await a("mixed", "bad");
+      await a("mixed@example.test", "bad");
+      expect(await a("0504445555")).toMatchObject({ ok: false, reason: "rate_limited" });
+    });
+
+    it("success clears both the identifier and the account counters", async () => {
+      await mkUser("clears", { password: "right-pass-1", email: "clears@example.test" });
+      for (let i = 0; i < 3; i++) await a("clears@example.test", "bad");
+      expect(await a("clears@example.test")).toMatchObject({ ok: true });
+      for (let i = 0; i < 4; i++) await a("clears", "bad");
+      expect(await a("clears")).toMatchObject({ ok: true });
+    });
+
+    it("lockout lifts for every identifier once the reset link is used (clearLoginLimitsForUser)", async () => {
+      const u = await mkUser("unlock", { password: "right-pass-1", email: "unlock@example.test", phone: "+972505556666" });
+      for (let i = 0; i < 6; i++) await a("0505556666", "bad");
+      expect(await a("0505556666")).toMatchObject({ reason: "rate_limited" });
+      await clearLoginLimitsForUser(db, u.id, SECRET);
+      expect(await a("0505556666")).toMatchObject({ ok: true });
+      expect(await a("unlock@example.test")).toMatchObject({ ok: true });
+    });
+
+    it("same work and same generic answer whether or not the identifier exists (statement count and timing)", async () => {
+      await mkUser("exists", { password: "right-pass-1", email: "exists@example.test", phone: "+972506667777" });
+      await mkUser("dupa", { password: "right-pass-1", email: "dup@example.test" });
+      await mkUser("dupb", { password: "right-pass-1", email: "dup@example.test" });
+      let statements = 0;
+      const counting = new Proxy(db, {
+        get(target, prop, recv) {
+          const v = Reflect.get(target, prop, recv);
+          if (prop === "execute") return (...args: unknown[]) => (statements++, (v as (...a: unknown[]) => unknown).apply(target, args));
+          return typeof v === "function" ? v.bind(target) : v;
+        },
+      }) as Db;
+      const probe = async (identifier: string) => {
+        statements = 0;
+        const t0 = performance.now();
+        const r = await authenticate(counting, { identifier, password: "wrong-pass-1", secret: SECRET, ip: "9.9.9.9" });
+        return { r, statements, ms: performance.now() - t0 };
+      };
+      const ids = ["exists", "exists@example.test", "0506667777", "ghost", "ghost@example.test", "0509998888", "dup@example.test"];
+      const out: { r: unknown; statements: number; ms: number }[] = [];
+      for (const id of ids) out.push(await probe(id));
+      for (const o of out) expect(o.r).toEqual(INVALID);
+      expect(new Set(out.map((o) => o.statements)).size).toBe(1);
+      // every path pays for one password hash (tens of ms): a skipped hash would be several times faster
+      const median = (xs: number[]) => [...xs].sort((x, y) => x - y)[Math.floor(xs.length / 2)];
+      const real = median([out[0].ms, out[1].ms, out[2].ms]);
+      const missing = median([out[3].ms, out[4].ms, out[5].ms]);
+      const ambiguous = out[6].ms;
+      expect(missing).toBeGreaterThan(real * 0.4);
+      expect(ambiguous).toBeGreaterThan(real * 0.4);
+      expect(missing).toBeLessThan(real * 2.5);
+      expect(ambiguous).toBeLessThan(real * 2.5);
+    });
+
+    it("an ambiguous identifier is logged without the value", async () => {
+      await mkUser("la", { password: "right-pass-1", email: "log@example.test" });
+      await mkUser("lb", { password: "right-pass-1", email: "log@example.test" });
+      const lines: unknown[] = [];
+      const log = { debug() {}, info() {}, error() {}, child() { return log; }, warn: (m: string, f: unknown) => lines.push([m, f]) };
+      await authenticate(db, { identifier: "log@example.test", password: "x", secret: SECRET, log });
+      expect(JSON.stringify(lines)).toContain("more than one account");
+      expect(JSON.stringify(lines)).not.toContain("log@example.test");
+    });
+  });
+
   describe("lockout and the reset link", () => {
     it("while a username is locked for login, the reset link still goes out and sets a password that works", async () => {
       await mkUser("locked1", { password: "right-pass-1", phone: "050-123-4567" });
-      const a = (p: string) => authenticate(db, { username: "locked1", password: p, secret: SECRET });
+      const a = (p: string) => authenticate(db, { identifier: "locked1", password: p, secret: SECRET });
       for (let i = 0; i < 5; i++) await a("bad");
       expect(await a("right-pass-1")).toMatchObject({ ok: false, reason: "rate_limited" });
 
@@ -344,7 +459,7 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
       const { token } = await issueToken(db, { userId: u.id, purpose: "reset", ttlMinutes: 30 });
       expect(await completePasswordSetup(db, { token, passwordHash: await hashPassword("new-pass-2") })).toMatchObject({ userId: u.id });
       // what activateAction does next: the link proved ownership, so the lockout is lifted
-      await clearAttempts(db, "login", rateLimitKeys(SECRET, "locked1", null));
+      await clearLoginLimitsForUser(db, u.id, SECRET);
       expect(await a("new-pass-2")).toMatchObject({ ok: true });
     });
   });

@@ -221,7 +221,7 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     await runAfter();
     expect(captured).toHaveLength(0);
     expect(await count("activation_tokens", sql`used_at is null`)).toBe(0);
-    expect((await authenticate(db, { username: "whtest.act", password: pw, secret: env.SESSION_SECRET! })).ok).toBe(true);
+    expect((await authenticate(db, { identifier: "whtest.act", password: pw, secret: env.SESSION_SECRET! })).ok).toBe(true);
   });
 
   it("concurrent identical webhooks create exactly one user and one link", async () => {
@@ -311,11 +311,11 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     const token = tokenOf(d);
     expect(await peekToken(db, token)).toMatchObject({ username: "whtest.flow", purpose: "activate" });
     const pw = "my-own-chosen-password-9";
-    expect((await authenticate(db, { username: d.username, password: pw, secret: env.SESSION_SECRET! })).ok).toBe(false);
+    expect((await authenticate(db, { identifier: d.username, password: pw, secret: env.SESSION_SECRET! })).ok).toBe(false);
     const done = await completePasswordSetup(db, { token, passwordHash: await hashPassword(pw) });
     expect(done).toMatchObject({ username: "whtest.flow" });
     expect(await completePasswordSetup(db, { token, passwordHash: await hashPassword("other-password-123") })).toBeNull();
-    expect((await authenticate(db, { username: d.username.toUpperCase(), password: pw, secret: env.SESSION_SECRET! })).ok).toBe(true);
+    expect((await authenticate(db, { identifier: d.username.toUpperCase(), password: pw, secret: env.SESSION_SECRET! })).ok).toBe(true);
   });
 
   it("a delivery failure is logged and does not change the response or the stored state", async () => {

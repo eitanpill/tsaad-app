@@ -50,16 +50,16 @@ test.describe("axe: zero violations", () => {
     await axe(page);
 
     await page.getByRole("button", { name: "כניסה", exact: true }).click();
-    await expect(page.getByText("יש להזין שם משתמש.")).toBeVisible();
-    await expect(page.getByLabel("שם משתמש", { exact: true })).toBeFocused();
+    await expect(page.getByText("יש להזין שם משתמש, טלפון או מייל.")).toBeVisible();
+    await expect(page.getByLabel("שם משתמש, טלפון או מייל")).toBeFocused();
     await axe(page);
 
-    await page.getByLabel("שם משתמש", { exact: true }).fill("nobody");
+    await page.getByLabel("שם משתמש, טלפון או מייל").fill("nobody");
     await page.getByLabel("סיסמה", { exact: true }).fill("wrong-pass-1");
     await page.getByRole("button", { name: "כניסה", exact: true }).click();
-    await expect(page.locator("#login-form-err")).toHaveText("שם המשתמש או הסיסמה לא נכונים");
-    await expect(page.getByLabel("שם משתמש", { exact: true })).toBeFocused();
-    await expect(page.getByLabel("שם משתמש", { exact: true })).toHaveValue("nobody");
+    await expect(page.locator("#login-form-err")).toHaveText("הפרטים או הסיסמה לא נכונים");
+    await expect(page.getByLabel("שם משתמש, טלפון או מייל")).toBeFocused();
+    await expect(page.getByLabel("שם משתמש, טלפון או מייל")).toHaveValue("nobody");
     await axe(page);
   });
 
@@ -144,7 +144,7 @@ test.describe("flows", () => {
 
     await page.context().clearCookies();
     await page.goto("/login");
-    await page.getByLabel("שם משתמש", { exact: true }).fill(username);
+    await page.getByLabel("שם משתמש, טלפון או מייל").fill(username);
     await page.getByLabel("סיסמה", { exact: true }).fill("my-pass-1234");
     await page.getByRole("button", { name: "כניסה", exact: true }).click();
     await page.waitForURL("**/today");
@@ -225,7 +225,7 @@ test.describe("flows", () => {
       }
       return route.continue();
     });
-    await page.getByLabel("שם משתמש", { exact: true }).fill(username);
+    await page.getByLabel("שם משתמש, טלפון או מייל").fill(username);
     await page.getByLabel("סיסמה", { exact: true }).fill("csrf-pass-123");
     await page.getByRole("button", { name: "כניסה", exact: true }).click();
     await expect.poll(() => !!captured).toBe(true);
