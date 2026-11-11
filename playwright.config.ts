@@ -85,7 +85,6 @@ export default defineConfig({
         // bundle link deliberately unset: one disabled button next to enabled ones
         OFFER_UTM_SESSION: "session271",
         OFFER_UTM_YESODOT: "yesodot1265",
-        YESODOT_OFFER_EXPIRY: "2026-12-20",
         ACCESSIBILITY_CONTACT: "access@example.test",
         PRIVACY_CONTACT: "privacy@example.test",
         SUPPORT_CONTACT: "050-123-4567",

@@ -4,7 +4,7 @@ import { axe, clock, createUser, pool, expectReflowAndTargets, open, overflowing
 /**
  * Stage 10 on server B (day 14 live at 20:00, window 48h, session and Yesodot links set, bundle link unset, contacts set).
  * Day 14 = 2026-12-14. The live ends 60 minutes after 20:00; the offer then stays open 48 hours (until 2026-12-16 21:00).
- * Yesodot has its own expiry (2026-12-20, through the end of that day).
+ * Yesodot shares the same window: valid until 2026-12-16 21:00, open to everyone before day 14 too.
  */
 test.use({ baseURL: "http://localhost:3101" });
 
@@ -13,8 +13,8 @@ const TT = {
   open: "2026-12-14T21:30:00+02:00",
   lastMinute: "2026-12-16T20:59:00+02:00",
   expired: "2026-12-16T21:01:00+02:00",
-  yesodotLastDay: "2026-12-20T23:00:00+02:00",
-  yesodotExpired: "2026-12-21T10:00:00+02:00",
+  yesodotBeforeDay14: "2026-12-05T10:00:00+02:00",
+  yesodotExpired: "2026-12-16T21:01:00+02:00",
 };
 
 let s: Session;
@@ -101,9 +101,12 @@ test("a client cannot move the clock: the real server clock decides (no test hea
   await ctx.close();
 });
 
-test("yesodot: valid with a date, CTA link with UTM; after the expiry no button", async ({ browser }) => {
-  let o = await open(browser, s, TT.yesodotLastDay, "/yesodot");
-  await expect(o.page.getByText("המחיר הזה תקף עד 20 בדצמבר.")).toBeVisible();
+test("yesodot: valid until the offer window end (also before day 14), CTA link with UTM; after the window no button", async ({ browser }) => {
+  let o = await open(browser, s, TT.lastMinute, "/yesodot");
+  await expect(o.page.getByText(/המחיר הזה תקף עד .*21:00\./)).toBeVisible();
+  await o.ctx.close();
+  o = await open(browser, s, TT.yesodotBeforeDay14, "/yesodot");
+  await expect(o.page.getByText(/המחיר הזה תקף עד .*21:00\./)).toBeVisible();
   const a = o.page.getByRole("link", { name: "להרשמה ליסודות היוגה" });
   await expect(a).toHaveAttribute("href", "/go/yesodot");
   await shot(o.page, "yesodot-valid");

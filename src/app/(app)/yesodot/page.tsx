@@ -3,7 +3,7 @@ import { copy } from "@/content/copy.he";
 import { requireUser } from "@/lib/auth/dal";
 import { getOfferModel } from "@/lib/offer/config";
 import { goHref } from "@/lib/offer/links";
-import { formatValidUntil } from "@/lib/offer/model";
+import { formatDeadline } from "@/lib/offer/model";
 import { getAppClock } from "@/lib/preview/context";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
 import { OfferCta } from "../offer/OfferCta";
@@ -11,8 +11,8 @@ import { OfferCta } from "../offer/OfferCta";
 export const metadata: Metadata = { title: `${copy.offer.yesodot.heading} | ${copy.brand.name}` };
 
 /**
- * "יסודות היוגה": מסלול נפרד, פתוח לכל משתתף מחובר, עם תוקף משלו (YESODOT_OFFER_EXPIRY, שלא קשור לחלון ההצעה של יום 14).
- * בלי תוקף מוגדר: שורה ניטרלית (לא מציין המקום). אחרי התוקף: הודעה בלי כפתור.
+ * "יסודות היוגה": מסלול נפרד, פתוח לכל משתתף מחובר, באותו חלון תוקף של הצעות יום 14 (48 שעות מסוף האתגר).
+ * כשאי אפשר לחשב את המועד: שורה ניטרלית. אחרי התוקף: הודעה בלי כפתור.
  */
 export default async function YesodotPage() {
   await requireUser();
@@ -38,7 +38,7 @@ export default async function YesodotPage() {
             <p>{Y.priceNote}</p>
             <p className="ofr-note">
               {v.kind === "valid"
-                ? Y.expiry.replace("[YESODOT_OFFER_EXPIRY]", formatValidUntil(m.yesodotRaw!, v.until, m.tz))
+                ? Y.expiry.replace("{until}", formatDeadline(v.until, m.tz))
                 : Y.expiryTba}
             </p>
             <OfferCta href={goHref("yesodot", m.links.yesodot)} label={Y.cta} noteId="yes-note" />

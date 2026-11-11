@@ -21,10 +21,11 @@ export function getOfferLinks(env = getConfig().env) {
 
 export function getOfferModel(now: Date, schedule: Schedule | null) {
   const cfg = getConfig();
+  const inputs = getOfferInputs(cfg.env);
   return {
-    offer: offerState(now, schedule, getOfferInputs(cfg.env)),
-    yesodot: yesodotValidity(now, cfg.env.YESODOT_OFFER_EXPIRY, cfg.timeZone),
-    yesodotRaw: cfg.env.YESODOT_OFFER_EXPIRY,
+    offer: offerState(now, schedule, inputs),
+    // "יסודות היוגה" תקף באותו חלון של יום 14.
+    yesodot: yesodotValidity(now, schedule, inputs),
     spots: cfg.env.SESSION_SPOTS ?? null,
     links: getOfferLinks(cfg.env),
     tz: cfg.timeZone,

@@ -61,16 +61,6 @@ const origin = z
     message: "expected an origin without path or trailing slash",
   });
 
-/** תאריך (YYYY-MM-DD, עד סוף אותו יום בשעון ישראל) או רגע מלא עם אזור (ISO 8601). */
-const dateOrInstant = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2}))?$/, "expected YYYY-MM-DD or ISO 8601 with offset")
-  .refine((s) => {
-    const d = new Date(s.length === 10 ? `${s}T00:00:00Z` : s);
-    // round trip on the date part: catches 02-30 (which Date would roll over to March)
-    return !Number.isNaN(d.getTime()) && (s.length > 10 || d.toISOString().startsWith(s));
-  }, "not a real date");
-
 const utmValue = z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/, "letters, digits, _ . - only (max 64)");
 
 /** פרט קשר להצגה (מייל, טלפון או טקסט קצר). */
@@ -164,8 +154,6 @@ export const envSchema = z.object({
   OFFER_UTM_SESSION: optional(utmValue),
   OFFER_UTM_BUNDLE: optional(utmValue),
   OFFER_UTM_YESODOT: optional(utmValue),
-  /** סוף התוקף של "יסודות היוגה" ([YESODOT_OFFER_EXPIRY]). לא הוגדר = שורה ניטרלית בלי תאריך. */
-  YESODOT_OFFER_EXPIRY: optional(dateOrInstant),
 
   /** פרטי קשר בדפים המשפטיים ([ACCESSIBILITY_CONTACT], [PRIVACY_CONTACT]). לא הוגדר = שורה ניטרלית. */
   ACCESSIBILITY_CONTACT: optional(contactText),

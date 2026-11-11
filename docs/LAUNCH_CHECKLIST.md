@@ -43,7 +43,6 @@ The server refuses to start in production when a **required** variable is missin
 | `OFFER_WINDOW_HOURS` | How long the day-14 offer stays open after the day-14 live ends. Unset = the offer never opens. Owner value: `48`. |
 | `NEXT_COHORT_URL` | Optional https link for "לעדכון על המחזור הבא". The landing page replaces the registration button with "ההרשמה למחזור הזה נסגרה" from the opening of day 3 (05:00 Israel time); the link is shown next to it only when this is set. The signup webhook keeps creating accounts for people who already paid (it logs a warning). The payment page itself (`MORNING_URL_CHALLENGE_79`) is not closed by the app: switch it off in Morning when registration closes. |
 | `OFFER_UTM_SESSION`, `OFFER_UTM_BUNDLE`, `OFFER_UTM_YESODOT` | Optional `utm_campaign` values (letters, digits, `_ . -`). |
-| `YESODOT_OFFER_EXPIRY` | `YYYY-MM-DD` (end of that day in Israel) or an ISO time. Unset = no date shown. |
 | `SESSION_SPOTS` | Only if a real, current number of places exists. It never counts down; clear it when it stops being true. |
 | `ACCESSIBILITY_CONTACT` | **Blocker before launch** (accessibility regulations, regulation 35): the accessibility coordinator's name and phone or email. Owner value: `support@yogit-yoga.co.il`. |
 | `PRIVACY_CONTACT` | **Blocker before launch**: contact for privacy access and correction requests. |

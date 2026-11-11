@@ -1,7 +1,6 @@
 import { OFFER } from "@/config/constants";
 import { sessionStart, type LiveDay } from "@/lib/live/model";
 import type { Schedule } from "@/lib/days";
-import { addDays, zonedTimeToInstant } from "@/lib/time/zone";
 
 /** ללא server-only: מודל טהור שנבדק עם שעון מדומה. כל החלטה לפי שעון השרת; אין ספירה לאחור ואין ערכים מומצאים. */
 
@@ -32,35 +31,35 @@ export function liveEndsAt(schedule: Schedule | null, liveTime: string | undefin
   return start ? new Date(start.getTime() + OFFER.liveEndsAfterStartMinutes * MIN) : null;
 }
 
-export function offerState(now: Date, schedule: Schedule | null, inputs: OfferInputs): OfferState {
+/** חלון ההצעה של יום 14: מסוף הלייב ועד OFFER_WINDOW_HOURS אחריו, או null אם חסר נתון (לא ממציאים מועד). מקור יחיד גם ל־offerState וגם ל־"יסודות היוגה". */
+export function offerWindow(schedule: Schedule | null, inputs: OfferInputs): { opensAt: Date; deadline: Date; hours: number } | null {
   const opensAt = liveEndsAt(schedule, inputs.liveTime);
   const hours = inputs.windowHours;
-  if (!opensAt || !hours || !Number.isInteger(hours) || hours <= 0) return { state: "notYet", nextChange: null };
-  const deadline = new Date(opensAt.getTime() + hours * HOUR);
+  if (!opensAt || !hours || !Number.isInteger(hours) || hours <= 0) return null;
+  return { opensAt, deadline: new Date(opensAt.getTime() + hours * HOUR), hours };
+}
+
+export function offerState(now: Date, schedule: Schedule | null, inputs: OfferInputs): OfferState {
+  const w = offerWindow(schedule, inputs);
+  if (!w) return { state: "notYet", nextChange: null };
+  const { opensAt, deadline, hours } = w;
   const t = now.getTime();
   if (t < opensAt.getTime()) return { state: "notYet", nextChange: opensAt };
   if (t < deadline.getTime()) return { state: "open", opensAt, deadline, hours, nextChange: deadline };
   return { state: "expired", deadline, nextChange: null };
 }
 
-/** תוקף "יסודות היוגה": תאריך בלבד נחשב עד סוף אותו יום בשעון ישראל; רגע מלא נחשב כפי שהוא. */
-export function parseExpiry(raw: string | undefined, tz: string): Date | null {
-  if (!raw) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-    const d = zonedTimeToInstant(addDays(raw, 1), "00:00", tz);
-    return Number.isNaN(d.getTime()) ? null : d;
-  }
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-/** unset: לא הוגדר (שורה ניטרלית); valid: עד until; expired: עבר. until הוא הרגע הראשון שבו המחיר כבר לא תקף. */
+/**
+ * תוקף "יסודות היוגה": אותו חלון של יום 14 (48 שעות מסוף האתגר, החלטת פית 2026-11-11).
+ * unset: אי אפשר לחשב עדיין (חסר START_DATE, LIVE_TIME_DAY14 או OFFER_WINDOW_HOURS); valid: עד until (גם לפני יום 14); expired: עבר.
+ * until הוא הרגע הראשון שבו המחיר כבר לא תקף.
+ */
 export type Validity = { kind: "unset" } | { kind: "valid"; until: Date } | { kind: "expired"; until: Date };
 
-export function yesodotValidity(now: Date, raw: string | undefined, tz: string): Validity {
-  const until = parseExpiry(raw, tz);
-  if (!until) return { kind: "unset" };
-  return now.getTime() < until.getTime() ? { kind: "valid", until } : { kind: "expired", until };
+export function yesodotValidity(now: Date, schedule: Schedule | null, inputs: OfferInputs): Validity {
+  const w = offerWindow(schedule, inputs);
+  if (!w) return { kind: "unset" };
+  return now.getTime() < w.deadline.getTime() ? { kind: "valid", until: w.deadline } : { kind: "expired", until: w.deadline };
 }
 
 const FMT = new Map<string, Intl.DateTimeFormat>();
@@ -72,16 +71,4 @@ export function formatDeadline(at: Date, tz: string): string {
     FMT.set(tz, f);
   }
   return f.format(at);
-}
-
-const DATE_FMT = new Map<string, Intl.DateTimeFormat>();
-/** תאריך אחרון שבו המחיר תקף, למשל "7 בדצמבר". עבור תאריך בלבד זה היום עצמו; עבור רגע מלא, היום שבו הוא חל. */
-export function formatValidUntil(raw: string, until: Date, tz: string): string {
-  let f = DATE_FMT.get(tz);
-  if (!f) {
-    f = new Intl.DateTimeFormat("he-IL", { day: "numeric", month: "long", timeZone: tz });
-    DATE_FMT.set(tz, f);
-  }
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(raw);
-  return f.format(dateOnly ? new Date(until.getTime() - 1) : until);
 }
