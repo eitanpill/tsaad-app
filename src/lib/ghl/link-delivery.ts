@@ -6,7 +6,7 @@ import { issueToken } from "@/lib/auth/tokens";
 import { logger, type Logger } from "@/lib/logger";
 import { createGhlClient, setFieldAndTag, type GhlClient } from "./client";
 import { getGhlConfig, type GhlConfig } from "./config";
-import { enqueueLink, runGhlOutbox, type GhlRunResult, type LinkKind } from "./outbox";
+import { cancelQueuedLink, enqueueLink, runGhlOutbox, type GhlRunResult, type LinkKind } from "./outbox";
 
 export type LinkDeliveryRequest = { userId: string; ghlContactId: string; kind: LinkKind; link: string };
 export type LinkDeliveryOutcome = "sent" | "dry" | "queued" | "dropped";
@@ -33,12 +33,14 @@ export function createLinkDelivery(deps: { cfg: GhlConfig; client: GhlClient | n
       const r = await setFieldAndTag(deps.client, {
         contactId: req.ghlContactId,
         fieldKey: cfg.fields.activationUrl,
+        fieldId: cfg.fields.activationUrlId,
         value: req.link,
         tag,
         rearm: true,
         locationId: cfg.locationId,
       });
       if (r.ok) {
+        await cancelQueuedLink(deps.db(), req.userId, req.kind);
         log.info("ghl link delivered", { kind: req.kind, userId: req.userId });
         return "sent";
       }
@@ -46,7 +48,7 @@ export function createLinkDelivery(deps: { cfg: GhlConfig; client: GhlClient | n
         log.error("ghl link delivery failed, not retrying", { kind: req.kind, userId: req.userId, error: r.error });
         return "dropped";
       }
-      await enqueueLink(deps.db(), req.userId, req.kind);
+      await enqueueLink(deps.db(), req.userId, req.kind, r.retryAfterSeconds);
       log.warn("ghl link delivery failed, queued for retry", { kind: req.kind, userId: req.userId, error: r.error });
       return "queued";
     },

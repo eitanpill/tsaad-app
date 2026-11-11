@@ -16,6 +16,7 @@ import type { GhlClient } from "./client";
 import { getGhlConfig } from "./config";
 import { createLinkDelivery } from "./link-delivery";
 import { enqueueLink, runGhlOutbox } from "./outbox";
+import { getWhatsappReminderPref, setWhatsappReminderPref } from "./preferences";
 import { queueGhlReminders } from "./reminders";
 
 const url = process.env.DATABASE_URL;
@@ -169,6 +170,45 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
       expect(calls.filter((c) => c.startsWith("add"))).toHaveLength(6);
     });
 
+    it("WhatsApp opt-out: no row is queued for a user who switched it off, and a queued row is dropped if they switch it off later", async () => {
+      const off = await mkUser();
+      const later = await mkUser();
+      expect(await getWhatsappReminderPref(db, off.id)).toEqual({ on: true, hasContact: true }); // default on
+      expect(await setWhatsappReminderPref(db, off.id, false)).toBe(false);
+      expect(await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log })).toEqual({ mode: "live", claimed: 1 });
+      expect(await count("reminder_log", sql`channel = 'ghl' and user_id = ${off.id}`)).toBe(0);
+      await setWhatsappReminderPref(db, later.id, false);
+      const { client, calls } = okClient();
+      expect(await worker(client, DAY3)).toMatchObject({ claimed: 1, sent: 0, dead: 1 });
+      expect(calls).toHaveLength(0);
+      expect(await count("sync_outbox", sql`last_error = 'opted out'`)).toBe(1);
+      // switching it back on takes effect from the next date
+      await setWhatsappReminderPref(db, off.id, true);
+      expect((await queueGhlReminders({ db, cfg: live, day: 4, date: "2026-12-04", log }))?.claimed).toBe(1);
+      expect(await getWhatsappReminderPref(db, "00000000-0000-0000-0000-000000000000")).toBeNull();
+    });
+
+    it("a 429 with Retry-After is not retried before that time", async () => {
+      await mkUser();
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      const { client } = okClient();
+      (client.updateCustomFields as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: false, retryable: true, error: "ghl http 429", retryAfterSeconds: 1800 });
+      expect(await worker(client, DAY3)).toMatchObject({ failed: 1 });
+      const wait = rowsOf<{ s: number }>(await db.execute(sql`select extract(epoch from next_attempt_at - now())::int as s from sync_outbox`))[0].s;
+      expect(wait).toBeGreaterThanOrEqual(1790);
+    });
+
+    it("claims in small chunks up to the row cap, and stops claiming once the run budget is spent", async () => {
+      for (let i = 0; i < 5; i++) await mkUser();
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      const { client, calls } = okClient();
+      const base = { db, cfg: live, client, now: DAY3, log, timeZone: "Asia/Jerusalem", origin: ORIGIN, makeLink: async () => "x", random: () => 0 };
+      expect(await runGhlOutbox({ ...base, runBudgetMs: 0 })).toMatchObject({ claimed: 0 });
+      expect(await runGhlOutbox({ ...base, claimChunk: 2, maxRows: 3 })).toMatchObject({ claimed: 3, sent: 3 });
+      expect(await runGhlOutbox({ ...base, claimChunk: 2 })).toMatchObject({ claimed: 2, sent: 2 });
+      expect(calls.filter((c) => c.startsWith("add"))).toHaveLength(5);
+    });
+
     it("the tracker worker never claims GHL rows, and the GHL worker never claims tracker rows", async () => {
       const u = await mkUser();
       await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
@@ -202,6 +242,23 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
       expect(calls).toEqual([`field ${u.ghlContactId}`, `remove ${u.ghlContactId} tsaad_account_ready`, `add ${u.ghlContactId} tsaad_account_ready`]);
       expect(bodies[0]).toEqual([{ key: "tsaad_activation_url", value: link }]);
       expect(lines.join("\n")).not.toContain("SECRETTOKEN999");
+    });
+
+    it("with the field id configured, the id is sent along with the key", async () => {
+      const u = await mkUser({ activated: false });
+      const withId = getGhlConfig(buildConfig({ GHL_DELIVERY_MODE: "live", GHL_FIELD_ACTIVATION_URL_ID: "FieldId123456", ...ghlEnv() }).env, {});
+      const { client, bodies } = okClient();
+      await createLinkDelivery({ cfg: withId, client, db: () => db, log }).deliver({ userId: u.id, ghlContactId: u.ghlContactId!, kind: "activate", link: "l" });
+      expect(bodies[0]).toEqual([{ key: "tsaad_activation_url", id: "FieldId123456", value: "l" }]);
+    });
+
+    it("a direct delivery cancels a retry still waiting for the same purpose (it would replace the fresh link)", async () => {
+      const u = await mkUser({ activated: false });
+      await enqueueLink(db, u.id, "activate");
+      const { client } = okClient();
+      expect(await createLinkDelivery({ cfg: live, client, db: () => db, log }).deliver({ userId: u.id, ghlContactId: u.ghlContactId!, kind: "activate", link: "l" })).toBe("sent");
+      expect(await count("sync_outbox", sql`status = 'sent'`)).toBe(1);
+      expect((await worker(client, DAY3, async () => "x")).claimed).toBe(0);
     });
 
     it("reset uses the reset tag", async () => {

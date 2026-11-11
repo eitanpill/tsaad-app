@@ -90,6 +90,8 @@ export default defineConfig({
         PRIVACY_CONTACT: "privacy@example.test",
         SUPPORT_CONTACT: "050-123-4567",
         NEXT_COHORT_URL: "https://next.example.test/updates",
+        // dry: the WhatsApp switch shows on /reminders; nothing is ever sent (live is refused under TSAAD_E2E anyway).
+        GHL_REMINDER_MODE: "dry",
       },
     },
   ],

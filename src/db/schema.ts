@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   date,
   index,
@@ -42,6 +43,8 @@ export const users = pgTable(
     passwordHash: text("password_hash"),
     createdAt: ts("created_at").notNull().defaultNow(),
     activatedAt: ts("activated_at"),
+    /** תזכורת הבוקר בוואטסאפ (דרך GHL). ברירת מחדל: פעילה; המשתתף/ת מכבה במסך התזכורות. */
+    whatsappReminders: boolean("whatsapp_reminders").notNull().default(true),
   },
   (t) => [
     check("users_username_lower", sql`${t.username} = lower(${t.username})`),

@@ -123,11 +123,18 @@ export async function markFailed(
   db: Exec,
   row: ClaimedRow,
   error: unknown,
-  opts: { retryable?: boolean; random?: () => number; maxAttempts?: number } = {},
+  opts: {
+    retryable?: boolean;
+    random?: () => number;
+    maxAttempts?: number;
+    /** השהיה מינימלית (למשל Retry-After של השירות), בשניות; לא מעבר לתקרת ה־backoff. */
+    minDelaySeconds?: number;
+  } = {},
 ): Promise<"failed" | "dead" | null> {
   const retryable = opts.retryable ?? true;
   const dead = !retryable || row.attempts >= (opts.maxAttempts ?? SYNC.maxAttempts);
-  const delay = backoffSeconds(row.attempts, opts.random);
+  const floor = Math.min(Math.max(0, Math.ceil(opts.minDelaySeconds ?? 0)), SYNC.backoffMaxSeconds);
+  const delay = Math.max(backoffSeconds(row.attempts, opts.random), floor);
   const res = await db.execute(
     sql`update sync_outbox
            set status = ${dead ? "dead" : "failed"},

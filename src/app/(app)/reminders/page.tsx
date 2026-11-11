@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import { getConfig } from "@/config";
 import { copy } from "@/content/copy.he";
+import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
+import { getGhl } from "@/lib/ghl/link-delivery";
+import { getWhatsappReminderPref } from "@/lib/ghl/preferences";
 import { fill } from "@/lib/format";
 import { timeTokens } from "@/lib/times";
 import { RemindersControls } from "./RemindersControls";
+import { WhatsappToggle } from "./WhatsappToggle";
 
 export const metadata: Metadata = { title: `${copy.nav.reminders} | ${copy.brand.name}` };
 
@@ -13,7 +17,10 @@ export const metadata: Metadata = { title: `${copy.nav.reminders} | ${copy.brand
  * המפתח הפרטי לא נוגע בדף הזה.
  */
 export default async function RemindersPage() {
-  await requireUser();
+  const user = await requireUser();
+  // מתג הוואטסאפ: רק כשתזכורת ה־GHL אינה כבויה, ורק למי שיש לו איש קשר ב־GHL (אחרים לא מקבלים וואטסאפ בכלל).
+  const whatsapp =
+    getGhl().cfg.reminderMode === "off" ? null : await getWhatsappReminderPref(getDb(), user.userId);
   const vapidKey = getConfig().env.VAPID_PUBLIC_KEY ?? null;
   const times = timeTokens();
   const previewText = fill(copy.push.generic, { day: copy.push.previewDay });
@@ -45,6 +52,7 @@ export default async function RemindersPage() {
       </section>
 
       <RemindersControls vapidKey={vapidKey} unlockTime={times.unlockTime} reminderTime={times.reminderTime} />
+      {whatsapp?.hasContact ? <WhatsappToggle initial={whatsapp.on} /> : null}
     </>
   );
 }

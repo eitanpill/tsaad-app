@@ -105,6 +105,12 @@ export const envSchema = z.object({
   /** שמות (מפתחות) של שדות מותאמים ותגים ב־GHL. אלה שמות, לא מזהים: יוצרים אותם ב־GHL לפי docs/GHL_SETUP.md. */
   GHL_FIELD_TODAY_URL: withDefault(ghlName, "tsaad_today_url"),
   GHL_FIELD_ACTIVATION_URL: withDefault(ghlName, "tsaad_activation_url"),
+  /**
+   * אופציונלי, מומלץ: מזהי השדות המותאמים ב־GHL (Settings, Custom Fields). כשמוגדר, הקריאה שולחת {id, fieldValue}
+   * (הצורה שהסכמה של GHL מסמנת כחובה); בלעדיו {key, fieldValue}.
+   */
+  GHL_FIELD_TODAY_URL_ID: optional(z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "a GHL custom field id")),
+  GHL_FIELD_ACTIVATION_URL_ID: optional(z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "a GHL custom field id")),
   GHL_TAG_REMINDER_PREFIX: withDefault(ghlName, "tsaad_reminder_day"),
   GHL_TAG_ACCOUNT_READY: withDefault(ghlName, "tsaad_account_ready"),
   GHL_TAG_RESET_READY: withDefault(ghlName, "tsaad_reset_ready"),

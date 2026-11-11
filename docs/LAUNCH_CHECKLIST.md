@@ -60,9 +60,10 @@ The server refuses to start in production when a **required** variable is missin
 | `GHL_DELIVERY_MODE` | `off` | `off` = today's dry-run. `dry` = logs what would be written. `live` = writes the one-time activation or reset link to the contact field and adds the tag, and a GHL workflow sends WhatsApp and email. Same token rules. |
 | `GHL_API_TOKEN` (secret), `GHL_LOCATION_ID` | empty | Only for `live`. Private Integration token with the contacts scopes (view and edit), see `docs/GHL_SETUP.md`. |
 | `GHL_FIELD_TODAY_URL`, `GHL_FIELD_ACTIVATION_URL`, `GHL_TAG_REMINDER_PREFIX`, `GHL_TAG_ACCOUNT_READY`, `GHL_TAG_RESET_READY` | defaults `tsaad_today_url`, `tsaad_activation_url`, `tsaad_reminder_day`, `tsaad_account_ready`, `tsaad_reset_ready` | Names (keys) of what Pit creates in GHL. Change only if the names in GHL differ. |
-
-Order for turning on GHL sending (each step with Pit's approval): finish the GHL steps in `docs/GHL_SETUP.md`, then `dry` for a day and read the logs, then `live` for one test contact (Pit's own) before real participants. **The first live call must be verified by hand** (the request shapes are written from the GHL API v2 documentation, not from a live call): check that the field and the tag appear on the contact and that the workflow fires. Run migration `0011` first (it adds `reminder_log.channel`).
+| `GHL_FIELD_TODAY_URL_ID`, `GHL_FIELD_ACTIVATION_URL_ID` | empty (set for live) | Recommended: the GHL ids of the two custom fields (Settings, Custom Fields). Set = the update sends `{id, fieldValue}` (GHL's schema marks `id` required); empty = `{key, fieldValue}`. |
 | GHL activation delivery | dry-run (`GHL_DELIVERY_MODE=off`) | The signup webhook creates the account and logs that a message *would* go out. The app itself never sends WhatsApp or email: with `GHL_DELIVERY_MODE=live` it writes the link to a GHL field and a GHL workflow sends. Do not connect real participants before the live check above. |
+
+Order for turning on GHL sending (each step with Pit's approval): finish the GHL steps in `docs/GHL_SETUP.md`, then `dry` for a day and read the logs, then `live` for one test contact (Pit's own) before real participants. **The first live call must be verified by hand** (the request shapes are written from the GHL API v2 documentation, not from a live call): check that the field and the tag appear on the contact and that the workflow fires. Run migrations `0011` (adds `reminder_log.channel`) and `0012` (adds `users.whatsapp_reminders`, default on) first. With `GHL_REMINDER_MODE` not `off`, /reminders shows a "תזכורת בוואטסאפ" switch to participants who have a GHL contact; switched off, they get no WhatsApp reminder. Template 3 must carry the opt-out line (`docs/GHL_SETUP.md`).
 
 ### Keep at their defaults
 `UNLOCK_HOUR=05:00`, `REMINDER_TIME=07:30`, `TZ_NAME=Asia/Jerusalem`. Leave `TRUST_PROXY_IP_HEADERS` and `GHL_WEBHOOK_URL` empty (Vercel sets trusted IP headers itself; the URL is for G3).
@@ -72,7 +73,7 @@ Order for turning on GHL sending (each step with Pit's approval): finish the GHL
 
 ## 2. Database (Neon, aws-eu-central-1)
 - [ ] Use the **unpooled** connection string (host without `-pooler`) for migrations only; the app uses the pooled one.
-- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0011` in order (verified on an empty Postgres 16 by `scripts/test-db.sh`). `0008` drops the unused `login_attempts.user_id`; `0009` adds the `offer_clicks` counter table. Run it before the first deploy, and again before any deploy that adds a migration.
+- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0012` in order (verified on an empty Postgres 16 by `scripts/test-db.sh`). `0008` drops the unused `login_attempts.user_id`; `0009` adds the `offer_clicks` counter table. Run it before the first deploy, and again before any deploy that adds a migration.
 - [ ] Do not run `scripts/create-dev-user.ts` against Neon (it refuses anything but localhost).
 - [ ] Turn on Neon point-in-time restore / backups for the branch.
 

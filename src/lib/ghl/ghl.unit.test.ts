@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseEnv } from "@/config/env";
 import { createLogger } from "@/lib/logger";
-import { createGhlClient, setFieldAndTag } from "./client";
+import { createGhlClient, parseRetryAfter, setFieldAndTag } from "./client";
 import { getGhlConfig } from "./config";
 import { createLinkDelivery } from "./link-delivery";
 
@@ -48,10 +48,60 @@ describe("ghl client (fetch is always a mock)", () => {
       "PUT https://services.leadconnectorhq.com/contacts/abc123XYZ",
       "POST https://services.leadconnectorhq.com/contacts/abc123XYZ/tags",
     ]);
-    expect(JSON.parse(calls[0][1].body as string)).toEqual({ customFields: [{ key: "tsaad_today_url", field_value: "https://app.example.test/today" }] });
+    // GHL schema: id or key, and fieldValue (field_value is deprecated); never tags in the PUT (it would overwrite them all).
+    expect(JSON.parse(calls[0][1].body as string)).toEqual({ customFields: [{ key: "tsaad_today_url", fieldValue: "https://app.example.test/today" }] });
     expect(JSON.parse(calls[1][1].body as string)).toEqual({ tags: ["tsaad_reminder_day3"] });
     expect(calls[0][1].headers).toMatchObject({ Authorization: `Bearer ${TOKEN}`, Version: "2021-07-28" });
     expect(calls[0][1].redirect).toBe("error");
+    expect(calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    expect(calls[0][1].headers).toMatchObject({ "Content-Type": "application/json", Accept: "application/json" });
+  });
+  it("sends the field id (not the key) when the id is configured", async () => {
+    const f = vi.fn(async () => res(200));
+    const c = createGhlClient({ token: TOKEN, fetchImpl: f as unknown as typeof fetch });
+    await setFieldAndTag(c, { contactId: "abc123XYZ", fieldKey: "tsaad_activation_url", fieldId: "AbCdEf123456", value: "v", tag: "t", rearm: false });
+    const body = JSON.parse((f.mock.calls as unknown as [string, RequestInit][])[0][1].body as string);
+    expect(body).toEqual({ customFields: [{ id: "AbCdEf123456", fieldValue: "v" }] });
+    expect(body).not.toHaveProperty("tags");
+  });
+  it("tag add and remove: POST and DELETE /contacts/{id}/tags with {tags}", async () => {
+    const f = vi.fn(async () => res(201));
+    const c = createGhlClient({ token: TOKEN, fetchImpl: f as unknown as typeof fetch });
+    expect(await c.addTags("abc123XYZ", ["a"])).toEqual({ ok: true });
+    expect(await c.removeTags("abc123XYZ", ["a"])).toEqual({ ok: true });
+    const calls = f.mock.calls as unknown as [string, RequestInit][];
+    expect(calls.map(([u, i]) => `${i.method} ${u} ${i.body as string}`)).toEqual([
+      'POST https://services.leadconnectorhq.com/contacts/abc123XYZ/tags {"tags":["a"]}',
+      'DELETE https://services.leadconnectorhq.com/contacts/abc123XYZ/tags {"tags":["a"]}',
+    ]);
+  });
+  it("429 carries Retry-After (seconds or a date, capped); 5xx without it has none", async () => {
+    const r429 = createGhlClient({ token: TOKEN, fetchImpl: (async () => new Response("", { status: 429, headers: { "retry-after": "120" } })) as unknown as typeof fetch });
+    expect(await r429.addTags("abc123XYZ", ["t"])).toEqual({ ok: false, retryable: true, error: "ghl http 429", retryAfterSeconds: 120 });
+    const r502 = createGhlClient({ token: TOKEN, fetchImpl: (async () => res(502)) as unknown as typeof fetch });
+    expect(await r502.addTags("abc123XYZ", ["t"])).toEqual({ ok: false, retryable: true, error: "ghl http 502" });
+    expect(parseRetryAfter("Wed, 11 Nov 2026 10:00:30 GMT", Date.parse("2026-11-11T10:00:00Z"))).toBe(30);
+    expect(parseRetryAfter("999999")).toBe(3600);
+    expect(parseRetryAfter("soon")).toBeUndefined();
+    expect(parseRetryAfter(null)).toBeUndefined();
+  });
+  it("a temporary failure removing the tag stops before adding it (else the workflow would not fire)", async () => {
+    const f = vi.fn(async (_u: string, i: RequestInit) => (i.method === "DELETE" ? res(503) : res(200)));
+    const c = createGhlClient({ token: TOKEN, fetchImpl: f as unknown as typeof fetch });
+    expect(await setFieldAndTag(c, { contactId: "abc123XYZ", fieldKey: "k", value: "v", tag: "t", rearm: true })).toMatchObject({ ok: false, retryable: true });
+    expect((f.mock.calls as unknown as [string, RequestInit][]).map(([, i]) => i.method)).toEqual(["PUT", "DELETE"]);
+    const g = vi.fn(async (_u: string, i: RequestInit) => (i.method === "DELETE" ? res(404) : res(200)));
+    const c2 = createGhlClient({ token: TOKEN, fetchImpl: g as unknown as typeof fetch });
+    expect(await setFieldAndTag(c2, { contactId: "abc123XYZ", fieldKey: "k", value: "v", tag: "t", rearm: true })).toEqual({ ok: true });
+  });
+  it("a timeout is retryable", async () => {
+    const hang = ((_u: string, i: RequestInit) =>
+      new Promise((_r, reject) => i.signal?.addEventListener("abort", () => reject(i.signal?.reason)))) as unknown as typeof fetch;
+    const c = createGhlClient({ token: TOKEN, fetchImpl: hang, timeoutMs: 20 });
+    expect(await c.addTags("abc123XYZ", ["t"])).toEqual({ ok: false, retryable: true, error: "ghl timeout" });
+  });
+  it("never builds a client with the real fetch in tests", () => {
+    expect(() => createGhlClient({ token: TOKEN })).toThrow(/never/);
   });
   it("rearm removes the tag before adding it", async () => {
     const f = vi.fn(async () => res(200));
