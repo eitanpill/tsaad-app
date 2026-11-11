@@ -72,7 +72,7 @@ test.describe("live: before the window", () => {
     await expect(tile.getByRole("button", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveCount(0);
     await expect(tile.getByRole("link", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveCount(0);
     await expect(tile).not.toContainText("אפשר יהיה להוסיף ליומן");
-    await expect(page.getByText("אי אפשר להגיע?")).toBeVisible();
+    await expect(page.getByText("לא מצליחים להגיע?")).toBeVisible();
     await axe(page);
     await ctx.close();
   });

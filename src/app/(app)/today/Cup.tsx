@@ -1,5 +1,6 @@
 import { useId } from "react";
 import type { CupLevel } from "@/lib/days";
+import { paint } from "@/components/paint";
 
 /** גובה פני המים (בקואורדינטות ה־SVG). "empty" מניח אותם מתחת לכוס, כדי שהעלייה תתחיל מלמטה. */
 const WATER_Y: Record<CupLevel, number> = { empty: 98, half: 48, three_quarters: 28, full: 10 };
@@ -45,26 +46,26 @@ export function Cup({
           <path
             className="wave"
             d="M-40 0 Q-30 -5 -20 0 T0 0 T20 0 T40 0 T60 0 T80 0 T100 0 V100 H-40 Z"
-            fill="#123021"
+            style={paint("forest")}
           />
         </g>
       </g>
-      <path d="M16 14 L21 80" stroke="#FFFFFF" strokeOpacity="0.8" strokeWidth="3" strokeLinecap="round" />
+      <path d="M16 14 L21 80" strokeOpacity="0.8" strokeWidth="3" strokeLinecap="round" style={paint(null, "white")} />
       <path
         d={GLASS}
         fill="none"
-        stroke="#123021"
         strokeWidth="3.5"
         strokeLinejoin="round"
         strokeDasharray={level === "empty" ? "6 5" : undefined}
+        style={paint(null, "forest")}
       />
       {burst > 0 && level === "full" ? (
         <g key={burst} className="cup-burst" aria-hidden="true">
-          <path className="sp sp1" d="M14 2 C 11 -6 8 -9 5 -11 C 11 -10 15 -6 14 2 Z" fill="#6F8A6E" />
-          <path className="sp sp2" d="M40 0 C 37 -9 34 -13 31 -16 C 38 -14 42 -9 40 0 Z" fill="#6F8A6E" />
-          <path className="sp sp3" d="M66 2 C 69 -6 72 -9 75 -11 C 69 -10 65 -6 66 2 Z" fill="#6F8A6E" />
-          <path className="sp sp4" d="M26 -4 l2.2 -6 l2.2 6 l6 2.2 l-6 2.2 l-2.2 6 l-2.2 -6 l-6 -2.2 Z" fill="#BB6F51" />
-          <path className="sp sp5" d="M56 -6 l1.8 -5 l1.8 5 l5 1.8 l-5 1.8 l-1.8 5 l-1.8 -5 l-5 -1.8 Z" fill="#BB6F51" />
+          <path className="sp sp1" d="M14 2 C 11 -6 8 -9 5 -11 C 11 -10 15 -6 14 2 Z" style={paint("water")} />
+          <path className="sp sp2" d="M40 0 C 37 -9 34 -13 31 -16 C 38 -14 42 -9 40 0 Z" style={paint("water")} />
+          <path className="sp sp3" d="M66 2 C 69 -6 72 -9 75 -11 C 69 -10 65 -6 66 2 Z" style={paint("water")} />
+          <path className="sp sp4" d="M26 -4 l2.2 -6 l2.2 6 l6 2.2 l-6 2.2 l-2.2 6 l-2.2 -6 l-6 -2.2 Z" style={paint("terracotta")} />
+          <path className="sp sp5" d="M56 -6 l1.8 -5 l1.8 5 l5 1.8 l-5 1.8 l-1.8 5 l-1.8 -5 l-5 -1.8 Z" style={paint("terracotta")} />
         </g>
       ) : null}
     </svg>

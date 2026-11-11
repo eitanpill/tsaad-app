@@ -18,7 +18,8 @@ import { fill } from "@/lib/format";
 import { finishSummary } from "@/lib/path/finish";
 import { pathModel } from "@/lib/path/view";
 import { actionKey, doneActionsFor } from "@/lib/today/view";
-import { AlertCircle, CheckIcon, WifiOffIcon } from "../_components/icons";
+import { WifiOffIcon } from "../_components/icons";
+import { ToastDock } from "../_components/ToastDock";
 import { actionDetail, actionTitle, type DayTitles } from "./action-labels";
 import { ActionButton } from "./ActionButton";
 import { toggleAction } from "./actions";
@@ -97,16 +98,6 @@ export function TodayBoard(p: BoardProps) {
     const t = setTimeout(() => router.refresh(), ms + 1000);
     return () => clearTimeout(t);
   }, [p.nextChangeIso, router]);
-
-  // ההודעה נשארת לפחות 7 שניות, ולא נעלמת כשהעכבר או המיקוד בתוכה.
-  const hold = useRef(false);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setInterval(() => {
-      if (!hold.current) setToast(null);
-    }, 7000);
-    return () => clearInterval(t);
-  }, [toast]);
 
   const stepsByDay = useMemo(() => {
     const out: Record<number, number> = {};
@@ -298,37 +289,43 @@ export function TodayBoard(p: BoardProps) {
 
       {p.children}
 
-      <div
-        className="toast-region"
-        role="status"
-        aria-live="polite"
-        onMouseEnter={() => (hold.current = true)}
-        onMouseLeave={() => (hold.current = false)}
-        onFocus={() => (hold.current = true)}
-        onBlur={() => (hold.current = false)}
-      >
-        {toast ? (
-          <div className={`toast${toast.kind === "error" ? " toast--err" : ""}`}>
-            <span className="tick" aria-hidden="true">
-              {toast.kind === "error" ? <AlertCircle /> : <CheckIcon size={16} />}
-            </span>
-            <span className="msg">{toast.text}</span>
-            {toast.kind === "error" ? (
-              <button type="button" onClick={() => { const r = toast.retry; setToast(null); focusAction(r.day, r.action); setAction(r.day, r.action, r.to); }}>
-                {copy.common.retry}
-              </button>
-            ) : toast.undo ? (
-              <button
-                type="button"
-                aria-label={copy.a11y.toast.undo}
-                onClick={() => { const u = toast.undo!; setToast(null); focusAction(u.day, u.action); setAction(u.day, u.action, u.to); }}
-              >
-                {copy.common.undo}
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
+      <ToastDock
+        source={toast}
+        onExpire={() => setToast(null)}
+        toast={
+          !toast
+            ? null
+            : toast.kind === "error"
+              ? {
+                  error: true,
+                  text: toast.text,
+                  action: {
+                    label: copy.common.retry,
+                    run: () => {
+                      const r = toast.retry;
+                      setToast(null);
+                      focusAction(r.day, r.action);
+                      setAction(r.day, r.action, r.to);
+                    },
+                  },
+                }
+              : {
+                  text: toast.text,
+                  action: toast.undo
+                    ? {
+                        label: copy.common.undo,
+                        ariaLabel: copy.a11y.toast.undo,
+                        run: () => {
+                          const u = toast.undo!;
+                          setToast(null);
+                          focusAction(u.day, u.action);
+                          setAction(u.day, u.action, u.to);
+                        },
+                      }
+                    : undefined,
+                }
+        }
+      />
     </div>
   );
 }

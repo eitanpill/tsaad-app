@@ -36,7 +36,7 @@
   border-radius: 26px; background: var(--terracotta); color: #fff; text-decoration: none; font: inherit; font-weight: 700; font-size: 19px;
   border: 2px solid var(--terracotta); cursor: pointer; max-width: 100%; text-align: center;
 }
-.cta--off { background: var(--cream); color: var(--muted); border: 2px dashed #8E7B6F; cursor: default; font-size: 17px; }
+.cta--off { background: var(--cream); color: var(--muted); border: 2px dashed var(--dash); cursor: default; font-size: 17px; }
 .cta-note { margin: 8px 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
 .pt--forest .cta-note { color: var(--cream); }
 .plink {

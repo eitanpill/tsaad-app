@@ -153,7 +153,7 @@ test.describe("states (axe, copy, server clock)", () => {
     await expect(page.getByRole("img", { name: "4 מתוך 14 ימים" })).toBeVisible();
     await expect(page.getByText("עוד 8 ימים להשלמת האתגר")).toBeVisible();
     expect(await ringLines(page)).toBeLessThanOrEqual(3);
-    await expect(page.getByText("שכחת לסמן אתמול?")).toHaveCount(0);
+    await expect(page.getByText("שכחתם לסמן אתמול?")).toHaveCount(0);
     await axe(page);
     await shot(page, "today-day4-half");
     await ctx.close();
@@ -179,7 +179,7 @@ test.describe("states (axe, copy, server clock)", () => {
   test("yesterday prompt: mark until midnight, then it is rejected", async ({ browser }) => {
     await seed([[1, "habit"], [2, "habit"]]);
     const { ctx, page } = await open(browser, T.day4Late);
-    await expect(page.getByText("שכחת לסמן אתמול? אפשר עד חצות.")).toBeVisible();
+    await expect(page.getByText("שכחתם לסמן אתמול? אפשר עד חצות.")).toBeVisible();
     await axe(page);
     await shot(page, "today-yesterday-prompt");
     await page.getByRole("button", { name: "לסימון אתמול" }).click();
@@ -205,7 +205,7 @@ test.describe("states (axe, copy, server clock)", () => {
     await seed([[1, "habit"], [2, "habit"]]);
     const { ctx, page } = await open(browser, T.day5Night);
     await expect(page.locator(".chip")).toHaveText("יום 4 מתוך 14");
-    await expect(page.getByText("שכחת לסמן אתמול?")).toHaveCount(0);
+    await expect(page.getByText("שכחתם לסמן אתמול?")).toHaveCount(0);
     await ctx.close();
   });
 
@@ -241,11 +241,11 @@ test.describe("states (axe, copy, server clock)", () => {
     let { ctx, page } = await open(browser, T.day14Late);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.locator(".eyebrow-s")).toHaveText("האתגר הסתיים");
-    await expect(page.getByText("שכחת לסמן אתמול?")).toBeVisible();
+    await expect(page.getByText("שכחתם לסמן אתמול?")).toBeVisible();
     await axe(page);
     await ctx.close();
     ({ ctx, page } = await open(browser, T.ended));
-    await expect(page.getByText("שכחת לסמן אתמול?")).toHaveCount(0);
+    await expect(page.getByText("שכחתם לסמן אתמול?")).toHaveCount(0);
     // the challenge is over: no "you can keep practising until day 14"
     await expect(page.getByText(/אפשר להמשיך/)).toHaveCount(0);
     await expect(page.locator(".t-sum-days")).toContainText("הימים שנספרו");

@@ -19,6 +19,7 @@ import { connection } from "next/server";
 import { getAppOrigin } from "@/lib/auth/config";
 import { LandingCta } from "../_components/LandingCta";
 import { LandingCup, LandingPath, LandingRing } from "../_components/LandingPath";
+import { paint } from "@/components/paint";
 
 const L = copy.landing;
 
@@ -88,9 +89,9 @@ export default async function LandingPage() {
     <main id="main" className="pub-main">
       <section className="pt pt-hero" aria-labelledby="land-h1">
         <svg className="rings" aria-hidden="true" focusable="false" width="220" height="220" viewBox="0 0 220 220">
-          <circle cx="110" cy="110" r="100" fill="none" stroke="#BB6F51" strokeWidth="2" />
-          <circle cx="110" cy="110" r="74" fill="none" stroke="#BB6F51" strokeWidth="2" />
-          <circle cx="110" cy="110" r="48" fill="none" stroke="#BB6F51" strokeWidth="2" />
+          <circle cx="110" cy="110" r="100" fill="none" strokeWidth="2" style={paint(null, "terracotta")} />
+          <circle cx="110" cy="110" r="74" fill="none" strokeWidth="2" style={paint(null, "terracotta")} />
+          <circle cx="110" cy="110" r="48" fill="none" strokeWidth="2" style={paint(null, "terracotta")} />
         </svg>
         <div className="pt-bar">
           <span className="logo">

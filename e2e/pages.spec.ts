@@ -319,7 +319,7 @@ test.describe("account deletion", () => {
     await page.getByLabel("שם משתמש").fill(s.username);
     await page.getByLabel("סיסמה", { exact: true }).fill("today-pass-12");
     await page.getByRole("button", { name: "כניסה", exact: true }).click();
-    await expect(page.getByText("שם המשתמש או הסיסמה לא נכונים")).toBeVisible();
+    await expect(page.getByText("שם המשתמש או הסיסמה לא נכונים.")).toBeVisible();
     await ctx.close();
   });
 });

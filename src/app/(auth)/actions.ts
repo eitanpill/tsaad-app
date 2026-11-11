@@ -29,7 +29,7 @@ import type { ActivateState, ForgotState, LoginState } from "./state";
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** כניסה. כל כשל זהה כלפי חוץ ("שם המשתמש או הסיסמה לא נכונים"). */
+/** כניסה. כל כשל זהה כלפי חוץ ("שם המשתמש או הסיסמה לא נכונים."). */
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const h = await headers();
   assertSameOrigin(h);

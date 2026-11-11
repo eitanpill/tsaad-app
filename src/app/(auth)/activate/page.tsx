@@ -17,7 +17,7 @@ async function ActivateBody({ searchParams }: Props) {
   const peeked = value ? await peekToken(getDb(), value) : null;
   if (!peeked) return <ExpiredLink />;
   return (
-    <section className="tile tile--white" aria-label={copy.activate.title}>
+    <section className="tile tile--white">
       <ActivateForm token={value} username={peeked.username} />
     </section>
   );

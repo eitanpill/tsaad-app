@@ -3,6 +3,7 @@ import { copy } from "@/content/copy.he";
 import { fill, withStartDate } from "@/lib/format";
 import { timeTokens } from "@/lib/times";
 import { BellIcon, LockIcon } from "../../_components/icons";
+import { paint } from "@/components/paint";
 
 export type LockedReason = "before_start" | "tomorrow" | "far";
 
@@ -45,7 +46,7 @@ export function LockedDay({
         >
           <svg width="96" height="115" viewBox="0 0 40 48" aria-hidden="true" focusable="false">
             <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="rgba(255,255,255,0.75)" />
-            <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="none" stroke="#123021" strokeWidth="1.6" strokeLinejoin="round" strokeDasharray="3 2.5" />
+            <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="none" strokeWidth="1.6" strokeLinejoin="round" strokeDasharray="3 2.5" style={paint(null, "forest")} />
           </svg>
           <i className="lock-stone" />
           <span className="lock-badge">
