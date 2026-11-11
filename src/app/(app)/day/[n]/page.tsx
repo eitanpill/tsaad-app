@@ -8,10 +8,9 @@ import { requireUser } from "@/lib/auth/dal";
 import { actionsForDay, stepsFor, type Action } from "@/lib/days";
 import { fill } from "@/lib/format";
 import { dayScreen, parseDayParam } from "@/lib/path/view";
-import { serverNow } from "@/lib/today/clock";
+import { getAppClock } from "@/lib/preview/context";
 import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listDayCompletions } from "@/lib/today/completions";
-import { getSchedule } from "@/lib/today/schedule";
 import { getVideoConfig, hasVideo } from "@/lib/today/video";
 import { nextBoundary, todayModel } from "@/lib/today/view";
 import { CheckIcon } from "../../_components/icons";
@@ -40,8 +39,7 @@ export default async function DayPage({ params }: Props) {
   const n = parseDayParam((await params).n);
   if (n === null) notFound();
   const user = await requireUser();
-  const now = await serverNow();
-  const schedule = getSchedule();
+  const { now, schedule } = await getAppClock();
   const cfg = getConfig();
 
   // הסימונים של היום הזה בלבד; לימים נעולים אין סימונים ממילא.

@@ -30,6 +30,8 @@ export const RATE_LIMITS = Object.freeze({
   /** ניסיונות מחיקת חשבון (כל ניסיון נספר, גם מוצלח, לפי משתמש). שימוש רגיל: פעם אחת בחיים. נגד ניחוש סיסמה מתוך סשן גנוב. */
   account: Object.freeze({ windowSeconds: 15 * 60, perIdentifier: 5, perIp: 30 }),
   /** הרשמה חוזרת של חשבון שלא הופעל: הנפקה מחדש של קישור לכל איש קשר (הנפקה ראשונה אינה נספרת). */
+  /** פעולות ניהול של הבעלים (/admin/participants), לפי מנהל; כל קריאה נספרת. שימוש רגיל: כמה בודדות. נגד לולאה או סשן גנוב. */
+  adminActions: Object.freeze({ windowSeconds: 10 * 60, perIdentifier: 60, perIp: 1_000_000 }),
   webhookReissue: Object.freeze({ windowSeconds: 60 * 60, perIdentifier: 3, perIp: 1_000_000 }),
 });
 

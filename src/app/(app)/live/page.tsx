@@ -13,9 +13,8 @@ import {
   nextLiveChange,
   type LiveSession,
 } from "@/lib/live/model";
-import { serverNow } from "@/lib/today/clock";
+import { getAppClock } from "@/lib/preview/context";
 import { listCompletions } from "@/lib/today/completions";
-import { getSchedule } from "@/lib/today/schedule";
 import { LiveIcon } from "../_components/icons";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
 import { AttendanceToggle } from "./AttendanceToggle";
@@ -41,8 +40,7 @@ function When({ s, tz }: { s: LiveSession; tz: string }) {
 
 export default async function LivePage() {
   const user = await requireUser();
-  const now = await serverNow();
-  const schedule = getSchedule();
+  const { now, schedule } = await getAppClock();
   const cfg = getConfig();
   const tz = cfg.timeZone;
   const sessions = liveSessions(now, schedule, getLiveInputs(cfg.env));

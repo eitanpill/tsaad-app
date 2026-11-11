@@ -4,8 +4,7 @@ import { requireUser } from "@/lib/auth/dal";
 import { getOfferModel } from "@/lib/offer/config";
 import { goHref } from "@/lib/offer/links";
 import { formatValidUntil } from "@/lib/offer/model";
-import { serverNow } from "@/lib/today/clock";
-import { getSchedule } from "@/lib/today/schedule";
+import { getAppClock } from "@/lib/preview/context";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
 import { OfferCta } from "../offer/OfferCta";
 
@@ -17,8 +16,8 @@ export const metadata: Metadata = { title: `${copy.offer.yesodot.heading} | ${co
  */
 export default async function YesodotPage() {
   await requireUser();
-  const now = await serverNow();
-  const m = getOfferModel(now, getSchedule());
+  const { now, schedule } = await getAppClock();
+  const m = getOfferModel(now, schedule);
   const Y = copy.offer.yesodot;
   const v = m.yesodot;
 

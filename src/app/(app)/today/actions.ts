@@ -6,8 +6,7 @@ import { getSessionSecret } from "@/lib/auth/config";
 import { requireUser } from "@/lib/auth/dal";
 import { OriginError, assertSameOrigin } from "@/lib/auth/origin";
 import { logger } from "@/lib/logger";
-import { serverNow } from "@/lib/today/clock";
-import { getSchedule } from "@/lib/today/schedule";
+import { getAppClock } from "@/lib/preview/context";
 import { toggleActionCore, toggleRateAllowed, type ToggleResult } from "@/lib/today/toggle";
 
 export type ToggleActionResult = ToggleResult | { ok: false; error: "forbidden" | "failed" };
@@ -34,13 +33,14 @@ export async function toggleAction(
       logger.warn("toggleAction rate limited");
       return { ok: false, error: "rate_limited" };
     }
+    const clock = await getAppClock();
     return await toggleActionCore(db, {
       userId: user.userId,
       day,
       action,
       desired: typeof desired === "boolean" ? desired : undefined,
-      now: await serverNow(),
-      schedule: getSchedule(),
+      now: clock.now,
+      schedule: clock.schedule,
     });
   } catch (e) {
     logger.error("toggleAction failed", { error: e });

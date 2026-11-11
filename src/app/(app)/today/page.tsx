@@ -7,10 +7,9 @@ import { copy } from "@/content/copy.he";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { fill } from "@/lib/format";
-import { serverNow } from "@/lib/today/clock";
+import { getAppClock } from "@/lib/preview/context";
 import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listCompletions } from "@/lib/today/completions";
-import { getSchedule } from "@/lib/today/schedule";
 import { getVideoConfig, hasVideo, posterUrl } from "@/lib/today/video";
 import { firstNameOf } from "@/lib/today/first-name";
 import { actionKey, greetingKey, nextBoundary, todayModel } from "@/lib/today/view";
@@ -24,8 +23,7 @@ export const metadata: Metadata = { title: `${copy.nav.today} | ${copy.brand.nam
 
 export default async function TodayPage() {
   const user = await requireUser();
-  const now = await serverNow();
-  const schedule = getSchedule();
+  const { now, schedule } = await getAppClock();
   const cfg = getConfig();
   const model = todayModel(now, schedule);
 

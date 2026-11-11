@@ -900,3 +900,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   .today--before .ar-note { grid-column: 1 / -1; }
   .ar-note { grid-column: 2; }
 }
+
+/* Owner-only day preview banner (src/lib/preview). */
+.preview-banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; padding: 6px 12px; min-height: 44px; border-radius: var(--radius-btn); background: var(--maroon); color: #fff; font-weight: 700; }
+.preview-banner .linkbtn { color: #fff; min-height: 44px; min-width: 44px; text-decoration: underline; }

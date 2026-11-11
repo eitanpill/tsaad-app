@@ -256,6 +256,86 @@
 | `admin.stats.offers.names.bundle` | באנדל |  |
 | `admin.stats.offers.names.yesodot` | יסודות היוגה |  |
 | `admin.stats.notes` | יום נספר מפעולה אחת ומעלה. ״חזרו״ נגזר מהסימונים: משתמש שסימן ביום הזה וגם ביום מוקדם יותר. אין מעקב אחרי כניסות, ואין עוגיות או כלי ניתוח של צד שלישי. |  |
+| `admin.nav.label` | דפי הבעלים |  |
+| `admin.nav.stats` | סטטיסטיקה |  |
+| `admin.nav.participants` | משתתפים |  |
+| `admin.participants.title` | משתתפים |  |
+| `admin.participants.lead` | ניהול משתתפים ידני. הקישורים נוצרים כאן ונשלחים על ידכם בלבד: האפליקציה לא שולחת כלום. |  |
+| `admin.participants.search.label` | חיפוש לפי שם, שם משתמש, אימייל או טלפון |  |
+| `admin.participants.search.button` | חיפוש |  |
+| `admin.participants.search.clear` | ניקוי החיפוש |  |
+| `admin.participants.list.heading` | הרשימה |  |
+| `admin.participants.list.count` | {n} משתתפים |  |
+| `admin.participants.list.none` | אין משתתפים להצגה. |  |
+| `admin.participants.list.username` | שם משתמש |  |
+| `admin.participants.list.phone` | טלפון |  |
+| `admin.participants.list.email` | אימייל |  |
+| `admin.participants.list.created` | נרשמו |  |
+| `admin.participants.list.activated` | הופעל |  |
+| `admin.participants.list.disabled` | מושבת |  |
+| `admin.participants.list.lastActivity` | פעילות אחרונה |  |
+| `admin.participants.list.yes` | כן |  |
+| `admin.participants.list.no` | לא |  |
+| `admin.participants.list.never` | אין עדיין |  |
+| `admin.participants.list.none2` | אין |  |
+| `admin.participants.list.you` | (החשבון שלכם) |  |
+| `admin.participants.list.prev` | הקודם |  |
+| `admin.participants.list.next` | הבא |  |
+| `admin.participants.list.pageOf` | עמוד {page} מתוך {pages} |  |
+| `admin.participants.list.pagination` | דפדוף ברשימה |  |
+| `admin.participants.add.heading` | הוספת משתתפת או משתתף ידנית |  |
+| `admin.participants.add.name` | שם |  |
+| `admin.participants.add.phone` | טלפון (אפשר להשאיר ריק אם יש אימייל) |  |
+| `admin.participants.add.email` | אימייל (אפשר להשאיר ריק אם יש טלפון) |  |
+| `admin.participants.add.submit` | יצירה וקבלת קישור |  |
+| `admin.participants.add.note` | שם משתמש נוצר אוטומטית, באותו כלל כמו בהרשמה האוטומטית. |  |
+| `admin.participants.link.showOnce` | הקישור מוצג פעם אחת. שלחו אותו בעצמכם בוואטסאפ או במייל. |  |
+| `admin.participants.link.forActivate` | קישור הפעלה עבור {name} (שם משתמש: {username}). בתוקף עד {until}. |  |
+| `admin.participants.link.forReset` | קישור לאיפוס סיסמה עבור {name} (שם משתמש: {username}). בתוקף עד {until}. |  |
+| `admin.participants.link.label` | הקישור |  |
+| `admin.participants.link.copy` | העתקת הקישור |  |
+| `admin.participants.link.copied` | הקישור הועתק |  |
+| `admin.participants.link.copyFailed` | ההעתקה לא הצליחה. סמנו את הקישור והעתיקו ידנית. |  |
+| `admin.participants.link.issueActivate` | קישור הפעלה חדש |  |
+| `admin.participants.link.issueReset` | קישור איפוס סיסמה |  |
+| `admin.participants.link.issueActivateFor` | קישור הפעלה חדש עבור {name} |  |
+| `admin.participants.link.issueResetFor` | קישור איפוס סיסמה עבור {name} |  |
+| `admin.participants.disable.button` | השבתה |  |
+| `admin.participants.disable.enable` | הפעלה מחדש |  |
+| `admin.participants.disable.buttonFor` | השבתת {name} |  |
+| `admin.participants.disable.enableFor` | הפעלה מחדש של {name} |  |
+| `admin.participants.disable.hint` | משתמש מושבת לא יכול להיכנס, נותקים אותו מיד, והוא לא מקבל תזכורות או קישורים. |  |
+| `admin.participants.remove.button` | מחיקה |  |
+| `admin.participants.remove.buttonFor` | מחיקת {name} |  |
+| `admin.participants.remove.heading` | מחיקה לצמיתות |  |
+| `admin.participants.remove.warning` | מחיקת {name} היא לצמיתות: כל הנתונים של המשתתף או המשתתפת נמחקים, ואי אפשר לשחזר. כדי לאשר, הקלידו את שם המשתמש ({username}). |  |
+| `admin.participants.remove.confirmLabel` | שם המשתמש לאישור |  |
+| `admin.participants.remove.submit` | מחיקה סופית |  |
+| `admin.participants.remove.cancel` | ביטול |  |
+| `admin.participants.preview.heading` | תצוגה מקדימה של יום |  |
+| `admin.participants.preview.lead` | לבדיקת האפליקציה לפני ההתחלה: ממשיכים לראות את מסכי היום, השביל והלייב כאילו זה יום מסוים. רק אצלכם, רק בחשבון המחובר. סימונים שתעשו נשמרים בחשבון שלכם. |  |
+| `admin.participants.preview.dayLabel` | יום |  |
+| `admin.participants.preview.start` | הפעלת תצוגה מקדימה |  |
+| `admin.participants.preview.stop` | הפסקת התצוגה המקדימה |  |
+| `admin.participants.preview.active` | תצוגה מקדימה פעילה: יום {n}. |  |
+| `admin.participants.preview.toToday` | למסך היום |  |
+| `admin.participants.errors.generic` | משהו השתבש. נסו שוב. |  |
+| `admin.participants.errors.forbidden` | הבקשה נדחתה. |  |
+| `admin.participants.errors.tooMany` | יותר מדי פעולות בזמן קצר. נסו שוב בעוד כמה דקות. |  |
+| `admin.participants.errors.invalidName` | הכניסו שם. |  |
+| `admin.participants.errors.invalidContact` | הכניסו טלפון תקין או אימייל תקין (לפחות אחד). |  |
+| `admin.participants.errors.notFound` | המשתתף לא נמצא. |  |
+| `admin.participants.errors.self` | אי אפשר לבצע את זה על החשבון שלכם. |  |
+| `admin.participants.errors.disabledUser` | החשבון מושבת. הפעילו אותו מחדש כדי להנפיק קישור. |  |
+| `admin.participants.errors.confirmMismatch` | שם המשתמש שהוקלד לא תואם. לא נמחק כלום. |  |
+| `admin.participants.errors.invalidDay` | בחרו יום בין 1 ל־14. |  |
+| `admin.participants.done.disabled` | {name} הושבת/ה. |  |
+| `admin.participants.done.enabled` | {name} הופעל/ה מחדש. |  |
+| `admin.participants.done.deleted` | המשתתף נמחק. |  |
+| `admin.participants.done.previewStopped` | התצוגה המקדימה הופסקה. |  |
+| `admin.previewBanner.text` | מצב תצוגה מקדימה: יום {n} |  |
+| `admin.previewBanner.stop` | הפסקה |  |
+| `admin.previewBanner.stopLabel` | הפסקת מצב התצוגה המקדימה |  |
 
 ## כניסה
 
@@ -803,4 +883,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 653 מחרוזות.
+סך הכול 733 מחרוזות.

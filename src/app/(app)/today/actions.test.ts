@@ -17,8 +17,7 @@ vi.mock("@/lib/auth/config", async (orig) => ({
   ...(await orig<typeof import("@/lib/auth/config")>()),
   getSessionSecret: () => "s".repeat(32),
 }));
-vi.mock("@/lib/today/clock", () => ({ serverNow: async () => new Date("2026-12-04T12:00:00Z") }));
-vi.mock("@/lib/today/schedule", () => ({ getSchedule: () => null }));
+vi.mock("@/lib/preview/context", () => ({ getAppClock: async () => ({ now: new Date("2026-12-04T12:00:00Z"), schedule: null, previewDay: null }) }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn(), debug: vi.fn() } }));
 
 import { toggleAction } from "./actions";
