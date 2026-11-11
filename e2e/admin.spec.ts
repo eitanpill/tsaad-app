@@ -10,10 +10,11 @@ test("logged out and non-admin users get the normal 404 (real status, same page 
   expect((await out.text()).includes("הדף לא נמצא")).toBe(true); // the Hebrew 404 page, not a login redirect
   expect(unknown.status()).toBe(404);
 
-  // logged in but not an admin: the same 404 page (status stays 200 here: the layout streams before the check can run, see src/proxy.ts)
+  // logged in but not an admin: the same 404 page with a real 404 status (decided in src/proxy.ts before anything streams)
   const s = await createUser(browser, "notadmin");
   const ctx = await browser.newContext({ storageState: s.storageState });
   const res = await ctx.request.get("/admin/stats");
+  expect(res.status()).toBe(404);
   const html = await res.text();
   expect(html.includes("סטטיסטיקה")).toBe(false);
   expect(html.includes("noindex")).toBe(true);
