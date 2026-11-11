@@ -30,7 +30,7 @@ export const TRACKER_KIND = "tracker";
 export const trackerDedupeKey = (userId: string, day: number) => `${TRACKER_KIND}:${userId}:${day}`;
 
 /**
- * בונה את המטען מהמסד. מחזיר null למשתמש בלי ghl_contact_id (אין למי לסנכרן).
+ * בונה את המטען מהמסד. מחזיר null למשתמש בלי ghl_contact_id (אין למי לסנכרן) ולמשתמש מושבת.
  * סופרים "ימים שנספרו" לפי אותו כלל כמו הכוס: צעד אחד ביום מספיק.
  */
 export async function buildTrackerPayload(
@@ -39,10 +39,10 @@ export async function buildTrackerPayload(
   day: number,
 ): Promise<TrackerPayload | null> {
   assertDay(day, { totalDays: CHALLENGE.totalDays });
-  const user = rowsOf<{ ghl_contact_id: string | null }>(
-    await db.execute(sql`select ghl_contact_id from users where id = ${userId}`),
+  const user = rowsOf<{ ghl_contact_id: string | null; disabled_at: Date | string | null }>(
+    await db.execute(sql`select ghl_contact_id, disabled_at from users where id = ${userId}`),
   )[0];
-  if (!user?.ghl_contact_id) return null;
+  if (!user?.ghl_contact_id || user.disabled_at) return null;
 
   const completions = rowsOf<{ day: number; action: Action }>(
     await db.execute(sql`select day, action from action_completions where user_id = ${userId}`),

@@ -68,7 +68,7 @@ export type GhlWorkerDeps = {
   maxRows?: number;
 };
 
-type UserRow = { ghl_contact_id: string | null; password_hash: string | null; activated_at: unknown; whatsapp_reminders: boolean };
+type UserRow = { ghl_contact_id: string | null; password_hash: string | null; activated_at: unknown; whatsapp_reminders: boolean; disabled_at: unknown };
 
 /**
  * מעבד שורות outbox של GHL (תזכורות וקישורים) עם SKIP LOCKED, backoff וניסיון חוזר, דרך ה־outbox הקיים.
@@ -147,10 +147,11 @@ async function processRow(deps: GhlWorkerDeps, row: ClaimedRow, now: Date): Prom
   if (!userId || !client) return dead("row vanished");
   const user = rowsOf<UserRow>(
     await db.execute(
-      sql`select ghl_contact_id, password_hash, activated_at, whatsapp_reminders from users where id = ${userId}`,
+      sql`select ghl_contact_id, password_hash, activated_at, whatsapp_reminders, disabled_at from users where id = ${userId}`,
     ),
   )[0];
   if (!user?.ghl_contact_id) return dead("no ghl contact");
+  if (user.disabled_at) return dead("account disabled");
   const contactId = user.ghl_contact_id;
 
   if (row.kind === GHL_REMINDER_KIND) {

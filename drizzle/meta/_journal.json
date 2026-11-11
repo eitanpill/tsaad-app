@@ -92,6 +92,13 @@
       "when": 1794370323990,
       "tag": "0012_users_whatsapp_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794383058697,
+      "tag": "0013_users_disabled_at",
+      "breakpoints": true
     }
   ]
 }

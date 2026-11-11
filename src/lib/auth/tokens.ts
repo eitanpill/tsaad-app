@@ -94,7 +94,7 @@ export async function peekToken(db: Pick<Db, "execute">, token: string): Promise
     sql`select t.user_id as "userId", u.username, u.display_name as "displayName", t.purpose
         from activation_tokens t join users u on u.id = t.user_id
         where t.token_hash = ${sha256Hex(token)}
-          and t.used_at is null and t.expires_at > now()`,
+          and t.used_at is null and t.expires_at > now() and u.disabled_at is null`,
   );
   return rowsOf<PeekedToken>(res)[0] ?? null;
 }

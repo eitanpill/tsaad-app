@@ -39,7 +39,7 @@ export type ForgotResult = { status: "ok" } | { status: "rate_limited"; retryAft
  * "שכחתי סיסמה". התוצאה החיצונית זהה בין אם יש חשבון ובין אם אין ("ok"); רק חריגה
  * ממגבלת הקצב (שתלויה בקלט בלבד, לא בקיום החשבון) מחזירה תשובה אחרת.
  * חשבון שעוד לא הופעל מקבל קישור הפעלה, חשבון מופעל מקבל קישור איפוס.
- * הקישור נשלח לפרטי הקשר שבחשבון, לא לכתובת שהוקלדה.
+ * הקישור נשלח לפרטי הקשר שבחשבון, לא לכתובת שהוקלדה. חשבון מושבת לא מקבל קישור (ואין שינוי בתשובה החיצונית).
  */
 export async function requestPasswordReset(
   db: Db,
@@ -73,7 +73,8 @@ export async function requestPasswordReset(
     : sql``;
   const res = await db.execute(
     sql`select id, username, display_name, email, phone, password_hash, ghl_contact_id from users
-        where username = ${identifier} or lower(email) = ${identifier}${phoneClause}
+        where (username = ${identifier} or lower(email) = ${identifier}${phoneClause})
+          and disabled_at is null
         order by created_at
         limit ${MAX_MATCHES}`,
   );

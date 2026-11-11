@@ -40,7 +40,7 @@ export async function rotateSession(
 
 /**
  * בודק התחברות ומעדכן last_seen_at בפקודה אחת.
- * נדחה אם עבר התוקף המוחלט או אם עבר זמן ההיעדרות. הכתיבה מוגבלת לפעם ב־touchEverySeconds.
+ * נדחה אם עבר התוקף המוחלט או אם עבר זמן ההיעדרות, או אם החשבון הושבת (disabled_at). הכתיבה מוגבלת לפעם ב־touchEverySeconds.
  */
 export async function validateSession(
   db: Pick<Db, "execute">,
@@ -57,6 +57,7 @@ export async function validateSession(
         where s.token_hash = ${sha256Hex(token)}
           and u.id = s.user_id
           and u.password_hash is not null
+          and u.disabled_at is null
           and s.expires_at > now()
           and s.last_seen_at > now() - make_interval(days => ${policy.idleDays})
         returning s.id as "sessionId", u.id as "userId", u.username, u.display_name as "displayName"`,

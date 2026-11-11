@@ -45,6 +45,11 @@ export const users = pgTable(
     activatedAt: ts("activated_at"),
     /** תזכורת הבוקר בוואטסאפ (דרך GHL). ברירת מחדל: פעילה; המשתתף/ת מכבה במסך התזכורות. */
     whatsappReminders: boolean("whatsapp_reminders").notNull().default(true),
+    /**
+     * null = פעיל. מוגדר על ידי בעל האתר (/admin/participants): משתמש מושבת לא נכנס, ההתחברויות שלו נמחקות, ואין לו
+     * תזכורות, התראות, סנכרון או קישורים חדשים. הרשמה חוזרת דרך GHL אף פעם לא מנקה אותו.
+     */
+    disabledAt: ts("disabled_at"),
   },
   (t) => [
     check("users_username_lower", sql`${t.username} = lower(${t.username})`),

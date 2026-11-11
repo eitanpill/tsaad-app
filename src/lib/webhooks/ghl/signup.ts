@@ -36,6 +36,7 @@ type UserRow = {
   phone: string | null;
   password_hash: string | null;
   activated_at: Date | string | null;
+  disabled_at: Date | string | null;
 };
 
 /**
@@ -43,7 +44,7 @@ type UserRow = {
  * כך שכשל באמצע משאיר את האירוע לא מעובד ו־GHL יכול לנסות שוב):
  *  1. נעילת מייעצת לפי איש הקשר: בקשות מקבילות לאותו איש קשר מתבצעות בזו אחר זו.
  *  2. רישום מזהה האירוע (ייחודי). כבר קיים: "duplicate", בלי לגעת בכלום.
- *  3. איש קשר קיים (ghl_contact_id): מופעל = "exists" (לא משנים כלום); לא מופעל = קישור חדש, הישן מתבטל
+ *  3. איש קשר קיים (ghl_contact_id): מושבת (disabled_at) או מופעל = "exists" (לא משנים כלום); לא מופעל = קישור חדש, הישן מתבטל
  *     ("reissued"), עד RATE_LIMITS.webhookReissue בשעה, ומעבר לזה "exists" בלי קישור חדש.
  *  4. אחרת: משתמש חדש (שם משתמש לפי username.ts) וקישור הפעלה ("created").
  * האסימון חוזר רק בזיכרון (לשכבת המשלוח); במסד נשמר ה־hash בלבד.
@@ -71,12 +72,17 @@ export async function processSignup(
 
     const existing = rowsOf<UserRow>(
       await tx.execute(
-        sql`select id, username, display_name, email, phone, password_hash, activated_at
+        sql`select id, username, display_name, email, phone, password_hash, activated_at, disabled_at
             from users where ghl_contact_id = ${payload.ghlContactId} for update`,
       ),
     )[0];
 
     if (existing) {
+      // משתתף/ת מושבת/ת: ההרשמה החוזרת אף פעם לא מפעילה מחדש ולא מנפיקה קישור. רק בעל האתר מפעיל מחדש (/admin/participants).
+      if (existing.disabled_at !== null) {
+        args.log.info("ghl signup: account disabled, nothing done", { userId: existing.id });
+        return { status: "exists" };
+      }
       if (existing.password_hash !== null || existing.activated_at !== null) {
         args.log.info("ghl signup: already activated, nothing done", { userId: existing.id });
         return { status: "exists" };

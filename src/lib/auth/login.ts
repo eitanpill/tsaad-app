@@ -19,12 +19,12 @@ export type LoginResult =
 
 export const USERNAME_MAX_LENGTH = 254;
 
-type Candidate = { id: string; username: string; password_hash: string | null };
+type Candidate = { id: string; username: string; password_hash: string | null; disabled_at: Date | string | null };
 
 /**
  * אימות שם משתמש, טלפון או מייל, וסיסמה. כל הכשלים (לא קיים, לא מופעל, סיסמה שגויה, קלט לא תקין,
  * וגם מייל או טלפון ששייכים ליותר מחשבון אחד) מחזירים את אותה תשובה "invalid", ועולים אותו זמן:
- * אותן שאילתות ובדיקת hash אחת (דמה כשאין חשבון יחיד).
+ * אותן שאילתות ובדיקת hash אחת (דמה כשאין חשבון יחיד). חשבון מושבת (disabled_at) נבדק מול הדמה, כמו סיסמה שגויה.
  * הגבלת הקצב נרשמת לפני האימות, פעמיים: לפי המזהה המנורמל (כל כתיב של אותו טלפון נספר יחד), ולפי החשבון
  * שנמצא (כדי שמייל, טלפון ושם משתמש של אותו חשבון לא יכפילו את המכסה). כשאין חשבון, המפתח השני
  * נגזר מהמזהה, כך שהעבודה זהה. הכל מתנקה בהצלחה.
@@ -52,7 +52,7 @@ export async function authenticate(
     const byPhone = id.kind === "phone" ? sql` or phone = ${id.normalized}` : sql``;
     // שם משתמש מורכב מספרות (למשל 0521234567) נתפס גם כטלפון: מחפשים לפי שניהם.
     const res = await db.execute(
-      sql`select id, username, password_hash from users where username = ${nameKey}${byEmail}${byPhone}
+      sql`select id, username, password_hash, disabled_at from users where username = ${nameKey}${byEmail}${byPhone}
           order by (username = ${nameKey}) desc limit 3`,
     );
     candidates = rowsOf<Candidate>(res);
@@ -75,7 +75,7 @@ export async function authenticate(
   }
 
   const ok =
-    !tooLong && user?.password_hash
+    !tooLong && user?.password_hash && !user.disabled_at
       ? await verifyPassword(user.password_hash, args.password)
       : await verifyAgainstDummy(args.password);
 

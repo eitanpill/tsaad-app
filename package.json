@@ -14,7 +14,8 @@
     "db:migrate": "drizzle-kit migrate",
     "test:db": "scripts/test-db.sh run -- vitest run --no-file-parallelism",
     "test:e2e": "scripts/test-db.sh run -- playwright test",
-    "dev:create-user": "NODE_ENV=development tsx scripts/create-dev-user.ts"
+    "dev:create-user": "NODE_ENV=development tsx scripts/create-dev-user.ts",
+    "admin:create-user": "node --env-file=.env.local --conditions=react-server --import tsx scripts/admin-create-user.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",

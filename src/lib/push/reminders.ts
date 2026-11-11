@@ -137,7 +137,7 @@ export async function runReminders(args: {
         sql`insert into reminder_log (user_id, date, channel, status)
             select u.id, ${date}::date, 'push', ${initial}
               from users u
-             where u.password_hash is not null and u.activated_at is not null
+             where u.password_hash is not null and u.activated_at is not null and u.disabled_at is null
                and exists (select 1 from push_subscriptions p where p.user_id = u.id)
                and not exists (select 1 from reminder_log r where r.user_id = u.id and r.date = ${date}::date and r.channel = 'push')
              order by u.id
