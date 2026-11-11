@@ -128,7 +128,8 @@ test.describe("states (axe, copy, server clock)", () => {
     await seed([]);
     const { ctx, page } = await open(browser, T.day1Morning);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("בוקר טוב, בדיקה");
-    await expect(page.locator(".eyebrow-s")).toHaveText("יום 1");
+    // the day number is in the header chip and the opening line; no third small line in the hero
+    await expect(page.locator(".t-hero .eyebrow-s")).toHaveCount(0);
     await expect(page.locator(".chip")).toHaveText("יום 1 מתוך 14");
     await expect(page.locator("p.opening")).toHaveText(
       "יום 1. ההרגל של היום: כוס מים חמימים עם לימון כשקמים. קחו נשימה אחת איתי, ומתחילים.",

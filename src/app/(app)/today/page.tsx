@@ -48,10 +48,11 @@ export default async function TodayPage() {
   const first = firstNameOf(user.displayName, user.username);
   const greetText = first ? fill(copy.today.greetingName, { greeting, name: first }) : greeting;
   // הכותרת היא הברכה (בשם הפרטי כשיש); שם ההרגל כבר בשורת הפתיחה ובכפתור, ולא חוזר בכותרת. ביום לייב: ההודעה על המפגש.
-  let eyebrow: string = copy.today.ended;
+  // מספר היום כבר בתג שבכותרת העליונה ובשורת הפתיחה ("יום 4. ההרגל של היום: ..."), ולכן אין שורה קטנה נוספת ביום רגיל.
+  let eyebrow: string | null = copy.today.ended;
   let hero: string = greetText;
   if (day !== null) {
-    eyebrow = model.live ? greetText : fill(copy.today.dayChip, { n: day });
+    eyebrow = model.live ? greetText : null;
     if (model.live) hero = copy.today.heroLive;
   }
   const next = nextBoundary(now, schedule);

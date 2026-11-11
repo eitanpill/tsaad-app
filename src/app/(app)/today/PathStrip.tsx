@@ -34,7 +34,12 @@ export function PathStrip({ stones, counted, day }: { stones: Stone[]; counted: 
             </span>
           ))}
         </span>
-        <span className="strip-more" aria-hidden="true">{copy.today.strip.link}</span>
+        <span className="strip-more" aria-hidden="true">
+          <span>{copy.today.strip.link}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+            <path d="M15 6 L9 12 L15 18" />
+          </svg>
+        </span>
       </Link>
     </section>
   );

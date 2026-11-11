@@ -39,8 +39,8 @@ export type BoardProps = {
   yesterday: number | null;
   /** אתמול עוד לא סומן בטעינה: מציגים את ההזמנה לסמן. */
   showYesterday: boolean;
-  /** שורה קטנה מעל הכותרת (ברכה, או "יום N מתוך 14"). */
-  eyebrow: string;
+  /** שורה קטנה מעל הכותרת (ביום לייב: הברכה; אחרי הסוף: "האתגר הסתיים"), או null. */
+  eyebrow: string | null;
   /** הכותרת (h1): הברכה, עם השם הפרטי כשיש; ביום לייב: ההודעה על המפגש. */
   hero: string;
   /** משפט הפתיחה בצילום של היום (רק כשיש יום פתוח), או null. */
@@ -208,7 +208,7 @@ export function TodayBoard(p: BoardProps) {
 
       <section className="t t-hero ar-hero" aria-labelledby="hero-h">
         <SunDoodle className="hero-sun" size={64} />
-        <span className="eyebrow-s">{p.eyebrow}</span>
+        {p.eyebrow ? <span className="eyebrow-s">{p.eyebrow}</span> : null}
         <h1 id="hero-h">{p.hero}</h1>
         {p.opening ? <p className="opening">{p.opening}</p> : null}
       </section>

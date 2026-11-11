@@ -19,4 +19,21 @@ describe("firstNameOf", () => {
     expect(firstNameOf("evil.com", "u")).toBeNull();
     expect(firstNameOf("050123", "u")).toBeNull();
   });
+
+  it("rejects bidi and invisible control characters, URLs, emoji and names that start with a mark or a dash", () => {
+    expect(firstNameOf("\u202Eדנה", "u")).toBeNull();
+    expect(firstNameOf("דנה\u200F", "u")).toBeNull();
+    expect(firstNameOf("ד\u200Bנה", "u")).toBeNull();
+    expect(firstNameOf("https://evil.example", "u")).toBeNull();
+    expect(firstNameOf("www.evil.co", "u")).toBeNull();
+    expect(firstNameOf("😀😀", "u")).toBeNull();
+    expect(firstNameOf("דנה😀", "u")).toBeNull();
+    expect(firstNameOf("-דנה", "u")).toBeNull();
+    expect(firstNameOf("\u05B0\u05B0", "u")).toBeNull();
+    expect(firstNameOf("<b>", "u")).toBeNull();
+  });
+  it("keeps names with an apostrophe or a maqaf", () => {
+    expect(firstNameOf("ג'ני כהן", "u")).toBe("ג'ני");
+    expect(firstNameOf("אנה־מריה", "u")).toBe("אנה־מריה");
+  });
 });

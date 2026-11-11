@@ -3,7 +3,8 @@
  * אותיות, ניקוד, רווח, גרש ומקף בלבד), ובלי שם בטופס נשמר שם המשתמש במקומו; שם משתמש כזה אינו שם, ולכן אין ברכה בשם.
  * מחזיר את המילה הראשונה, או null (אז הברכה "בוקר טוב" נשארת לבדה).
  */
-const CLEAN = /^[\p{L}\p{M}'’׳\-־]+$/u;
+// מתחיל באות; אחריה רק אותיות, ניקוד, גרש ומקף. אין ספרות, סימני כיוון (bidi), תווים בלתי נראים, אימוג'י, נקודה, נקודתיים או לוכסן (כתובות).
+const CLEAN = /^\p{L}[\p{L}\p{M}'’׳\-־]*$/u;
 
 export function firstNameOf(displayName: string | null | undefined, username: string): string | null {
   const name = (displayName ?? "").normalize("NFC").trim();

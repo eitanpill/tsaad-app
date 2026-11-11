@@ -800,7 +800,9 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .sstone-n { font-size: 11px; font-weight: 500; color: var(--muted); line-height: 1; }
 .sstone--today .sstone-n { font-weight: 800; color: var(--terracotta-text); font-size: 12px; }
 .sstone--live .sstone-n { text-decoration: underline; text-underline-offset: 2px; }
-.strip-more { align-self: flex-end; font-size: 13px; font-weight: 700; color: var(--terracotta-text); text-decoration: underline; text-underline-offset: 3px; }
+/* "לשביל" in its own row under the stones, separated by a hairline, so it never crowds day 14. */
+.strip-more { align-self: stretch; display: flex; justify-content: flex-end; align-items: center; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sand); font-size: 13px; font-weight: 700; color: var(--terracotta-text); }
+.strip-more > span { text-decoration: underline; text-underline-offset: 3px; }
 [data-motion='off'] .sstone--today .sstone-dot { animation-play-state: paused; }
 
 /* Celebration tile (12 days counted) and the end-of-challenge summary. */
@@ -813,6 +815,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .share-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
 .t-finish--pop { animation: appop 0.9s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
 @keyframes appop { 0% { transform: scale(0.94); } 100% { transform: none; } }
+[data-motion='off'] .t-finish--pop { animation: none; }
 .t-sum-days { grid-column: span 2; background: var(--sand); padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
 .t-sum-days h2, .t-sum-cups h2 { margin: 0; font-size: 18px; line-height: 1.2; font-weight: 800; }
 .t-sum-days p { margin: 4px 0 0; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
