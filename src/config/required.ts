@@ -46,6 +46,11 @@ export function checkProductionEnv(src: Source): string[] {
   if (src.REMINDERS_ENABLED === "true" && (!src.VAPID_PRIVATE_KEY || !src.VAPID_PUBLIC_KEY)) {
     warnings.push("REMINDERS_ENABLED=true without VAPID keys: reminders stay dry-run");
   }
+  for (const m of ["GHL_REMINDER_MODE", "GHL_DELIVERY_MODE"] as const) {
+    if (src[m] === "live" && (!src.GHL_API_TOKEN || !src.GHL_LOCATION_ID)) {
+      warnings.push(`${m}=live without GHL_API_TOKEN and GHL_LOCATION_ID: it runs as off`);
+    }
+  }
   if ((src.VERCEL || src.VERCEL_ENV) && (src.TSAAD_E2E || src.TSAAD_TEST_NOW || src.TSAAD_TEST_CLOCK_KEY)) {
     warnings.push("test clock variables are set on Vercel; they are ignored there, remove them");
   }

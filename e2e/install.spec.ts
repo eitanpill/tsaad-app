@@ -61,7 +61,7 @@ test("an install prompt fired early, on the login screen, is kept through sign-i
     window.dispatchEvent(e);
     (window as unknown as { __marker: boolean }).__marker = true;
   });
-  await page.getByLabel("שם משתמש", { exact: true }).fill(s.username);
+  await page.getByLabel("שם משתמש, טלפון או מייל").fill(s.username);
   await page.getByLabel("סיסמה", { exact: true }).fill("today-pass-12");
   await page.getByRole("button", { name: "כניסה", exact: true }).click();
   await page.waitForURL("**/today");

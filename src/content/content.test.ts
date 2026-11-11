@@ -291,4 +291,11 @@ describe("day video ids", () => {
   it("a videoId, when set, is a plain Bunny id (letters, digits, _ and -)", () => {
     for (const d of DAYS) if (d.videoId !== undefined) expect(d.videoId, `day ${d.day}`).toMatch(/^[A-Za-z0-9_-]+$/);
   });
+
+  it("D4: one practice video per day; no action carries its own video", () => {
+    for (const d of DAYS) {
+      for (const a of [d.habit, d.movement, d.meditation]) expect(Object.keys(a)).not.toContain("videoId");
+      expect(typeof d.videoId === "string" || d.videoId === undefined).toBe(true);
+    }
+  });
 });

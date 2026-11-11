@@ -1,6 +1,6 @@
 # צעד קטן ביום
 
-A Hebrew, right-to-left progressive web app for the 14-day yoga challenge "צעד קטן ביום". Participants are signed up from GoHighLevel, activate their account from a one-time link, and each morning get one new day: a small habit, a movement and a meditation (recorded practice videos on Bunny Stream), with live sessions on days 7 and 14, an optional morning reminder (web push) and the day-14 offers.
+A Hebrew, right-to-left progressive web app for the 14-day yoga challenge "צעד קטן ביום". Participants are signed up from GoHighLevel, activate their account from a one-time link, and each morning get one new day: a small habit, a movement and a meditation (one recorded practice video per day, on Bunny Stream), with live sessions on days 7 and 14, an optional morning reminder (web push) and the day-14 offers.
 
 Stack: Next.js 16 (App Router, TypeScript), Postgres (Neon in production, node-postgres locally) through drizzle-orm, opaque database sessions with argon2id passwords, zod for configuration, Vercel for hosting and cron. Nothing is deployed yet: see `docs/LAUNCH_CHECKLIST.md`.
 

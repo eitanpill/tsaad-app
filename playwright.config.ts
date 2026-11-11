@@ -89,6 +89,7 @@ export default defineConfig({
         ACCESSIBILITY_CONTACT: "access@example.test",
         PRIVACY_CONTACT: "privacy@example.test",
         SUPPORT_CONTACT: "050-123-4567",
+        NEXT_COHORT_URL: "https://next.example.test/updates",
       },
     },
   ],

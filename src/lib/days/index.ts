@@ -3,3 +3,4 @@ export * from "./marking";
 export * from "./cup";
 export * from "./progress";
 export * from "./reminder";
+export * from "./registration";

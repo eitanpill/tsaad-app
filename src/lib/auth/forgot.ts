@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import type { Db } from "@/db";
+import type { LinkDelivery } from "@/lib/ghl/link-delivery";
 import type { MessageSender } from "@/lib/messaging/sender";
 import { logger } from "@/lib/logger";
 import { RATE_LIMITS } from "./config";
@@ -29,6 +30,7 @@ type Match = {
   email: string | null;
   phone: string | null;
   password_hash: string | null;
+  ghl_contact_id: string | null;
 };
 
 export type ForgotResult = { status: "ok" } | { status: "rate_limited"; retryAfterSeconds: number };
@@ -53,6 +55,8 @@ export async function requestPasswordReset(
      * התשובה וזמן התגובה לא יגלה אם יש חשבון (גם כשהשולח האמיתי איטי). בלי ערך: ממתינים לו כאן.
      */
     defer?: (task: () => Promise<void>) => void;
+    /** מסירה דרך GHL (שדה מותאם ותג) למי שיש לו ghl_contact_id; בלי ערך, או למי שאין לו איש קשר: השולח הרגיל. */
+    ghl?: LinkDelivery | null;
   },
 ): Promise<ForgotResult> {
   const identifier = args.identifier.trim().toLowerCase().slice(0, IDENTIFIER_MAX_LENGTH);
@@ -68,7 +72,7 @@ export async function requestPasswordReset(
       )}]::text[])`
     : sql``;
   const res = await db.execute(
-    sql`select id, username, display_name, email, phone, password_hash from users
+    sql`select id, username, display_name, email, phone, password_hash, ghl_contact_id from users
         where username = ${identifier} or lower(email) = ${identifier}${phoneClause}
         order by created_at
         limit ${MAX_MATCHES}`,
@@ -94,6 +98,10 @@ export async function requestPasswordReset(
         const purpose: TokenPurpose = u.password_hash ? "reset" : "activate";
         const { token } = await issueToken(db, { userId: u.id, purpose, ttlMinutes: args.ttlMinutes });
         const link = `${args.origin}/activate?token=${token}`;
+        if (args.ghl && u.ghl_contact_id) {
+          await args.ghl.deliver({ userId: u.id, ghlContactId: u.ghl_contact_id, kind: purpose, link });
+          continue;
+        }
         const base = { kind: purpose === "reset" ? ("reset" as const) : ("activation" as const), userId: u.id, name: u.display_name, username: u.username, link };
         if (u.email) await args.sender.send({ ...base, channel: "email" });
         if (u.phone) await args.sender.send({ ...base, channel: "whatsapp" });

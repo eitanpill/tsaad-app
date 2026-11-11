@@ -15,6 +15,12 @@ describe("parseEnv", () => {
     expect(e.SESSION_SPOTS).toBeUndefined();
   });
 
+  it("NEXT_COHORT_URL is optional and https only", () => {
+    expect(parseEnv({}).NEXT_COHORT_URL).toBeUndefined();
+    expect(parseEnv({ NEXT_COHORT_URL: "https://next.example.test/x" }).NEXT_COHORT_URL).toBe("https://next.example.test/x");
+    expect(() => parseEnv({ NEXT_COHORT_URL: "http://next.example.test" })).toThrow();
+  });
+
   it("treats empty strings as unset", () => {
     const e = parseEnv({ START_DATE: "", LIVE_URL_DAY7: "", TZ_NAME: "", SESSION_SPOTS: "" });
     expect(e.START_DATE).toBeUndefined();

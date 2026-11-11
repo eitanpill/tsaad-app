@@ -6,6 +6,7 @@ import type { Db } from "@/db";
 import { RATE_LIMITS, getActivationTtlMinutes, getAppOrigin, getSessionSecret } from "@/lib/auth/config";
 import { isBlocked, rateLimitKeys, registerAttempt } from "@/lib/auth/rate-limit";
 import { clientIp } from "@/lib/auth/request";
+import { makeSchedule, registrationClosed } from "@/lib/days";
 import type { Logger } from "@/lib/logger";
 import {
   WEBHOOK_EVENT_ID_HEADER,
@@ -165,6 +166,22 @@ export async function handleGhlSignup(req: Request, deps: HandlerDeps): Promise<
   }
 
   log.info("ghl signup processed", { status: outcome.status, userId: outcome.issued?.userId, via: auth.via });
+  // ההרשמה בדף הנחיתה נסגרת בסוף יום 2, אבל תשלום שכבר בוצע לא נחסם: החשבון נוצר, ורק נרשמת אזהרה.
+  if (outcome.status === "created" && env.START_DATE) {
+    try {
+      const schedule = makeSchedule(env.START_DATE, {
+        timeZone: env.TZ_NAME || undefined,
+        unlockTime: env.UNLOCK_HOUR || undefined,
+      });
+      if (registrationClosed(now(), schedule)) {
+        log.warn("ghl signup: registration is closed for this cohort; account created for a late payer", {
+          userId: outcome.issued?.userId,
+        });
+      }
+    } catch {
+      /* START_DATE לא תקין: אין אזהרה, והחשבון כבר נוצר */
+    }
+  }
 
   if (outcome.issued) {
     const issued = outcome.issued;

@@ -117,3 +117,18 @@ export const RETENTION = Object.freeze({
   /** יומן תזכורות; רק התאריך של היום חשוב למניעת כפילות. */
   reminderLogDays: 90,
 });
+
+/**
+ * GHL API v2 (שלב D1). הכתובת קבועה בקוד בכוונה (לא ממשתנה סביבה), כדי שהטוקן לא יישלח לכתובת אחרת.
+ * את הצורה של הקריאות צריך לאמת בקריאה החיה הראשונה (ראו docs/GHL_SETUP.md).
+ */
+export const GHL = Object.freeze({
+  baseUrl: "https://services.leadconnectorhq.com",
+  apiVersion: "2021-07-28",
+  /** תקרה לכל קריאה אחת, במילישניות. */
+  timeoutMs: 10_000,
+  /** כמה שורות outbox של GHL בריצה אחת. */
+  batchSize: 50,
+  /** מקסימום תגובה שנקרא (בתים). */
+  maxResponseBytes: 64 * 1024,
+});

@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ACTIONS, actionsForDay, canMark, computeProgress, cupLevel, dayCounts, dayDate,
-  dayStatusAt, isDayUnlocked, makeSchedule, markDeadline, markState, reminderDue,
+  dayStatusAt, isDayUnlocked, makeSchedule, markDeadline, markState, registrationClosed, reminderDue,
   stepsFor, unlockedDays, unlockInstant,
 } from ".";
 
@@ -232,4 +232,21 @@ describe("marking invariants (security review sweep, every 10 minutes incl. DST)
       }
     });
   }
+});
+
+describe("registration closes at the end of day 2 (day 3 05:00 Israel)", () => {
+  it("open without a schedule, through day 2, closed from the day-3 unlock", () => {
+    expect(registrationClosed(at("2027-01-01T00:00:00Z"), null)).toBe(false);
+    expect(registrationClosed(at("2026-11-01T00:00:00Z"), winter)).toBe(false);
+    expect(registrationClosed(at("2026-12-03T02:59:59Z"), winter)).toBe(false);
+    expect(registrationClosed(at("2026-12-03T03:00:00Z"), winter)).toBe(true);
+    expect(registrationClosed(at("2026-12-20T03:00:00Z"), winter)).toBe(true);
+  });
+  it("is DST-safe (the boundary is the local 05:00)", () => {
+    // spring: day 3 = 2026-03-22, still +02:00; autumn start 2026-10-18 day 3 = 10-20 (+03:00)
+    expect(registrationClosed(at("2026-03-22T02:59:59Z"), spring)).toBe(false);
+    expect(registrationClosed(at("2026-03-22T03:00:00Z"), spring)).toBe(true);
+    expect(registrationClosed(at("2026-10-20T01:59:59Z"), autumn)).toBe(false);
+    expect(registrationClosed(at("2026-10-20T02:00:00Z"), autumn)).toBe(true);
+  });
 });

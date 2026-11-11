@@ -3,7 +3,7 @@ import type { Db } from "@/db";
 import { logger, type Logger } from "@/lib/logger";
 import type { SyncAdapter } from "./adapter";
 import { claimDue, markFailed, markSent, sanitizeError } from "./outbox";
-import { trackerPayloadSchema } from "./payload";
+import { TRACKER_KIND, trackerPayloadSchema } from "./payload";
 
 export type SyncRunResult = {
   enabled: boolean;
@@ -33,7 +33,7 @@ export async function runSyncWorker(args: {
     return { ...EMPTY, enabled: true };
   }
   const result: SyncRunResult = { ...EMPTY, enabled: true };
-  const rows = await claimDue(args.db);
+  const rows = await claimDue(args.db, undefined, undefined, [TRACKER_KIND]);
   result.claimed = rows.length;
   for (const row of rows) {
     let outcome: Awaited<ReturnType<SyncAdapter["send"]>>;

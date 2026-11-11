@@ -40,13 +40,14 @@ The server refuses to start in production when a **required** variable is missin
 | `LIVE_URL_DAY7`, `LIVE_URL_DAY14` | https link of each live session. Shown only from 60 minutes before the start until 120 minutes after. |
 | `MORNING_URL_CHALLENGE_79` | Payment page for the landing CTA (https). Unset = a disabled button. |
 | `MORNING_URL_SESSION_271`, `MORNING_URL_BUNDLE_139`, `MORNING_URL_YESODOT_1265` | Day-14 offer payment pages (https). Unset = disabled button. |
-| `OFFER_WINDOW_HOURS` | How long the day-14 offer stays open after the day-14 live ends. Unset = the offer never opens. |
+| `OFFER_WINDOW_HOURS` | How long the day-14 offer stays open after the day-14 live ends. Unset = the offer never opens. Owner value: `48`. |
+| `NEXT_COHORT_URL` | Optional https link for "לעדכון על המחזור הבא". The landing page replaces the registration button with "ההרשמה למחזור הזה נסגרה" from the opening of day 3 (05:00 Israel time); the link is shown next to it only when this is set. The signup webhook keeps creating accounts for people who already paid (it logs a warning). The payment page itself (`MORNING_URL_CHALLENGE_79`) is not closed by the app: switch it off in Morning when registration closes. |
 | `OFFER_UTM_SESSION`, `OFFER_UTM_BUNDLE`, `OFFER_UTM_YESODOT` | Optional `utm_campaign` values (letters, digits, `_ . -`). |
 | `YESODOT_OFFER_EXPIRY` | `YYYY-MM-DD` (end of that day in Israel) or an ISO time. Unset = no date shown. |
 | `SESSION_SPOTS` | Only if a real, current number of places exists. It never counts down; clear it when it stops being true. |
-| `ACCESSIBILITY_CONTACT` | **Blocker before launch** (accessibility regulations, regulation 35): the accessibility coordinator's name and phone or email. |
+| `ACCESSIBILITY_CONTACT` | **Blocker before launch** (accessibility regulations, regulation 35): the accessibility coordinator's name and phone or email. Owner value: `support@yogit-yoga.co.il`. |
 | `PRIVACY_CONTACT` | **Blocker before launch**: contact for privacy access and correction requests. |
-| `SUPPORT_CONTACT` | General contact shown in the terms. |
+| `SUPPORT_CONTACT` | General contact shown in the terms. Owner value: `support@yogit-yoga.co.il`. |
 | `ADMIN_USERNAMES` | Comma-separated usernames allowed to open `/admin/stats` (aggregate numbers: signed up, activated, active per day, days counted, completed 12 of 14, reminders opted in, offer button clicks). Empty = nobody. Everyone else, and anyone logged out, gets the normal 404. Use the owner's own participant username (an account created through the signup webhook). |
 | `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT` | Public half of the VAPID pair, and `mailto:<address>` or an https URL. Without the public key the reminders screen says reminders are not supported. |
 
@@ -54,8 +55,14 @@ The server refuses to start in production when a **required** variable is missin
 | Variable | Value at launch | What it does |
 |---|---|---|
 | `REMINDERS_ENABLED` | `false` | With `false` the 07:30 job writes `dry_run` rows and sends nothing. Turn on only with the VAPID keys set, after the owner approves. A `dry_run` row holds the day, so switching on mid-morning sends from the next day. |
-| `TRACKER_SYNC_ENABLED` | `false` | There is no real GHL adapter yet, so even `true` processes nothing. Keep `false`. |
-| GHL activation delivery | dry-run (code) | The signup webhook creates the account and logs that a message *would* go out. There is no WhatsApp or email sending in the code (`lib/webhooks/ghl/delivery.ts`). Do not connect the GHL workflow for real participants until a real adapter is approved and built (G3). |
+| `TRACKER_SYNC_ENABLED` | `false` | There is no tracker adapter yet, so even `true` processes nothing. Keep `false`. |
+| `GHL_REMINDER_MODE` | `off` | `off` = push only, as before. `dry` = logs and writes `reminder_log` rows (channel `ghl`), calls nothing. `live` = at the 07:30 run, sets the contact field and adds the day tag in GHL, and a GHL workflow sends the WhatsApp. Needs `GHL_API_TOKEN` and `GHL_LOCATION_ID`; ignored (runs as off, with an error in the log) without them, and never active in tests/e2e. |
+| `GHL_DELIVERY_MODE` | `off` | `off` = today's dry-run. `dry` = logs what would be written. `live` = writes the one-time activation or reset link to the contact field and adds the tag, and a GHL workflow sends WhatsApp and email. Same token rules. |
+| `GHL_API_TOKEN` (secret), `GHL_LOCATION_ID` | empty | Only for `live`. Private Integration token with the contacts scopes (view and edit), see `docs/GHL_SETUP.md`. |
+| `GHL_FIELD_TODAY_URL`, `GHL_FIELD_ACTIVATION_URL`, `GHL_TAG_REMINDER_PREFIX`, `GHL_TAG_ACCOUNT_READY`, `GHL_TAG_RESET_READY` | defaults `tsaad_today_url`, `tsaad_activation_url`, `tsaad_reminder_day`, `tsaad_account_ready`, `tsaad_reset_ready` | Names (keys) of what Pit creates in GHL. Change only if the names in GHL differ. |
+
+Order for turning on GHL sending (each step with Pit's approval): finish the GHL steps in `docs/GHL_SETUP.md`, then `dry` for a day and read the logs, then `live` for one test contact (Pit's own) before real participants. **The first live call must be verified by hand** (the request shapes are written from the GHL API v2 documentation, not from a live call): check that the field and the tag appear on the contact and that the workflow fires. Run migration `0011` first (it adds `reminder_log.channel`).
+| GHL activation delivery | dry-run (`GHL_DELIVERY_MODE=off`) | The signup webhook creates the account and logs that a message *would* go out. The app itself never sends WhatsApp or email: with `GHL_DELIVERY_MODE=live` it writes the link to a GHL field and a GHL workflow sends. Do not connect real participants before the live check above. |
 
 ### Keep at their defaults
 `UNLOCK_HOUR=05:00`, `REMINDER_TIME=07:30`, `TZ_NAME=Asia/Jerusalem`. Leave `TRUST_PROXY_IP_HEADERS` and `GHL_WEBHOOK_URL` empty (Vercel sets trusted IP headers itself; the URL is for G3).
@@ -65,7 +72,7 @@ The server refuses to start in production when a **required** variable is missin
 
 ## 2. Database (Neon, aws-eu-central-1)
 - [ ] Use the **unpooled** connection string (host without `-pooler`) for migrations only; the app uses the pooled one.
-- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0009` in order (verified on an empty Postgres 16 by `scripts/test-db.sh`). `0008` drops the unused `login_attempts.user_id`; `0009` adds the `offer_clicks` counter table. Run it before the first deploy, and again before any deploy that adds a migration.
+- [ ] From a checkout of the deployed commit: `DATABASE_URL='<unpooled url>' npx drizzle-kit migrate`. It applies `drizzle/0000` to `0011` in order (verified on an empty Postgres 16 by `scripts/test-db.sh`). `0008` drops the unused `login_attempts.user_id`; `0009` adds the `offer_clicks` counter table. Run it before the first deploy, and again before any deploy that adds a migration.
 - [ ] Do not run `scripts/create-dev-user.ts` against Neon (it refuses anything but localhost).
 - [ ] Turn on Neon point-in-time restore / backups for the branch.
 

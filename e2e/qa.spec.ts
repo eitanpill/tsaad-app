@@ -209,7 +209,7 @@ test.describe("every screen: axe, structure, targets, 200% zoom (195px)", () => 
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: "he-IL" });
     const page = await ctx.newPage();
     await page.goto("/login");
-    await page.getByLabel("שם משתמש", { exact: true }).fill("nobody");
+    await page.getByLabel("שם משתמש, טלפון או מייל").fill("nobody");
     await page.getByLabel("סיסמה", { exact: true }).fill("wrong-pass-1");
     await page.getByRole("button", { name: "כניסה", exact: true }).click();
     await expect(page.getByRole("alert").filter({ hasText: /\S/ }).first()).toBeVisible();
@@ -321,7 +321,7 @@ test("keyboard only: login, mark, undo, yesterday, path, day, live, reminders, a
 
   await page.goto("/login");
   await tabTo((n) => n === "" || true, 1); // first Tab lands somewhere in the page
-  await page.getByLabel("שם משתמש", { exact: true }).focus();
+  await page.getByLabel("שם משתמש, טלפון או מייל").focus();
   await page.keyboard.type(u.username);
   await page.keyboard.press("Tab");
   await page.keyboard.type("today-pass-12");

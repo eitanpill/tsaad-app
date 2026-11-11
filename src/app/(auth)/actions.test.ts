@@ -19,6 +19,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/db", () => ({ getDb: () => ({}) }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() } }));
+vi.mock("@/lib/ghl/link-delivery", () => ({ getLinkDelivery: () => null }));
 vi.mock("@/lib/messaging/sender", () => ({ getMessageSender: () => ({}) }));
 vi.mock("@/lib/auth/config", async (orig) => ({
   ...(await orig<object>()),
@@ -26,12 +27,11 @@ vi.mock("@/lib/auth/config", async (orig) => ({
   getAppOrigin: () => "https://app.example.test",
   getActivationTtlMinutes: () => 30,
 }));
-vi.mock("@/lib/auth/login", () => ({ authenticate: h.authenticate }));
+vi.mock("@/lib/auth/login", () => ({ authenticate: h.authenticate, clearLoginLimitsForUser: h.clear }));
 vi.mock("@/lib/auth/session", () => ({ rotateSession: h.rotate, deleteSession: vi.fn() }));
 vi.mock("@/lib/auth/cookies", () => ({ readSessionToken: async () => undefined, setSessionCookie: h.setCookie, clearSessionCookie: vi.fn() }));
 vi.mock("@/lib/auth/tokens", () => ({ peekToken: h.peek }));
 vi.mock("@/lib/auth/accounts", () => ({ completePasswordSetup: h.setup }));
-vi.mock("@/lib/auth/rate-limit", () => ({ clearAttempts: h.clear, rateLimitKeys: () => ({ identifierHash: "k", ipHash: null }) }));
 vi.mock("@/lib/push/subscription", () => ({ removeSubscriptionForSession: vi.fn() }));
 
 import { activateAction, loginAction } from "./actions";
@@ -89,7 +89,7 @@ describe("activateAction (activation and reset links)", () => {
     h.rotate.mockResolvedValue({ token: "t", expiresAt: new Date() });
     await expect(activateAction({}, f())).rejects.toThrow("REDIRECT:/today");
     expect(h.clear).toHaveBeenCalledTimes(1);
-    expect(h.clear.mock.calls[0][1]).toBe("login");
+    expect(h.clear.mock.calls[0][1]).toBe("u1");
   });
   it("a failure to clear the lockout does not block the sign-in", async () => {
     h.clear.mockRejectedValue(new Error("db hiccup"));

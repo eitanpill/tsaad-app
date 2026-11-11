@@ -71,6 +71,20 @@
       "when": 1794352739164,
       "tag": "0009_offer_clicks",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794363176865,
+      "tag": "0010_users_phone_idx",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794363587182,
+      "tag": "0011_reminder_log_channel",
+      "breakpoints": true
     }
   ]
 }

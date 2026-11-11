@@ -124,6 +124,7 @@ test("Today tile follows the offer state and the landing CTA is a real link when
   await expect(o.page.locator(".t-entry")).not.toContainText("271");
   await o.ctx.close();
 
+  await page.setExtraHTTPHeaders(clock("2026-12-02T12:00:00+02:00")); // registration is still open on day 2
   await page.goto("/tsaad");
   await expect(page.getByRole("link", { name: "אני בפנים, להרשמה לאתגר" }).first()).toHaveAttribute("href", "/go/challenge");
   await axe(page);

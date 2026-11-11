@@ -6,7 +6,7 @@
 Changing a title or opening line means editing `days.ts`, then running `node --experimental-strip-types scripts/gen-copy-deck.mjs` and `npx vitest run`. Titles and opening lines are sent to the browser only for today and yesterday (Today) or for an unlocked day (`/day/[n]`); locked days never receive them.
 
 ## Recorded-practice videos (Bunny)
-Each day's recorded practice is a Bunny Stream video. There are two places for its id, and the file is the main one:
+**One practice video per day** (decision D4): each day has a single Bunny Stream video for the whole day's practice (the habit, the movement and the meditation together), so there is exactly one id per day, never one per action. The three actions are only things to mark; none of them has its own video, and no code, copy or env variable assumes otherwise. There are two places for its id, and the file is the main one:
 
 1. **`src/content/days.ts` (main).** Each day has an optional `videoId`. When the owner sends a link or id for a day, it goes there: add `videoId: "<id>",` to that day's object. The id is the part of the Bunny link after `/embed/<library>/` or `/play/<library>/` (letters, digits, `_`, `-`); if you are sent a full link, copy only that id. Do not guess ids. Then run `npx vitest run` and deploy.
 2. **`BUNNY_VIDEO_IDS` (override).** A comma-separated list in day order (position 1 = day 1). A non-empty position wins over `days.ts` for that day; an empty position falls back to `days.ts`. Useful for a quick swap on Vercel without a code change. Example: `id1,id2,,id4`.

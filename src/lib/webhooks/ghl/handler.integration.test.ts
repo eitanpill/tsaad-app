@@ -11,7 +11,7 @@ import { peekToken } from "@/lib/auth/tokens";
 import { createLogger } from "@/lib/logger";
 import { WEBHOOK_EVENT_ID_HEADER, WEBHOOK_SECRET_HEADER } from "./auth";
 import type { SignupDelivery, SignupDeliveryRequest } from "./delivery";
-import { handleGhlSignup } from "./handler";
+import { handleGhlSignup, type HandlerDeps } from "./handler";
 
 const url = process.env.DATABASE_URL;
 const runIntegration = !!url && process.env.TSAAD_TEST_DB === "1" && isLocalDatabaseUrl(url);
@@ -39,6 +39,7 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     body: unknown,
     headers: Record<string, string> = {},
     e: Record<string, string | undefined> = env,
+    extra: Partial<HandlerDeps> = {},
   ) => {
     const res = await handleGhlSignup(
       new Request(`${ORIGIN}/api/webhooks/ghl/signup`, {
@@ -46,7 +47,7 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
         headers: { "content-type": "application/json", [WEBHOOK_SECRET_HEADER]: SECRET, ...headers },
         body: typeof body === "string" ? body : JSON.stringify(body),
       }),
-      { db: () => db, log, delivery, after: (t) => void tasks.push(t), env: e, startDate: () => "2026-12-01" },
+      { db: () => db, log, delivery, after: (t) => void tasks.push(t), env: e, startDate: () => "2026-12-01", ...extra },
     );
     return { status: res.status, json: (await res.json()) as { ok: boolean; status?: string; error?: string }, res };
   };
@@ -111,6 +112,21 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     );
     expect(toks).toEqual([{ token_hash: sha256Hex(tokenOf(d)), purpose: "activate" }]);
     expect(await count("webhook_events")).toBe(1);
+  });
+
+  it("D2: a late payer (after registration closed at day 3 05:00) still gets an account, with a warning in the log", async () => {
+    const closedEnv = { ...env, START_DATE: "2026-12-01" };
+    const late = await call(contact(), {}, closedEnv, { now: () => new Date("2026-12-03T03:00:00Z") });
+    expect(late.json).toEqual({ ok: true, status: "created" });
+    await runAfter();
+    expect(captured).toHaveLength(1);
+    expect(await count("users", sql`ghl_contact_id like 'ghl-wh-%'`)).toBe(1);
+    expect(logs.join("\n")).toContain("registration is closed for this cohort");
+
+    logs.length = 0;
+    const early = await call(contact(), {}, closedEnv, { now: () => new Date("2026-12-03T02:59:59Z") });
+    expect(early.json.status).toBe("created");
+    expect(logs.join("\n")).not.toContain("registration is closed");
   });
 
   it("phone-only signup works (no email stored, whatsapp only, username from phone digits)", async () => {
@@ -221,7 +237,7 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     await runAfter();
     expect(captured).toHaveLength(0);
     expect(await count("activation_tokens", sql`used_at is null`)).toBe(0);
-    expect((await authenticate(db, { username: "whtest.act", password: pw, secret: env.SESSION_SECRET! })).ok).toBe(true);
+    expect((await authenticate(db, { identifier: "whtest.act", password: pw, secret: env.SESSION_SECRET! })).ok).toBe(true);
   });
 
   it("concurrent identical webhooks create exactly one user and one link", async () => {
@@ -311,11 +327,11 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     const token = tokenOf(d);
     expect(await peekToken(db, token)).toMatchObject({ username: "whtest.flow", purpose: "activate" });
     const pw = "my-own-chosen-password-9";
-    expect((await authenticate(db, { username: d.username, password: pw, secret: env.SESSION_SECRET! })).ok).toBe(false);
+    expect((await authenticate(db, { identifier: d.username, password: pw, secret: env.SESSION_SECRET! })).ok).toBe(false);
     const done = await completePasswordSetup(db, { token, passwordHash: await hashPassword(pw) });
     expect(done).toMatchObject({ username: "whtest.flow" });
     expect(await completePasswordSetup(db, { token, passwordHash: await hashPassword("other-password-123") })).toBeNull();
-    expect((await authenticate(db, { username: d.username.toUpperCase(), password: pw, secret: env.SESSION_SECRET! })).ok).toBe(true);
+    expect((await authenticate(db, { identifier: d.username.toUpperCase(), password: pw, secret: env.SESSION_SECRET! })).ok).toBe(true);
   });
 
   it("a delivery failure is logged and does not change the response or the stored state", async () => {

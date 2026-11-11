@@ -23,3 +23,20 @@ export function LandingCta({ href, label, noteId }: { href: string | null; label
     </>
   );
 }
+
+/** אחרי סגירת ההרשמה: שורה ניטרלית במקום הכפתור, וקישור "המחזור הבא" רק אם הוגדר כתובת. */
+export function LandingClosed({ nextUrl }: { nextUrl: string | null }) {
+  return (
+    <p className="pt-note pt-closed">
+      <b>{copy.landing.hero.closed}</b>
+      {nextUrl ? (
+        <>
+          <br />
+          <a className="plink" href={nextUrl} rel="noopener">
+            {copy.landing.hero.closedNext}
+          </a>
+        </>
+      ) : null}
+    </p>
+  );
+}
