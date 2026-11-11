@@ -76,6 +76,11 @@ const utmValue = z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/, "letters, digits, _ 
 /** פרט קשר להצגה (מייל, טלפון או טקסט קצר). */
 const contactText = z.string().trim().min(3).max(200);
 
+/** שם שדה מותאם או תג ב־GHL: אותיות לטיניות, ספרות ו־_ . - בלבד. */
+const ghlName = z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/, "letters, digits, _ . - only (max 64)");
+
+const ghlMode = z.preprocess(emptyToUndefined, z.enum(["off", "dry", "live"]).default("off"));
+
 const posInt = z.coerce.number().int().positive();
 
 export const envSchema = z.object({
@@ -87,6 +92,22 @@ export const envSchema = z.object({
   GHL_WEBHOOK_SECRET: optional(z.string().min(32, "at least 32 characters")),
   CRON_SECRET: optional(z.string().min(16)),
   GHL_WEBHOOK_URL: optional(httpsUrl),
+
+  /**
+   * שליחה דרך GHL (שדה מותאם ותג שמפעילים Workflow). off (ברירת מחדל) = כמו לפני כן; dry = רושם מה היה נשלח ולא קורא ל־GHL;
+   * live = קורא ל־GHL (דורש GHL_API_TOKEN ו־GHL_LOCATION_ID, ואף פעם לא בבדיקות). ראו docs/GHL_SETUP.md.
+   */
+  GHL_REMINDER_MODE: ghlMode,
+  GHL_DELIVERY_MODE: ghlMode,
+  /** טוקן Private Integration של GHL (סוד, שרת בלבד). */
+  GHL_API_TOKEN: optional(z.string().min(20)),
+  GHL_LOCATION_ID: optional(z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "a GHL location id")),
+  /** שמות (מפתחות) של שדות מותאמים ותגים ב־GHL. אלה שמות, לא מזהים: יוצרים אותם ב־GHL לפי docs/GHL_SETUP.md. */
+  GHL_FIELD_TODAY_URL: withDefault(ghlName, "tsaad_today_url"),
+  GHL_FIELD_ACTIVATION_URL: withDefault(ghlName, "tsaad_activation_url"),
+  GHL_TAG_REMINDER_PREFIX: withDefault(ghlName, "tsaad_reminder_day"),
+  GHL_TAG_ACCOUNT_READY: withDefault(ghlName, "tsaad_account_ready"),
+  GHL_TAG_RESET_READY: withDefault(ghlName, "tsaad_reset_ready"),
 
   TRACKER_SYNC_ENABLED: literalBoolean.default(false),
   REMINDERS_ENABLED: literalBoolean.default(false),
