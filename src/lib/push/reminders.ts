@@ -7,6 +7,8 @@ import { rowsOf } from "@/lib/auth/sql";
 import { dayDate, dayStatusAt, isDayUnlocked, makeSchedule, reminderDue } from "@/lib/days";
 import { localDate } from "@/lib/time/zone";
 import { logger, type Logger } from "@/lib/logger";
+import { getGhlConfig, type GhlConfig } from "@/lib/ghl/config";
+import { queueGhlReminders, type GhlReminderResult } from "@/lib/ghl/reminders";
 import { buildReminderMessage } from "./message";
 import type { PushSender } from "./sender";
 
@@ -27,6 +29,8 @@ export type ReminderRunResult = {
   sent: number;
   failed: number;
   removedSubscriptions: number;
+  /** תזכורת ווטסאפ דרך GHL; מופיע רק כש־GHL_REMINDER_MODE אינו off. */
+  ghl?: GhlReminderResult;
 };
 
 const idList = (ids: string[]) => sql.join(ids.map((i) => sql`${i}`), sql`, `);
@@ -54,6 +58,8 @@ export async function runReminders(args: {
   /** לבדיקות; ברירת מחדל REMINDERS.claimBatchSize / runBudgetMs. */
   claimBatchSize?: number;
   runBudgetMs?: number;
+  /** ברירת מחדל: מהתצורה. */
+  ghlConfig?: GhlConfig;
 }): Promise<ReminderRunResult> {
   const { db, config, sender } = args;
   const log = args.log ?? logger;
@@ -89,11 +95,23 @@ export async function runReminders(args: {
   if (!due.due) return skip(due.reason === "past_cutoff" ? "past_cutoff" : "too_early", day);
   const date = due.date;
 
+  // ערוץ ה־GHL (ווטסאפ) בלתי תלוי בהתראות הדפדפן (VAPID, מנויים): רץ קודם, ואחריו הלוגיקה הקיימת.
+  const ghl = await queueGhlReminders({
+    db,
+    cfg: args.ghlConfig ?? getGhlConfig(config.env),
+    day,
+    date,
+    log,
+    claimBatchSize: args.claimBatchSize,
+    runBudgetMs: args.runBudgetMs,
+  });
+  const withGhl = <T extends ReminderRunResult>(r: T): T => (ghl ? { ...r, ghl } : r);
+
   const enabled = config.env.REMINDERS_ENABLED === true;
   if (enabled && sender.dryRun) {
     // הדגל דלוק אבל אין מפתחות VAPID: לא תופסים את היום, כדי שלא יאבדו תזכורות.
     log.warn("reminders enabled but push sender is not configured; nothing done");
-    return skip("no_vapid", day);
+    return withGhl(skip("no_vapid", day));
   }
   const live = enabled;
   const initial = live ? "pending" : "dry_run";
@@ -183,5 +201,5 @@ export async function runReminders(args: {
     if (claimed.length < batchSize || Date.now() - startedAt >= budgetMs) break;
   }
   log.info("reminders run", { ...result });
-  return result;
+  return withGhl(result);
 }

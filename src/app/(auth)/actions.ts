@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { getDb } from "@/db";
 import { logger } from "@/lib/logger";
+import { getLinkDelivery } from "@/lib/ghl/link-delivery";
 import { getMessageSender } from "@/lib/messaging/sender";
 import { completePasswordSetup } from "@/lib/auth/accounts";
 import {
@@ -133,6 +134,7 @@ export async function forgotAction(_prev: ForgotState, formData: FormData): Prom
       ip: clientIp(h),
       ttlMinutes: getActivationTtlMinutes(),
       sender: getMessageSender(),
+      ghl: getLinkDelivery(),
       origin,
       // המשלוח רץ אחרי התשובה, כך שזמן התגובה זהה עם חשבון ובלעדיו.
       defer: after,

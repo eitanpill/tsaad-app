@@ -2,6 +2,7 @@ import "server-only";
 import { appendFileSync } from "node:fs";
 import { getConfig, readEnv } from "@/config";
 import { logger, type Logger } from "@/lib/logger";
+import { getLinkDelivery, type LinkDelivery } from "@/lib/ghl/link-delivery";
 import { renderMessage, type MessageChannel } from "@/lib/messaging/sender";
 import { withStartDate } from "@/lib/format";
 import { testClockAllowed } from "@/lib/today/test-clock";
@@ -100,13 +101,26 @@ export function captureFileFor(env: Record<string, string | undefined> = readEnv
   return file;
 }
 
+/** משלוח דרך GHL (שדה מותאם ותג): ההודעות עצמן ב־Workflow של GHL, ולכן ההודעות המורכבות כאן לא נשלחות. */
+export function createGhlSignupDelivery(link: LinkDelivery): SignupDelivery {
+  return {
+    name: "ghl",
+    async deliver(req) {
+      await link.deliver({ userId: req.userId, ghlContactId: req.ghlContactId, kind: "activate", link: req.link });
+    },
+  };
+}
+
 let delivery: SignupDelivery | undefined;
 
-/** כרגע dry-run (או לכידת בדיקות). משלוח אמיתי יתווסף בשער G3, מאחורי דגל מפורש. */
+/**
+ * לכידת בדיקות e2e, אחרת GHL (כש־GHL_DELIVERY_MODE הוא dry או live), אחרת dry-run כמו קודם (off, ברירת המחדל).
+ */
 export function getSignupDelivery(): SignupDelivery {
   if (!delivery) {
     const file = captureFileFor();
-    delivery = file ? createCaptureDelivery(file) : createDryRunDelivery();
+    const ghl = file ? null : getLinkDelivery();
+    delivery = file ? createCaptureDelivery(file) : ghl ? createGhlSignupDelivery(ghl) : createDryRunDelivery();
   }
   return delivery;
 }

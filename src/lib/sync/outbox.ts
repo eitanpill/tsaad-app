@@ -75,11 +75,14 @@ export async function claimDue(
   db: Exec,
   limit: number = SYNC.batchSize,
   leaseSeconds: number = SYNC.leaseSeconds,
+  /** רק שורות מהסוגים האלה (ברירת מחדל: כולם). סוגים שונים מעובדים בעובדים שונים. */
+  kinds?: readonly string[],
 ): Promise<ClaimedRow[]> {
+  const kindFilter = kinds ? sql` and kind = any(array[${sql.join(kinds.map((k) => sql`${k}`), sql`, `)}]::text[])` : sql``;
   const res = await db.execute(
     sql`with due as (
           select id from sync_outbox
-          where status in ('pending','failed') and next_attempt_at <= now()
+          where status in ('pending','failed') and next_attempt_at <= now()${kindFilter}
           order by next_attempt_at, created_at
           limit ${limit}
           for update skip locked

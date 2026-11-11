@@ -19,6 +19,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/db", () => ({ getDb: () => ({}) }));
 vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() } }));
+vi.mock("@/lib/ghl/link-delivery", () => ({ getLinkDelivery: () => null }));
 vi.mock("@/lib/messaging/sender", () => ({ getMessageSender: () => ({}) }));
 vi.mock("@/lib/auth/config", async (orig) => ({
   ...(await orig<object>()),
