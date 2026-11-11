@@ -16,7 +16,7 @@ test.describe("landing /tsaad (public)", () => {
     await expect(page.locator("button.cta--off").first()).toHaveAttribute("aria-disabled", "true");
     await expect(page.locator("#cta-note-hero")).toHaveText("ההרשמה תיפתח כאן.");
     expect(await cta.count()).toBe(0); // the disabled button's visible name is the label; it is not the link
-    await expect(page.getByText("ההרשמה לאתגר היא 79 ₪. זה אינו מנוי.").first()).toBeVisible();
+    await expect(page.getByText("ההרשמה לאתגר היא 79 ₪. זה לא מנוי.").first()).toBeVisible();
     await expect(page.getByText("תאריך ההתחלה יפורסם בקרוב.")).toHaveCount(0); // START_DATE is set on this server
     await expect(page.getByText("האתגר מתחיל ב־1 בדצמבר.")).toBeVisible();
     expect(await page.locator("body").innerText()).not.toMatch(RAW);
