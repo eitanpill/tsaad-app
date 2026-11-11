@@ -317,7 +317,7 @@ test.describe("bottom nav never hides content", () => {
       expect(hidden, `${url} @${width}`).toEqual([]);
       await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
       const hit = await page.evaluate(() => {
-        const b = document.querySelector(".app-foot button")!.getBoundingClientRect();
+        const b = document.querySelector(".app-foot--links a:last-child")!.getBoundingClientRect();
         const navTop = document.querySelector(".bnav")!.getBoundingClientRect().top;
         const el = document.elementFromPoint(b.left + b.width / 2, b.bottom - 2);
         return { onTop: el?.closest(".app-foot") != null, gap: navTop - b.bottom };

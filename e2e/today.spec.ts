@@ -127,7 +127,8 @@ test.describe("states (axe, copy, server clock)", () => {
   test("day 1 morning: hero, chip, video placeholder, empty cup, axe", async ({ browser }) => {
     await seed([]);
     const { ctx, page } = await open(browser, T.day1Morning);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("הבוקר: כוס מים חמימים עם לימון כשקמים");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("בוקר טוב, בדיקה");
+    await expect(page.locator(".eyebrow-s")).toHaveText("יום 1");
     await expect(page.locator(".chip")).toHaveText("יום 1 מתוך 14");
     await expect(page.locator("p.opening")).toHaveText(
       "יום 1. ההרגל של היום: כוס מים חמימים עם לימון כשקמים. קחו נשימה אחת איתי, ומתחילים.",
@@ -143,7 +144,9 @@ test.describe("states (axe, copy, server clock)", () => {
   test("day 4 afternoon: 'היום:' hero, a marked habit, half cup, 4 of 14", async ({ browser }) => {
     await seed([[1, "habit"], [2, "habit"], [3, "move"], [4, "habit"]]);
     const { ctx, page } = await open(browser, T.day4Noon);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("היום: 7 דקות של אמבטיית שמש");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("שלום, בדיקה");
+    // the habit title is not repeated in the heading: it is in the opening line and on the button
+    await expect(page.getByRole("heading", { level: 1 })).not.toContainText("אמבטיית");
     await expect(habit(page)).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("img", { name: "הכוס של היום, חצי מלאה" })).toBeVisible();
     await expect(page.getByRole("img", { name: "4 מתוך 14 ימים" })).toBeVisible();
@@ -221,7 +224,9 @@ test.describe("states (axe, copy, server clock)", () => {
   test("completion: 12 counted", async ({ browser }) => {
     await seed(Array.from({ length: 12 }, (_, i): [number, string] => [i + 1, "habit"]));
     const { ctx, page } = await open(browser, T.day12);
-    await expect(page.getByText("האתגר הושלם")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "האתגר הושלם" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "שתפו" })).toBeVisible();
+    await expect(page.locator(".t-map")).toBeVisible();
     await expect(page.locator(".t-progress-note")).toHaveText("אפשר להמשיך עד יום 14.");
     expect(await ringLines(page)).toBeLessThanOrEqual(3);
     await expect(page.getByRole("img", { name: "12 מתוך 14 ימים" })).toBeVisible();
@@ -233,7 +238,8 @@ test.describe("states (axe, copy, server clock)", () => {
   test("after the end: day 14 is still markable until midnight, then closed", async ({ browser }) => {
     await seed([]);
     let { ctx, page } = await open(browser, T.day14Late);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("האתגר הסתיים");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.locator(".eyebrow-s")).toHaveText("האתגר הסתיים");
     await expect(page.getByText("שכחת לסמן אתמול?")).toBeVisible();
     await axe(page);
     await ctx.close();
@@ -241,7 +247,7 @@ test.describe("states (axe, copy, server clock)", () => {
     await expect(page.getByText("שכחת לסמן אתמול?")).toHaveCount(0);
     // the challenge is over: no "you can keep practising until day 14"
     await expect(page.getByText(/אפשר להמשיך/)).toHaveCount(0);
-    await expect(page.locator(".t-ring")).toContainText("ימים נספרו");
+    await expect(page.locator(".t-sum-days")).toContainText("הימים שנספרו");
     await axe(page);
     await shot(page, "today-ended");
     await ctx.close();
@@ -341,7 +347,7 @@ test.describe("shell, motion, video, CSP", () => {
       order.push(await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent?.trim().slice(0, 14) || ""));
     }
     expect(order[0]).toBe("דילוג לתוכן");
-    expect(order.slice(1, 5)).toEqual(["YOGIT, למסך היום", "עצירת אנימציה", expect.stringContaining("הפעלת סרטון"), expect.stringMatching(/^הרגל/)]);
+    expect(order.slice(1, 6)).toEqual(["YOGIT, למסך היום", "עצירת אנימציה", expect.stringContaining("ימים נספרו"), expect.stringContaining("הפעלת סרטון"), expect.stringMatching(/^הרגל/)]);
     // focus ring is drawn
     const outline = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
     expect(outline).toBe("solid");
@@ -487,7 +493,11 @@ test.describe("shell, motion, video, CSP", () => {
     const { ctx, page } = await open(browser, T.day1Morning);
     await page.goto("/");
     await page.waitForURL("**/today");
-    await page.getByRole("button", { name: "יציאה" }).click();
+    // logout lives on /account (the footer link leads there), reachable by keyboard
+    await page.getByRole("link", { name: "החשבון שלי" }).click();
+    await page.waitForURL("**/account");
+    await page.getByRole("button", { name: "יציאה" }).focus();
+    await page.keyboard.press("Enter");
     await page.waitForURL("**/login");
     await page.goto("/today");
     await page.waitForURL("**/login");

@@ -57,7 +57,7 @@ test("14 days with the test clock: boundaries, yesterday until midnight, night h
     const { page, close } = await openAt(browser, at(day, "05:00"), "/today");
     // the day's content: its habit is on the habit button, and the chip names the day
     await expect(page.locator(`[data-action-key="${day}:habit"]`)).toContainText(HABITS[day - 1]);
-    await expect(page.getByText(`יום ${day} מתוך 14`)).toBeVisible();
+    await expect(page.locator(".chip")).toHaveText(`יום ${day} מתוך 14`);
     // tomorrow is locked at 05:00 today
     if (day < 14) {
       const r = await page.request.get(`/api/video/${day + 1}`, { headers: clock(at(day, "05:00")) });
@@ -100,14 +100,14 @@ test("14 days with the test clock: boundaries, yesterday until midnight, night h
   expect([...counted].sort((a, b) => a - b)).toEqual([1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]);
   {
     const { page, close } = await openAt(browser, at(14, "21:00"), "/today");
-    await expect(page.getByText("האתגר הושלם")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "האתגר הושלם" })).toBeVisible();
     await expect(page.getByRole("img", { name: /12 מתוך 14/ })).toBeVisible();
     await close();
   }
   // after the end (day 15 05:00): ended, nothing markable; yesterday (14) stays markable until midnight is over
   {
     const { page, close } = await openAt(browser, at(16, "10:00"), "/today");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("האתגר הסתיים");
+    await expect(page.locator(".eyebrow-s")).toHaveText("האתגר הסתיים");
     await expect(page.locator("[data-action-key]")).toHaveCount(0);
     await page.goto("/path");
     await expect(page.getByRole("main").getByText("12 מתוך 14", { exact: true })).toBeVisible();

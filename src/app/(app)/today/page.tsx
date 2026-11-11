@@ -51,7 +51,7 @@ export default async function TodayPage() {
   let eyebrow: string = copy.today.ended;
   let hero: string = greetText;
   if (day !== null) {
-    eyebrow = model.live ? greetText : fill(copy.common.dayOfTotal, { n: day });
+    eyebrow = model.live ? greetText : fill(copy.today.dayChip, { n: day });
     if (model.live) hero = copy.today.heroLive;
   }
   const next = nextBoundary(now, schedule);
