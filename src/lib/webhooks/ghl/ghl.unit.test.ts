@@ -283,16 +283,17 @@ describe("composeSignupMessages and the dry-run delivery", () => {
   const args = { name: "דנה", username: "dana", link, userId: "u1", hasEmail: true, hasPhone: true, startDate: "2026-12-01" };
   it("fills name, username and link from copy.messages.activation, for the channels that exist", () => {
     const m = composeSignupMessages(args);
-    expect(m.map((x) => x.channel)).toEqual(["whatsapp", "email"]);
+    expect(m.map((x) => x.channel)).toEqual(["email"]);
     for (const x of m) {
       expect(x.body).toContain("דנה");
       expect(x.body).toContain("dana");
       expect(x.body).toContain(link);
       expect(hasUnresolvedPlaceholder(x.body)).toBe(false);
     }
-    expect(m[1].subject).toBeTruthy();
+    expect(m[0].subject).toBeTruthy();
     expect(composeSignupMessages({ ...args, hasPhone: false }).map((x) => x.channel)).toEqual(["email"]);
-    expect(composeSignupMessages({ ...args, hasEmail: false }).map((x) => x.channel)).toEqual(["whatsapp"]);
+    // links go by email only (Meta does not approve a WhatsApp template with a password link): a phone alone gets no message
+    expect(composeSignupMessages({ ...args, hasEmail: false })).toEqual([]);
   });
   it("flags an unresolved [START_DATE] when no start date is configured", () => {
     const m = composeSignupMessages({ ...args, startDate: undefined });
@@ -309,10 +310,10 @@ describe("composeSignupMessages and the dry-run delivery", () => {
       expiresAt: new Date(),
       messages: composeSignupMessages(args),
     });
-    expect(lines).toHaveLength(2);
+    expect(lines).toHaveLength(1);
     const all = lines.join("\n");
     for (const leak of ["SECRETTOKENVALUE", "activate", "דנה", "dana", "ghl-1", "app.example"]) expect(all).not.toContain(leak);
-    expect(JSON.parse(lines[0])).toMatchObject({ kind: "activation", channel: "whatsapp", userId: "11111111-2222-3333-4444-555555555555" });
+    expect(JSON.parse(lines[0])).toMatchObject({ kind: "activation", channel: "email", userId: "11111111-2222-3333-4444-555555555555" });
     expect(typeof JSON.parse(lines[0]).bodyLength).toBe("number");
   });
 });

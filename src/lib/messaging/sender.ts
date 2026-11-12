@@ -4,7 +4,8 @@ import { fill } from "@/lib/format";
 import { readEnv } from "@/config";
 import { logger, type Logger } from "@/lib/logger";
 
-export type MessageChannel = "whatsapp" | "email";
+/** קישורי הפעלה ואיפוס יוצאים במייל בלבד: Meta לא מאשרת תבנית וואטסאפ עם קישור לבחירת סיסמה. */
+export type MessageChannel = "email";
 export type MessageKind = "activation" | "reset";
 
 export type OutgoingMessage = {
@@ -27,9 +28,7 @@ export interface MessageSender {
 export function renderMessage(m: OutgoingMessage): { subject?: string; body: string } {
   const set = m.kind === "activation" ? copy.messages.activation : copy.messages.forgot;
   const values = { name: m.name, username: m.username, link: m.link };
-  return m.channel === "whatsapp"
-    ? { body: fill(set.whatsapp, values) }
-    : { subject: set.emailSubject, body: fill(set.emailBody, values) };
+  return { subject: set.emailSubject, body: fill(set.emailBody, values) };
 }
 
 /**

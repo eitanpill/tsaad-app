@@ -116,6 +116,7 @@ export default async function ParticipantsPage({ searchParams }: Props) {
                     {r.displayName}
                     {self ? <span className="adm-tag">{P.list.you}</span> : null}
                     {r.disabled ? <span className="adm-tag">{P.list.disabled}</span> : null}
+                    {!r.activated && !r.disabled && !r.email ? <span className="adm-tag" data-testid="no-email-badge">{P.list.noEmail}</span> : null}
                   </h3>
                   <dl>
                     <dt>{P.list.username}</dt>

@@ -5,7 +5,7 @@ import { createDryRunSender, getMessageSender, renderMessage, type OutgoingMessa
 
 const msg: OutgoingMessage = {
   kind: "reset",
-  channel: "whatsapp",
+  channel: "email",
   userId: "u1",
   name: "דנה",
   username: "dana",
@@ -20,9 +20,10 @@ const capture = () => {
 describe("dry-run message sender", () => {
   it("renders the approved copy with the link and name filled in", () => {
     const w = renderMessage(msg);
+    expect(w.subject).toBeTruthy();
     expect(w.body).toContain("דנה");
     expect(w.body).toContain(msg.link);
-    const e = renderMessage({ ...msg, channel: "email", kind: "activation" });
+    const e = renderMessage({ ...msg, kind: "activation" });
     expect(e.subject).toBeTruthy();
     expect(e.body).toContain("dana");
   });

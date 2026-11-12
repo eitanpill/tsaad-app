@@ -236,11 +236,27 @@ describe("copy", () => {
 
   it("keeps passwords out of account messages and warns not to share the link", () => {
     const { activation, forgot } = copy.messages;
-    for (const s of [activation.whatsapp, activation.emailBody, forgot.whatsapp, forgot.emailBody]) {
+    // links go by email only: there is no WhatsApp activation or reset draft (Meta does not approve a password link)
+    expect(activation).not.toHaveProperty("whatsapp");
+    expect(forgot).not.toHaveProperty("whatsapp");
+    for (const s of [activation.emailBody, forgot.emailBody]) {
       expect(s).not.toMatch(/\{pass|סיסמה זמנית|הסיסמה שלכם:/);
       expect(s).toContain("{link}");
       expect(s).toContain("לא כדאי להעביר אותו");
     }
+  });
+
+  it("says the activation and reset link comes by email, never by WhatsApp, and promises no timing", () => {
+    const text = [
+      copy.forgot.confirmation.body,
+      copy.forgot.forgotUsername.body,
+      copy.activate.expired.body,
+      copy.login.firstTime.body,
+      copy.landing.how.access,
+    ].join(" ");
+    expect(text).not.toMatch(/וואטסאפ|ווטסאפ|WhatsApp/);
+    expect(text).toContain("למייל");
+    expect(text).not.toMatch(/תוך כמה|בדרך כלל מגיע|מיד|דקות/);
   });
 
   it("gives the two show-password buttons different names", () => {

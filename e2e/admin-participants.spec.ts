@@ -118,6 +118,32 @@ test("invalid input is refused; search narrows the list", async ({ browser }) =>
   await ctx.close();
 });
 
+test("a not-yet-activated participant without an email gets the manual-link badge; others do not", async ({ browser }) => {
+  const tag = randomBytes(4).toString("hex");
+  const mk = (name: string, email: string | null, phone: string | null, activated: boolean) =>
+    pool.query(
+      `insert into users (username, display_name, email, phone, activated_at) values ($1, $2, $3, $4, $5)`,
+      [name, name, email, phone, activated ? new Date() : null],
+    );
+  await mk(`nomail-${tag}`, null, `+97254${Math.floor(1000000 + Math.random() * 8999999)}`, false);
+  await mk(`mailed-${tag}`, `mailed-${tag}@example.test`, null, false);
+  await mk(`donenomail-${tag}`, null, `+97253${Math.floor(1000000 + Math.random() * 8999999)}`, true);
+  const { ctx, page } = await adminCtx(browser);
+  const badge = (name: string) => page.locator("li.adm-item", { hasText: name }).getByTestId("no-email-badge");
+  await page.goto(`/admin/participants?q=nomail-${tag}`);
+  await expect(badge(`nomail-${tag}`)).toHaveText("אין מייל: שלחו קישור ידנית");
+  // the existing "new link" action is how the owner gets the link to send by hand
+  await page.locator("li.adm-item", { hasText: `nomail-${tag}` }).getByRole("button", { name: /קישור הפעלה/ }).click();
+  expect(await page.getByTestId("one-time-link").getByRole("textbox").inputValue()).toContain("/activate?token=");
+  await page.goto(`/admin/participants?q=mailed-${tag}`);
+  await expect(page.locator("li.adm-item", { hasText: `mailed-${tag}` })).toHaveCount(1);
+  await expect(badge(`mailed-${tag}`)).toHaveCount(0);
+  await page.goto(`/admin/participants?q=donenomail-${tag}`);
+  await expect(page.locator("li.adm-item", { hasText: `donenomail-${tag}` })).toHaveCount(1);
+  await expect(badge(`donenomail-${tag}`)).toHaveCount(0);
+  await ctx.close();
+});
+
 test("new link, disable (login refused, signed out at once), enable, and delete behind a typed confirmation", async ({ browser }) => {
   const target = await createUser(browser, "victim");
   const { ctx, page } = await adminCtx(browser);

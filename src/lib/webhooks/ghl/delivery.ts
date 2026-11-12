@@ -9,7 +9,7 @@ import { testClockAllowed } from "@/lib/today/test-clock";
 
 /**
  * נמל המשלוח של הרשמה דרך GHL: מקבל משתמש חדש (או קישור חדש לחשבון שלא הופעל) ואחראי שהמשתתף/ת יקבל/תקבל
- * WhatsApp ודוא"ל עם שם המשתמש והקישור החד־פעמי. ההרכבה (הנוסח מ־copy.messages.activation) נעשית כאן, והמתאם
+ * דוא"ל (בלבד: Meta לא מאשרת תבנית וואטסאפ עם קישור לבחירת סיסמה) עם שם המשתמש והקישור החד־פעמי. ההרכבה (הנוסח מ־copy.messages.activation) נעשית כאן, והמתאם
  * רק מוסר. המתאם היחיד היום הוא dry-run: לא מתקשר עם שום שירות. מתאם אמיתי (שער G3) הוא אחת משתי אפשרויות,
  * ראו docs/FILE_PLAN.md "GHL link: delivery options":
  *  (א) קריאה ל־API של GHL שכותבת את הקישור לשדה מותאם באיש הקשר ומפעילה Workflow ששולח את ההודעות;
@@ -25,7 +25,7 @@ export type SignupDeliveryRequest = {
   /** הקישור החד־פעמי המלא. אסור לרשום אותו ביומן. */
   link: string;
   expiresAt: Date;
-  /** ההודעות המוכנות: WhatsApp אם יש טלפון, דוא"ל אם יש אימייל. */
+  /** ההודעות המוכנות: דוא"ל אם יש אימייל; בלי אימייל, ריק. */
   messages: SignupMessage[];
 };
 
@@ -48,7 +48,7 @@ export function composeSignupMessages(args: {
 }): SignupMessage[] {
   const base = { kind: "activation" as const, userId: args.userId, name: args.name, username: args.username, link: args.link };
   const out: SignupMessage[] = [];
-  const channels: MessageChannel[] = [...(args.hasPhone ? ["whatsapp" as const] : []), ...(args.hasEmail ? ["email" as const] : [])];
+  const channels: MessageChannel[] = args.hasEmail ? ["email"] : [];
   for (const channel of channels) {
     const r = renderMessage({ ...base, channel });
     out.push({
@@ -106,6 +106,8 @@ export function createGhlSignupDelivery(link: LinkDelivery): SignupDelivery {
   return {
     name: "ghl",
     async deliver(req) {
+      // אין הודעות כשאין מייל (קישורים יוצאים במייל בלבד): לא כותבים שדה ותג ל־GHL, אין לאן לשלוח.
+      if (req.messages.length === 0) return;
       await link.deliver({ userId: req.userId, ghlContactId: req.ghlContactId, kind: "activate", link: req.link });
     },
   };

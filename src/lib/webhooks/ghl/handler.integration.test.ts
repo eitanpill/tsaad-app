@@ -95,7 +95,7 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     const d = captured[0];
     expect(d.username).toBe("whtest.dana");
     expect(d.link.startsWith(`${ORIGIN}/activate?token=`)).toBe(true);
-    expect(d.messages.map((m) => m.channel)).toEqual(["whatsapp", "email"]);
+    expect(d.messages.map((m) => m.channel)).toEqual(["email"]);
     expect(d.messages[0].body).toContain(d.link);
 
     const u = rowsOf<Record<string, unknown>>(await db.execute(sql`select * from users where ghl_contact_id = ${c.contact_id}`))[0];
@@ -129,12 +129,15 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     expect(logs.join("\n")).not.toContain("registration is closed");
   });
 
-  it("phone-only signup works (no email stored, whatsapp only, username from phone digits)", async () => {
+  it("phone-only signup works (no email stored, no message composed, a warning with ids only, username from phone digits)", async () => {
     const r = await call({ contact_id: "ghl-wh-phone", full_name: "דנה", phone: "+972 52-777-8899" });
     expect(r.json.status).toBe("created");
     await runAfter();
     expect(captured[0].username).toBe("0527778899");
-    expect(captured[0].messages.map((m) => m.channel)).toEqual(["whatsapp"]);
+    expect(captured[0].messages).toEqual([]);
+    const warn = logs.join("\n");
+    expect(warn).toContain("contact has no email");
+    expect(warn).not.toMatch(/0527778899|ghl-wh-phone@|דנה/);
     const u = rowsOf<{ email: string | null; display_name: string }>(
       await db.execute(sql`select email, display_name from users where ghl_contact_id = 'ghl-wh-phone'`),
     )[0];

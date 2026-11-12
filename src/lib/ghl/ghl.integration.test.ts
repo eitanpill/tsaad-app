@@ -32,12 +32,12 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
   const count = async (table: string, where = sql`true`) =>
     rowsOf<{ n: number }>(await db.execute(sql`select count(*)::int as n from ${sql.raw(table)} where ${where}`))[0].n;
   let n = 0;
-  const mkUser = async (o: { contact?: string | null; activated?: boolean; sub?: boolean } = {}) => {
+  const mkUser = async (o: { contact?: string | null; activated?: boolean; sub?: boolean; noEmail?: boolean } = {}) => {
     const i = ++n;
     const [u] = await db
       .insert(schema.users)
       .values({
-        username: `ghlt${i}`, displayName: "x", email: `ghlt${i}@example.test`, phone: "+972521234567",
+        username: `ghlt${i}`, displayName: "x", email: o.noEmail ? null : `ghlt${i}@example.test`, phone: "+972521234567",
         ghlContactId: o.contact === undefined ? `contact${i}abcdef` : o.contact,
         passwordHash: o.activated === false ? null : "h",
         activatedAt: o.activated === false ? null : new Date(),
@@ -290,6 +290,24 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
       // the old link no longer works, the new one is the only unused activation token
       expect(await count("activation_tokens", sql`used_at is null`)).toBe(1);
       expect(await count("activation_tokens", sql`token_hash = ${sha256Hex(token)}`)).toBe(1);
+    });
+
+    it("a queued link for an account with no email is dropped (links go by email only; nothing is written to GHL)", async () => {
+      const u = await mkUser({ activated: false, noEmail: true });
+      await enqueueLink(db, u.id, "activate");
+      const { client, calls } = okClient();
+      expect(await worker(client, DAY3, makeLink([]))).toMatchObject({ claimed: 1, sent: 0 });
+      expect(calls).toHaveLength(0);
+    });
+
+    it("writing a link works whether the field is empty or holds the single space GHL leaves after a send (we never read it, we overwrite)", async () => {
+      const u = await mkUser({ activated: false });
+      const { client, bodies } = okClient();
+      const d = createLinkDelivery({ cfg: live, client, db: () => db, log });
+      for (const link of [`${ORIGIN}/activate?token=a1`, `${ORIGIN}/activate?token=a2`]) {
+        expect(await d.deliver({ userId: u.id, ghlContactId: u.ghlContactId!, kind: "activate", link })).toBe("sent");
+      }
+      expect(bodies.map((b) => (b as { value: string }[])[0].value)).toEqual([`${ORIGIN}/activate?token=a1`, `${ORIGIN}/activate?token=a2`]);
     });
 
     it("a queued activation for an account that has since been activated is skipped quietly", async () => {

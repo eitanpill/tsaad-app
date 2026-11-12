@@ -68,7 +68,7 @@ export type GhlWorkerDeps = {
   maxRows?: number;
 };
 
-type UserRow = { ghl_contact_id: string | null; password_hash: string | null; activated_at: unknown; whatsapp_reminders: boolean; disabled_at: unknown };
+type UserRow = { ghl_contact_id: string | null; email: string | null; password_hash: string | null; activated_at: unknown; whatsapp_reminders: boolean; disabled_at: unknown };
 
 /**
  * מעבד שורות outbox של GHL (תזכורות וקישורים) עם SKIP LOCKED, backoff וניסיון חוזר, דרך ה־outbox הקיים.
@@ -147,7 +147,7 @@ async function processRow(deps: GhlWorkerDeps, row: ClaimedRow, now: Date): Prom
   if (!userId || !client) return dead("row vanished");
   const user = rowsOf<UserRow>(
     await db.execute(
-      sql`select ghl_contact_id, password_hash, activated_at, whatsapp_reminders, disabled_at from users where id = ${userId}`,
+      sql`select ghl_contact_id, email, password_hash, activated_at, whatsapp_reminders, disabled_at from users where id = ${userId}`,
     ),
   )[0];
   if (!user?.ghl_contact_id) return dead("no ghl contact");
@@ -182,6 +182,8 @@ async function processRow(deps: GhlWorkerDeps, row: ClaimedRow, now: Date): Prom
   // המצב השתנה מאז הבקשה (הופעל בינתיים, או עוד לא): אין מה לשלוח.
   if (p.data.purpose === "activate" && activated) return { outcome: { ok: true }, userId };
   if (p.data.purpose === "reset" && !activated) return dead("account not activated");
+  // קישורים יוצאים במייל בלבד: בלי מייל אין לאן לשלוח (בעל האתר שולח ידנית).
+  if (!user.email) return dead("no email");
   const link = await deps.makeLink(userId, p.data.purpose);
   const outcome = await setFieldAndTag(client, {
     contactId,

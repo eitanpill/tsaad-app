@@ -33,7 +33,7 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
 
   const mkUser = async (
     username: string,
-    opts: { password?: string; email?: string; phone?: string } = {},
+    opts: { password?: string; email?: string | null; phone?: string } = {},
   ) =>
     (
       await db
@@ -41,7 +41,7 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
         .values({
           username,
           displayName: `Name ${username}`,
-          email: opts.email ?? `${username}@example.test`,
+          email: opts.email === null ? null : (opts.email ?? `${username}@example.test`),
           phone: opts.phone ?? null,
           passwordHash: opts.password ? await hashPassword(opts.password) : null,
           activatedAt: opts.password ? new Date() : null,
@@ -491,8 +491,8 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
       expect(a).toEqual({ status: "ok" });
       expect(b).toEqual(a);
       expect(c).toEqual(a);
-      // only the real account got messages: email + whatsapp
-      expect(r.sent.map((m) => m.channel).sort()).toEqual(["email", "whatsapp"]);
+      // only the real account got a message, by email only (a phone never receives a password link)
+      expect(r.sent.map((m) => m.channel)).toEqual(["email"]);
       expect(await count("activation_tokens")).toBe(1);
     });
 
@@ -501,7 +501,7 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
       for (const [i, ident] of ["finder", "FINDER@example.TEST", "0501234567", "+972 50-123-4567"].entries()) {
         const r = recorder();
         await run(ident, r.sender, `10.0.0.${i}`);
-        expect(r.sent.length, ident).toBe(2);
+        expect(r.sent.length, ident).toBe(1);
         expect(r.sent.every((m) => m.userId === u.id && m.kind === "reset")).toBe(true);
         expect(r.sent[0].link).toMatch(/^https:\/\/app\.example\.com\/activate\?token=[A-Za-z0-9_-]{43}$/);
       }
@@ -512,6 +512,34 @@ describe.skipIf(!runIntegration)("auth (integration)", () => {
       const r = recorder();
       await run("fresh", r.sender);
       expect(r.sent.map((m) => [m.kind, m.channel])).toEqual([["activation", "email"]]);
+    });
+
+    it("an account without an email gets nothing (no token, no message), and the answer is the same generic one", async () => {
+      await mkUser("phoneonly", { password: "pass-12345", email: null, phone: "050-111-2233" });
+      await mkUser("phoneonly2", { email: null, phone: "050-111-2244" });
+      await mkUser("hasmail", { password: "pass-12345" });
+      const r = recorder();
+      const a = await run("0501112233", r.sender, "15.0.0.1");
+      const b = await run("phoneonly2", r.sender, "15.0.0.2");
+      const c = await run("hasmail", r.sender, "15.0.0.3");
+      expect(a).toEqual({ status: "ok" });
+      expect(b).toEqual(a);
+      expect(c).toEqual(a);
+      expect(r.sent.map((m) => [m.channel, m.kind])).toEqual([["email", "reset"]]);
+      expect(await count("activation_tokens")).toBe(1);
+    });
+
+    it("an account without an email is not handed to GHL either (the generic answer stays the same)", async () => {
+      const u = (await db.insert(users).values({ username: "ghlnomail", displayName: "N", email: null, phone: "0501110000", ghlContactId: "ghl-nomail-1" }).returning())[0];
+      const withMail = (await db.insert(users).values({ username: "ghlmail", displayName: "M", email: "ghlmail@example.test", ghlContactId: "ghl-mail-1" }).returning())[0];
+      const delivered: string[] = [];
+      const ghl = { async deliver(req: { userId: string }) { delivered.push(req.userId); return "dry" as const; } };
+      const r = recorder();
+      for (const [i, ident] of ["ghlnomail", "ghlmail"].entries()) {
+        expect(await requestPasswordReset(db, { identifier: ident, secret: SECRET, ip: `16.0.0.${i}`, ttlMinutes: 30, sender: r.sender, origin: "https://app.example.com", ghl })).toEqual({ status: "ok" });
+      }
+      expect(delivered).toEqual([withMail.id]);
+      expect(delivered).not.toContain(u.id);
     });
 
     it("issuing again invalidates the previous link", async () => {
