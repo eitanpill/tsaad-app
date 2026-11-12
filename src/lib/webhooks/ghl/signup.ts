@@ -87,6 +87,13 @@ export async function processSignup(
         args.log.info("ghl signup: already activated, nothing done", { userId: existing.id });
         return { status: "exists" };
       }
+      // קישורים יוצאים במייל בלבד: אם נרשמו בלי מייל ובינתיים נוסף מייל לאיש הקשר ב־GHL, משלימים אותו (רק כשהשדה ריק,
+      // ורק בחשבון שעוד לא הופעל), אחרת הקישור החוזר וגם "שכחתי סיסמה" לא היו נשלחים לעולם.
+      let email = existing.email;
+      if (!email && payload.email) {
+        await tx.execute(sql`update users set email = ${payload.email} where id = ${existing.id} and email is null`);
+        email = payload.email;
+      }
       const limit = await registerAttempt(
         tx,
         "webhook",
@@ -112,7 +119,7 @@ export async function processSignup(
           userId: existing.id,
           username: existing.username,
           displayName: existing.display_name,
-          hasEmail: !!existing.email,
+          hasEmail: !!email,
           hasPhone: !!existing.phone,
           token,
           expiresAt,

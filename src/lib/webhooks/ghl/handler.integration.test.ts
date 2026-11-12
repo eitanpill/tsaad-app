@@ -144,6 +144,21 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     expect(u).toEqual({ email: null, display_name: "דנה" });
   });
 
+  it("a phone-only signup that later arrives with an email: the email is filled in and the reissued link is sent; an existing email is never overwritten", async () => {
+    const id = "ghl-wh-later-mail";
+    expect((await call({ contact_id: id, full_name: "דנה", phone: "+972 52-777-8800" }, { [WEBHOOK_EVENT_ID_HEADER]: "m1" })).json.status).toBe("created");
+    const again = { contact_id: id, full_name: "דנה", phone: "+972 52-777-8800", email: "Whtest.Later@x.test" };
+    expect((await call(again, { [WEBHOOK_EVENT_ID_HEADER]: "m2" })).json.status).toBe("reissued");
+    await runAfter();
+    expect(captured.map((r) => r.messages.map((m) => m.channel))).toEqual([[], ["email"]]);
+    const emailOf = async () =>
+      rowsOf<{ email: string | null }>(await db.execute(sql`select email from users where ghl_contact_id = ${id}`))[0].email;
+    expect(await emailOf()).toBe("whtest.later@x.test");
+    expect(logs.join("\n")).not.toMatch(/whtest\.later/i);
+    expect((await call({ ...again, email: "other@x.test" }, { [WEBHOOK_EVENT_ID_HEADER]: "m3" })).json.status).toBe("reissued");
+    expect(await emailOf()).toBe("whtest.later@x.test");
+  });
+
   it("username collisions get numeric suffixes", async () => {
     await call(contact({ email: "whtest.same@a.test" }));
     await call(contact({ email: "whtest.same@b.test" }));
