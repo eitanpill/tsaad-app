@@ -9,8 +9,12 @@ type BeforeInstallPromptEvent = Event & {
  * ב־imports של מסך אחר), לכל עותק היה deferred משלו, והאירוע שנלכד במסך הכניסה לא היה מגיע לדף /install.
  */
 type Shared = { deferred: BeforeInstallPromptEvent | null; listeners: Set<() => void>; started: boolean };
-const G = globalThis as unknown as { __tsaadInstall?: Shared };
-const shared: Shared = (G.__tsaadInstall ??= { deferred: null, listeners: new Set(), started: false });
+const fresh = (): Shared => ({ deferred: null, listeners: new Set(), started: false });
+/** רק בדפדפן: בשרת (SSR) globalThis משותף לכל הבקשות ולכל המשתמשים, ולכן שם כל טעינת מודול מקבלת מצב משלה. */
+const shared: Shared =
+  typeof window === "undefined"
+    ? fresh()
+    : ((globalThis as typeof globalThis & { __tsaadInstall?: Shared }).__tsaadInstall ??= fresh());
 const emit = () => shared.listeners.forEach((l) => l());
 
 /**

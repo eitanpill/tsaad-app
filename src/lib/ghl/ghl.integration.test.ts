@@ -16,7 +16,7 @@ import type { GhlClient } from "./client";
 import { getGhlConfig } from "./config";
 import { createLinkDelivery } from "./link-delivery";
 import { enqueueLink, runGhlOutbox } from "./outbox";
-import { getWhatsappReminderPref, setWhatsappReminderPref } from "./preferences";
+import { getReminderTime, getWhatsappReminderPref, setReminderTime, setWhatsappReminderPref } from "./preferences";
 import { queueGhlReminders } from "./reminders";
 
 const url = process.env.DATABASE_URL;
@@ -213,6 +213,18 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
       await setWhatsappReminderPref(db, off.id, true);
       expect((await queueGhlReminders({ db, cfg: live, day: 4, date: "2026-12-04", nowMinutes: 450, log }))?.claimed).toBe(1);
       expect(await getWhatsappReminderPref(db, "00000000-0000-0000-0000-000000000000")).toBeNull();
+    });
+
+    it("setReminderTime saves only the caller's own row, and never for a disabled user", async () => {
+      const me = await mkUser();
+      const other = await mkUser();
+      expect(await setReminderTime(db, me.id, 600)).toBe(600);
+      expect(await getReminderTime(db, me.id)).toBe(600);
+      expect(await getReminderTime(db, other.id)).toBe(450);
+      await db.execute(sql`update users set disabled_at = now() where id = ${me.id}`);
+      expect(await setReminderTime(db, me.id, 900)).toBeNull();
+      expect(await getReminderTime(db, me.id)).toBe(600);
+      expect(await setReminderTime(db, "00000000-0000-0000-0000-000000000000", 600)).toBeNull();
     });
 
     it("a 429 with Retry-After is not retried before that time", async () => {
