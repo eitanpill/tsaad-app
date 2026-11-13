@@ -13,6 +13,7 @@ test.beforeAll(async ({ browser }) => {
 });
 test.beforeEach(async () => {
   await pool.query("delete from push_subscriptions where user_id = $1", [s.userId]);
+  await pool.query("update users set reminder_time = 450 where id = $1", [s.userId]);
 });
 
 function fakeKeys() {
@@ -98,15 +99,102 @@ const sw = (p: Page) => p.getByRole("switch", { name: "התראה בטלפון" 
 const status = (p: Page) => p.locator("[role=status].rm-status");
 const rows = async () => (await pool.query("select endpoint, p256dh, auth from push_subscriptions where user_id = $1", [s.userId])).rows;
 
-test("static content: hero, the notification preview, the fixed time, and the iPhone note with a link to the guide", async ({ browser }) => {
+test("static content: hero, the notification preview, the time form (default 07:30), and the iPhone note with a link to the guide", async ({ browser }) => {
   const { ctx, page } = await openReminders(browser, { permission: "default" });
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("תזכורת של בוקר");
-  await expect(page.locator(".t-rem-hero p")).toHaveText("הודעה אחת בכל בוקר ב־07:30, אחרי שהיום החדש נפתח. אפשר לכבות בכל רגע.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("תזכורת יומית");
+  await expect(page.locator(".t-rem-hero p")).toHaveText("הודעה אחת בכל יום בשעה שבחרתם, אחרי שהיום החדש נפתח. ברירת המחדל היא 07:30. אפשר לכבות בכל רגע.");
   await expect(page.getByRole("region", { name: "דוגמה להתראה: יום 5 נפתח. דבר אחד קטן מספיק." })).toBeVisible();
-  await expect(page.locator(".rm-time")).toHaveText("07:30");
-  await expect(page.getByText("היום נפתח ב־05:00, והתזכורת מגיעה ב־07:30.")).toBeVisible();
+  await expect(timeSelect(page)).toHaveValue("450");
+  await expect(page.getByText("ההתראה והתזכורת בוואטסאפ מגיעות בשעה שבחרתם. ברירת המחדל היא 07:30, והיום נפתח ב־05:00.")).toBeVisible();
   await expect(page.getByRole("link", { name: "איך מוסיפים למסך הבית" })).toHaveAttribute("href", "/install");
   await expect(page.getByRole("navigation", { name: "ניווט ראשי" }).getByRole("link", { name: "תזכורות" })).toHaveAttribute("aria-current", "page");
+  await ctx.close();
+});
+
+const timeSelect = (p: Page) => p.getByRole("combobox", { name: "שעת התזכורת היומית" });
+const timeStatus = (p: Page) => p.locator("[role=status].rm-time-status");
+const savedMinutes = async (userId = s.userId) => (await pool.query("select reminder_time from users where id = $1", [userId])).rows[0].reminder_time as number;
+
+test("the daily time: a labelled select of 32 half-hour choices, 05:30 to 21:00, default 07:30", async ({ browser }) => {
+  const { ctx, page } = await openReminders(browser, { permission: "default" });
+  const sel = timeSelect(page);
+  await expect(sel).toBeVisible();
+  const opts = await sel.locator("option").allTextContents();
+  expect(opts).toHaveLength(32);
+  expect([opts[0], opts[1], opts[2], opts.at(-1)]).toEqual(["05:30", "06:00", "06:30", "21:00"]);
+  await expect(sel).toHaveValue("450");
+  await expect(page.getByRole("button", { name: "שמירת השעה" })).toBeVisible();
+  await expect(timeStatus(page)).toHaveAttribute("aria-live", "polite");
+  await expect(timeStatus(page)).toBeEmpty();
+  expect(await sel.evaluate((e) => e.getAttribute("aria-describedby")!.includes(document.querySelector(".rm-time-status")!.id))).toBe(true);
+  expect((await sel.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await expectReflowAndTargets(page);
+  await ctx.close();
+});
+
+test("changing the time: saved in the database, announced in the live region, kept after a reload; axe", async ({ browser }) => {
+  const { ctx, page } = await openReminders(browser, { permission: "default" });
+  await timeSelect(page).selectOption("540");
+  expect(await savedMinutes()).toBe(450); // nothing is saved until the button is pressed
+  await page.getByRole("button", { name: "שמירת השעה" }).click();
+  await expect(timeStatus(page)).toHaveText("השעה נשמרה. התזכורת תגיע בשעה שבחרתם.");
+  await expect(timeSelect(page)).toHaveValue("540");
+  expect(await savedMinutes()).toBe(540);
+  await axe(page);
+  await shot(page, "reminders-time-saved");
+  await page.reload();
+  await expect(timeSelect(page)).toHaveValue("540");
+  expect(await page.locator(".t-rem-hero p").textContent()).toContain("בשעה שבחרתם");
+  await axe(page);
+  // from another page and back, same choice
+  await page.goto("/today");
+  await page.goto("/reminders");
+  await expect(timeSelect(page)).toHaveValue("540");
+  await ctx.close();
+});
+
+test("the time can be changed with the keyboard only, to the earliest and the latest choice", async ({ browser }) => {
+  const { ctx, page } = await openReminders(browser, { permission: "default" });
+  await timeSelect(page).focus();
+  await page.keyboard.press("Home");
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "שמירת השעה" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(timeStatus(page)).toHaveText("השעה נשמרה. התזכורת תגיע בשעה שבחרתם.");
+  expect(await savedMinutes()).toBe(330);
+  await timeSelect(page).focus();
+  await page.keyboard.press("End");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect.poll(() => savedMinutes()).toBe(1260);
+  await ctx.close();
+});
+
+test("a value outside the choices is refused by the server: the error is announced and nothing changes", async ({ browser }) => {
+  const { ctx, page } = await openReminders(browser, { permission: "default" });
+  await timeSelect(page).evaluate((e) => {
+    const o = document.createElement("option");
+    o.value = "331";
+    o.textContent = "bad";
+    e.appendChild(o);
+    (e as HTMLSelectElement).value = "331";
+  });
+  await page.getByRole("button", { name: "שמירת השעה" }).click();
+  await expect(timeStatus(page)).toHaveText("לא הצלחנו לשמור את השעה. אפשר לנסות שוב בעוד רגע.");
+  expect(await savedMinutes()).toBe(450);
+  await axe(page);
+  await shot(page, "reminders-time-error");
+  await ctx.close();
+});
+
+test("the time belongs to the signed-in user only", async ({ browser }) => {
+  const other = await createUser(browser, "rem-other");
+  const { ctx, page } = await openReminders(browser, { permission: "default" });
+  await timeSelect(page).selectOption("1260");
+  await page.getByRole("button", { name: "שמירת השעה" }).click();
+  await expect(timeStatus(page)).toHaveText("השעה נשמרה. התזכורת תגיע בשעה שבחרתם.");
+  expect(await savedMinutes()).toBe(1260);
+  expect(await savedMinutes(other.userId)).toBe(450);
   await ctx.close();
 });
 

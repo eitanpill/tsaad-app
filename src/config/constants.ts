@@ -24,8 +24,15 @@ export const DEFAULT_TZ_NAME = CHALLENGE.timeZone;
  * ברירות מחדל טכניות לשכבת הרקע (שלב 6). אלה לא ערכים עסקיים, וניתן לשנות אותם בקוד בלבד.
  */
 export const REMINDERS = Object.freeze({
-  /** אחרי השעה הזאת (שעון מקומי) כבר לא שולחים תזכורת של אותו יום. */
-  cutoffTime: "12:00",
+  /** בחירת שעת התזכורת של המשתתף/ת: דקות מחצות, בצעדים של 30, מ־05:30 עד 21:00 (שעון מקומי). */
+  timeMinMinutes: 330,
+  timeMaxMinutes: 1260,
+  timeStepMinutes: 30,
+  /** ברירת המחדל לכולם (07:30); זהה ל־DEFAULT של users.reminder_time ב־DB. */
+  timeDefaultMinutes: 450,
+  /** תזכורת שלא יצאה בזמן ננסה שוב עד שעת הבחירה + 4.5 שעות, ולא אחרי 23:59 של אותו יום. */
+  retryWindowMinutes: 270,
+  latestCutoffMinutes: 23 * 60 + 59,
   /** כמה שליחות במקביל בריצה אחת. */
   sendConcurrency: 10,
   /** כמה משתמשים נתפסים (נרשמים ב־reminder_log) בכל סבב; משתמשים שלא נתפסו יטופלו בריצה הבאה. */

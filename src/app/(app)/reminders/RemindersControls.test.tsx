@@ -20,7 +20,7 @@ afterEach(() => {
 describe("RemindersControls", () => {
   it("without a VAPID key from the server: unsupported, the switch is off and aria-disabled, the reason is announced politely", async () => {
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
-    render(<RemindersControls vapidKey={null} unlockTime="05:00" reminderTime="07:30" />);
+    render(<RemindersControls vapidKey={null} />);
     const sw = screen.getByRole("switch", { name: copy.reminders.toggleTitle });
     expect(sw).toHaveAttribute("aria-checked", "false");
     expect(sw).toHaveAttribute("aria-disabled", "true");
@@ -28,10 +28,10 @@ describe("RemindersControls", () => {
     expect(sw.getAttribute("aria-describedby")).toContain(screen.getByRole("status").id);
   });
 
-  it("shows the fixed reminder time and the iPhone note with a link to the install guide", () => {
+  it("renders the time slot and the iPhone note with a link to the install guide", () => {
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
-    render(<RemindersControls vapidKey={null} unlockTime="05:00" reminderTime="07:30" />);
-    expect(screen.getByText("07:30")).toBeInTheDocument();
+    render(<RemindersControls vapidKey={null} timeSlot={<p>slot</p>} />);
+    expect(screen.getByText("slot")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: copy.reminders.installLink })).toHaveAttribute("href", "/install");
   });
 });

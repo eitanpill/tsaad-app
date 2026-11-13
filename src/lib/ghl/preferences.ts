@@ -24,3 +24,17 @@ export async function setWhatsappReminderPref(db: Exec, userId: string, on: bool
   )[0];
   return row ? row.on : null;
 }
+
+/** שעת התזכורת של המשתמש (דקות מחצות, שעון ישראל), או null אם המשתמש לא קיים. */
+export async function getReminderTime(db: Exec, userId: string): Promise<number | null> {
+  const row = rowsOf<{ t: number }>(await db.execute(sql`select reminder_time as t from users where id = ${userId}`))[0];
+  return row ? Number(row.t) : null;
+}
+
+/** שומר את שעת התזכורת (הקורא כבר אימת שהיא אחת מהבחירות; ה־CHECK ב־DB הוא הרשת השנייה). מחזיר את הערך השמור, או null. */
+export async function setReminderTime(db: Exec, userId: string, minutes: number): Promise<number | null> {
+  const row = rowsOf<{ t: number }>(
+    await db.execute(sql`update users set reminder_time = ${minutes} where id = ${userId} returning reminder_time as t`),
+  )[0];
+  return row ? Number(row.t) : null;
+}

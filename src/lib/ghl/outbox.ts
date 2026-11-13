@@ -5,7 +5,8 @@ import type { Db } from "@/db";
 import { GHL, REMINDERS } from "@/config/constants";
 import { rowsOf } from "@/lib/auth/sql";
 import { logger, type Logger } from "@/lib/logger";
-import { localDate, localMinutes, parseHHMM } from "@/lib/time/zone";
+import { reminderCutoffMinutes } from "@/lib/days/reminder";
+import { localDate, localMinutes } from "@/lib/time/zone";
 import { claimDue, markFailed, markSent, sanitizeError, type ClaimedRow } from "@/lib/sync/outbox";
 import { setFieldAndTag, type GhlClient, type GhlResult } from "./client";
 import type { GhlConfig } from "./config";
@@ -68,7 +69,7 @@ export type GhlWorkerDeps = {
   maxRows?: number;
 };
 
-type UserRow = { ghl_contact_id: string | null; email: string | null; password_hash: string | null; activated_at: unknown; whatsapp_reminders: boolean; disabled_at: unknown };
+type UserRow = { ghl_contact_id: string | null; email: string | null; password_hash: string | null; activated_at: unknown; whatsapp_reminders: boolean; disabled_at: unknown; reminder_time: number };
 
 /**
  * מעבד שורות outbox של GHL (תזכורות וקישורים) עם SKIP LOCKED, backoff וניסיון חוזר, דרך ה־outbox הקיים.
@@ -147,7 +148,7 @@ async function processRow(deps: GhlWorkerDeps, row: ClaimedRow, now: Date): Prom
   if (!userId || !client) return dead("row vanished");
   const user = rowsOf<UserRow>(
     await db.execute(
-      sql`select ghl_contact_id, email, password_hash, activated_at, whatsapp_reminders, disabled_at from users where id = ${userId}`,
+      sql`select ghl_contact_id, email, password_hash, activated_at, whatsapp_reminders, disabled_at, reminder_time from users where id = ${userId}`,
     ),
   )[0];
   if (!user?.ghl_contact_id) return dead("no ghl contact");
@@ -159,8 +160,11 @@ async function processRow(deps: GhlWorkerDeps, row: ClaimedRow, now: Date): Prom
     if (!p.success) return dead("invalid payload");
     // כיבו את תזכורת הוואטסאפ אחרי שנכנסה לתור: לא שולחים.
     if (!user.whatsapp_reminders) return dead("opted out");
-    // תזכורת בוקר שימושית רק באותו בוקר.
-    if (localDate(now, deps.timeZone) !== p.data.date || localMinutes(now, deps.timeZone) >= parseHHMM(REMINDERS.cutoffTime)) {
+    // תזכורת שימושית רק באותו יום ובתוך החלון של המשתמש (שעתו + 4.5 שעות, עד 23:59).
+    if (
+      localDate(now, deps.timeZone) !== p.data.date ||
+      localMinutes(now, deps.timeZone) >= reminderCutoffMinutes(user.reminder_time)
+    ) {
       return dead("stale reminder");
     }
     if (!deps.origin) return dead("APP_ORIGIN not set");

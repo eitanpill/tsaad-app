@@ -45,7 +45,7 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
     rowsOf<{ n: number }>(await db.execute(sql`select count(*)::int as n from ${sql.raw(table)} where ${where}`))[0].n;
 
   const mkUser = async (
-    opts: { activated?: boolean; subs?: number; ghl?: string | null; phone?: string } = {},
+    opts: { activated?: boolean; subs?: number; ghl?: string | null; phone?: string; reminderTime?: number } = {},
   ) => {
     const i = ++n;
     const activated = opts.activated ?? true;
@@ -59,6 +59,7 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
         ghlContactId: opts.ghl === undefined ? `ghl-${i}` : opts.ghl,
         passwordHash: activated ? "hash" : null,
         activatedAt: activated ? new Date() : null,
+        ...(opts.reminderTime === undefined ? {} : { reminderTime: opts.reminderTime }),
       })
       .returning();
     for (let s = 0; s < (opts.subs ?? 1); s++) {
@@ -232,18 +233,20 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
       await mkUser();
       const { sender, sent } = fakeSender();
       const early = await runReminders({ db, config: live(), sender, now: d("2026-12-01T05:29:59Z") });
-      expect(early).toMatchObject({ mode: "skipped", skipped: "too_early" });
+      expect(early).toMatchObject({ mode: "live", claimed: 0 }); // 07:29:59: the default user's time has not come
       expect(await count("reminder_log")).toBe(0);
+      const beforeAny = await runReminders({ db, config: live(), sender, now: d("2026-12-01T03:29:59Z") }); // 05:29:59
+      expect(beforeAny).toMatchObject({ mode: "skipped", skipped: "too_early" });
       const late = await runReminders({ db, config: live(), sender, now: d("2026-12-01T07:12:00Z") }); // 09:12
       expect(late.claimed).toBe(1);
       expect(sent).toHaveLength(1);
     });
 
-    it("nothing at or after the 12:00 cutoff; 11:59 still sends", async () => {
+    it("the default 07:30 user: nothing at or after 12:00 (07:30 + 4.5h); 11:59 still sends", async () => {
       await mkUser();
       const { sender, sent } = fakeSender();
       const after = await runReminders({ db, config: live(), sender, now: d("2026-12-01T10:00:00Z") });
-      expect(after).toMatchObject({ mode: "skipped", skipped: "past_cutoff" });
+      expect(after).toMatchObject({ mode: "live", claimed: 0 });
       expect(sent).toHaveLength(0);
       const justBefore = await runReminders({ db, config: live(), sender, now: d("2026-12-01T09:59:00Z") });
       expect(justBefore.claimed).toBe(1);
@@ -285,12 +288,12 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
       expect(sent).toHaveLength(0);
     });
 
-    it("never announces a day that opened yesterday (reminder time before unlock time)", async () => {
+    it("never announces a day that opened yesterday (after midnight, before the unlock time)", async () => {
       await mkUser();
       const { sender, sent } = fakeSender();
       const r = await runReminders({
         db,
-        config: cfg({ REMINDERS_ENABLED: "true", REMINDER_TIME: "03:00" }),
+        config: cfg({ REMINDERS_ENABLED: "true" }),
         sender,
         now: d("2026-12-02T02:00:00Z"), // 04:00 מקומי, עדיין יום 1
       });
@@ -304,14 +307,10 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
         await mkUser();
         const { sender, sent } = fakeSender();
         const config = cfg({ REMINDERS_ENABLED: "true", START_DATE: "2027-03-25" });
-        expect(
-          (await runReminders({ db, config, sender, now: d("2027-03-25T05:29:00Z") })).skipped,
-        ).toBe("too_early");
-        expect((await runReminders({ db, config, sender, now: d("2027-03-25T05:30:00Z") })).day).toBe(1);
+        expect((await runReminders({ db, config, sender, now: d("2027-03-25T05:29:00Z") })).claimed).toBe(0);
+        expect((await runReminders({ db, config, sender, now: d("2027-03-25T05:30:00Z") })).claimed).toBe(1);
         // יום המעבר: 04:29Z הוא 07:29 מקומי, 04:30Z הוא 07:30.
-        expect(
-          (await runReminders({ db, config, sender, now: d("2027-03-26T04:29:00Z") })).skipped,
-        ).toBe("too_early");
+        expect((await runReminders({ db, config, sender, now: d("2027-03-26T04:29:00Z") })).claimed).toBe(0);
         const r = await runReminders({ db, config, sender, now: d("2027-03-26T04:30:00Z") });
         expect(r).toMatchObject({ day: 2, claimed: 1 });
         expect(sent).toHaveLength(2);
@@ -324,7 +323,7 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
         await mkUser();
         const { sender } = fakeSender();
         const config = cfg({ REMINDERS_ENABLED: "true", START_DATE: "2027-03-25" });
-        expect((await runReminders({ db, config, sender, now: d("2027-03-26T09:00:00Z") })).skipped).toBe("past_cutoff");
+        expect((await runReminders({ db, config, sender, now: d("2027-03-26T09:00:00Z") })).claimed).toBe(0);
         expect((await runReminders({ db, config, sender, now: d("2027-03-26T08:59:00Z") })).claimed).toBe(1);
       });
 
@@ -336,9 +335,7 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
         expect(
           (await runReminders({ db, config, sender, now: d("2026-10-24T04:30:00Z") })).day,
         ).toBe(1); // עדיין שעון קיץ
-        expect(
-          (await runReminders({ db, config, sender, now: d("2026-10-25T04:30:00Z") })).skipped,
-        ).toBe("too_early");
+        expect((await runReminders({ db, config, sender, now: d("2026-10-25T04:30:00Z") })).claimed).toBe(0);
         expect((await runReminders({ db, config, sender, now: d("2026-10-25T05:30:00Z") })).day).toBe(2);
         expect(sent).toHaveLength(2);
       });
@@ -410,6 +407,219 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
         await runReminders({ db, config: live(), sender, now: d("2026-12-01T06:00:00Z") });
         expect(calls).toBe(1);
       });
+    });
+  });
+
+  describe("per-user reminder time", () => {
+    const live = () => cfg({ REMINDERS_ENABLED: "true" });
+    const T = (h: number, m = 0) => h * 60 + m;
+    // 2026-12-01 is UTC+2: local HH:MM = (HH-2):MM Z.
+    const at = (h: number, m = 0, date = "2026-12-01") => d(`${date}T${String(h - 2).padStart(2, "0")}:${String(m).padStart(2, "0")}:00Z`);
+    const loggedUsers = async (channel = "push") =>
+      rowsOf<{ user_id: string }>(await db.execute(sql`select user_id from reminder_log where channel = ${channel}`)).map((r) => r.user_id);
+
+    it("the column defaults to 07:30 (450) and the CHECK allows only 05:30..21:00 in steps of 30", async () => {
+      const u = await mkUser();
+      expect(u.reminderTime).toBe(450);
+      for (const ok of [330, 360, 450, 1230, 1260]) await db.execute(sql`update users set reminder_time = ${ok} where id = ${u.id}`);
+      for (const bad of [0, 300, 329, 331, 345, 1290, 1261, 1440, -30]) {
+        await expect(db.execute(sql`update users set reminder_time = ${bad} where id = ${u.id}`), String(bad)).rejects.toThrow();
+      }
+      await expect(db.execute(sql`update users set reminder_time = null where id = ${u.id}`)).rejects.toThrow();
+    });
+
+    it("each user is claimed at the first run at or after their own time, and only once", async () => {
+      const a = await mkUser({ reminderTime: T(7, 30) });
+      const b = await mkUser({ reminderTime: T(9) });
+      const c = await mkUser({ reminderTime: T(21) });
+      const { sender, sent } = fakeSender();
+      const runs: [Date, string[]][] = [
+        [at(7, 15), []],
+        [at(7, 30), [a.id]],
+        [at(7, 45), []],
+        [at(8, 45), []],
+        [at(9, 0), [b.id]],
+        [at(9, 15), []],
+        [at(20, 45), []],
+        [at(21, 0), [c.id]],
+        [at(21, 15), []],
+      ];
+      for (const [now, expected] of runs) {
+        const before = await loggedUsers();
+        await runReminders({ db, config: live(), sender, now });
+        const added = (await loggedUsers()).filter((id) => !before.includes(id));
+        expect(added, now.toISOString()).toEqual(expected);
+      }
+      expect(sent).toHaveLength(3);
+    });
+
+    it("a run that is late by up to the window still sends; the cut-off is the chosen time + 4.5h (exclusive)", async () => {
+      const u = await mkUser({ reminderTime: T(6) });
+      const { sender } = fakeSender();
+      expect((await runReminders({ db, config: live(), sender, now: at(10, 30) })).claimed).toBe(0); // 06:00 + 4.5h
+      expect((await loggedUsers()).length).toBe(0);
+      expect((await runReminders({ db, config: live(), sender, now: at(10, 29) })).claimed).toBe(1);
+      expect(await loggedUsers()).toEqual([u.id]);
+    });
+
+    it("the cut-off is capped at 23:59: a 21:00 user is still sent at 23:58 and not at 23:59", async () => {
+      await mkUser({ reminderTime: T(21) });
+      const { sender } = fakeSender();
+      expect((await runReminders({ db, config: live(), sender, now: at(23, 59) })).claimed).toBe(0);
+      expect((await runReminders({ db, config: live(), sender, now: at(23, 58) })).claimed).toBe(1);
+    });
+
+    it("someone not due yet does not use up a claim batch", async () => {
+      for (let i = 0; i < 5; i++) await mkUser({ reminderTime: T(9) });
+      const due = await mkUser({ reminderTime: T(7, 30) });
+      const { sender, sent } = fakeSender();
+      const r = await runReminders({ db, config: live(), sender, now: at(7, 30), claimBatchSize: 2 });
+      expect(r.claimed).toBe(1);
+      expect(await loggedUsers()).toEqual([due.id]);
+      expect(sent).toHaveLength(1);
+    });
+
+    it("changing the time after today's reminder was sent does not send a second one that day (earlier or later)", async () => {
+      const u = await mkUser({ reminderTime: T(7, 30) });
+      const { sender, sent } = fakeSender();
+      await runReminders({ db, config: live(), sender, now: at(7, 30) });
+      expect(sent).toHaveLength(1);
+      for (const [minutes, now] of [[T(9), at(9)], [T(8), at(9, 15)], [T(5, 30), at(10)], [T(7, 30), at(10, 15)]] as const) {
+        await db.execute(sql`update users set reminder_time = ${minutes} where id = ${u.id}`);
+        await runReminders({ db, config: live(), sender, now });
+      }
+      expect(sent).toHaveLength(1);
+      expect(await count("reminder_log")).toBe(1);
+      // the new time applies from the next date
+      await db.execute(sql`update users set reminder_time = ${T(9)} where id = ${u.id}`);
+      await runReminders({ db, config: live(), sender, now: at(8, 45, "2026-12-02") });
+      expect(sent).toHaveLength(1);
+      await runReminders({ db, config: live(), sender, now: at(9, 0, "2026-12-02") });
+      expect(sent).toHaveLength(2);
+    });
+
+    it("moving the time later before the reminder went out holds it back; moving it earlier releases it", async () => {
+      const u = await mkUser({ reminderTime: T(7, 30) });
+      const { sender, sent } = fakeSender();
+      await db.execute(sql`update users set reminder_time = ${T(10)} where id = ${u.id}`);
+      await runReminders({ db, config: live(), sender, now: at(7, 30) });
+      expect(sent).toHaveLength(0);
+      await db.execute(sql`update users set reminder_time = ${T(8)} where id = ${u.id}`);
+      await runReminders({ db, config: live(), sender, now: at(8, 15) });
+      expect(sent).toHaveLength(1);
+    });
+
+    it("a user whose cut-off has passed today (changed to a time that is already long gone) gets nothing today", async () => {
+      await mkUser({ reminderTime: T(5, 30) });
+      const { sender, sent } = fakeSender();
+      await runReminders({ db, config: live(), sender, now: at(10, 0) }); // 05:30 + 4.5h = 10:00
+      expect(sent).toHaveLength(0);
+    });
+
+    it("DST: spring forward (UTC+3 from 2027-03-26 02:00): 05:30 local is 02:30Z that day, 03:30Z the day before", async () => {
+      const u = await mkUser({ reminderTime: T(5, 30) });
+      const { sender } = fakeSender();
+      const config = cfg({ REMINDERS_ENABLED: "true", START_DATE: "2027-03-25" });
+      expect((await runReminders({ db, config, sender, now: d("2027-03-25T03:29:00Z") })).skipped).toBe("too_early");
+      expect((await runReminders({ db, config, sender, now: d("2027-03-25T03:30:00Z") })).claimed).toBe(1);
+      expect((await runReminders({ db, config, sender, now: d("2027-03-26T02:29:00Z") })).skipped).toBe("too_early");
+      expect((await runReminders({ db, config, sender, now: d("2027-03-26T02:30:00Z") })).claimed).toBe(1);
+      expect(await count("reminder_log", sql`user_id = ${u.id}`)).toBe(2);
+    });
+
+    it("DST: fall back (UTC+2 from 2026-10-25 02:00): 21:00 local is 18:00Z the day before, 19:00Z on the change day", async () => {
+      await mkUser({ reminderTime: T(21) });
+      const { sender } = fakeSender();
+      const config = cfg({ REMINDERS_ENABLED: "true", START_DATE: "2026-10-24" });
+      expect((await runReminders({ db, config, sender, now: d("2026-10-24T17:59:00Z") })).claimed).toBe(0);
+      expect((await runReminders({ db, config, sender, now: d("2026-10-24T18:00:00Z") })).claimed).toBe(1);
+      expect((await runReminders({ db, config, sender, now: d("2026-10-25T18:59:00Z") })).claimed).toBe(0);
+      expect((await runReminders({ db, config, sender, now: d("2026-10-25T19:00:00Z") })).claimed).toBe(1);
+    });
+
+    it("dry mode (REMINDERS_ENABLED off) follows the same per-user times and sends nothing", async () => {
+      const early = await mkUser({ reminderTime: T(6) });
+      await mkUser({ reminderTime: T(20) });
+      const { sender, sent } = fakeSender();
+      const r = await runReminders({ db, config: cfg(), sender, now: at(7, 30) });
+      expect(r).toMatchObject({ mode: "dry", claimed: 1, sent: 0 });
+      expect(sent).toHaveLength(0);
+      expect(await loggedUsers()).toEqual([early.id]);
+      expect(await count("reminder_log", sql`status = 'dry_run'`)).toBe(1);
+    });
+
+    it("disabled users are never selected, whatever their time", async () => {
+      const off = await mkUser({ reminderTime: T(7, 30) });
+      await db.execute(sql`update users set disabled_at = now() where id = ${off.id}`);
+      const { sender, sent } = fakeSender();
+      expect((await runReminders({ db, config: live(), sender, now: at(7, 30) })).claimed).toBe(0);
+      expect(sent).toHaveLength(0);
+    });
+
+    describe("the WhatsApp (GHL) channel uses the same time", () => {
+      const ghlDry = () => cfg({ GHL_REMINDER_MODE: "dry" });
+
+      it("one choice for both channels: each channel is claimed for a user at their own time, not before", async () => {
+        const a = await mkUser({ reminderTime: T(7, 30) });
+        const b = await mkUser({ reminderTime: T(11) });
+        await runReminders({ db, config: ghlDry(), sender: createDryRunPushSender(), now: at(7, 15) });
+        expect(await count("reminder_log")).toBe(0);
+        const r1 = await runReminders({ db, config: ghlDry(), sender: createDryRunPushSender(), now: at(7, 30) });
+        expect(r1.ghl).toEqual({ mode: "dry", claimed: 1 });
+        expect(await loggedUsers("ghl")).toEqual([a.id]);
+        expect(await loggedUsers("push")).toEqual([a.id]);
+        const r2 = await runReminders({ db, config: ghlDry(), sender: createDryRunPushSender(), now: at(11, 0) });
+        expect(r2.ghl).toEqual({ mode: "dry", claimed: 1 });
+        expect((await loggedUsers("ghl")).sort()).toEqual([a.id, b.id].sort());
+      });
+
+      it("live: the tag row is queued at the user's time, once; a time change after it was queued sends nothing more that day", async () => {
+        const u = await mkUser({ reminderTime: T(9) });
+        const { queueGhlReminders } = await import("@/lib/ghl/reminders");
+        const { getGhlConfig } = await import("@/lib/ghl/config");
+        const liveCfg = getGhlConfig(
+          buildConfig({ GHL_REMINDER_MODE: "live", GHL_API_TOKEN: "pit-0123456789abcdef0123456789abcdef", GHL_LOCATION_ID: "loc-123456" }).env,
+          {},
+        );
+        expect((await queueGhlReminders({ db, cfg: liveCfg, day: 1, date: "2026-12-01", nowMinutes: T(8, 45) }))?.claimed).toBe(0);
+        expect(await count("sync_outbox")).toBe(0);
+        expect((await queueGhlReminders({ db, cfg: liveCfg, day: 1, date: "2026-12-01", nowMinutes: T(9) }))?.claimed).toBe(1);
+        expect(await count("sync_outbox", sql`kind = 'ghl_reminder'`)).toBe(1);
+        await db.execute(sql`update users set reminder_time = ${T(10)} where id = ${u.id}`);
+        expect((await queueGhlReminders({ db, cfg: liveCfg, day: 1, date: "2026-12-01", nowMinutes: T(10) }))?.claimed).toBe(0);
+        expect(await count("sync_outbox")).toBe(1);
+        // the cut-off is the user's time + 4.5h, capped at 23:59
+        await db.execute(sql`update users set reminder_time = ${T(21)} where id = ${u.id}`);
+        expect((await queueGhlReminders({ db, cfg: liveCfg, day: 2, date: "2026-12-02", nowMinutes: T(23, 59) }))?.claimed).toBe(0);
+        expect((await queueGhlReminders({ db, cfg: liveCfg, day: 2, date: "2026-12-02", nowMinutes: T(23, 58) }))?.claimed).toBe(1);
+      });
+
+      it("a user who turned WhatsApp off is skipped for the GHL channel but still gets the push; disabled users get neither", async () => {
+        const wOff = await mkUser({ reminderTime: T(7, 30) });
+        await db.execute(sql`update users set whatsapp_reminders = false where id = ${wOff.id}`);
+        const gone = await mkUser({ reminderTime: T(7, 30) });
+        await db.execute(sql`update users set disabled_at = now() where id = ${gone.id}`);
+        const { sender, sent } = fakeSender();
+        const r = await runReminders({ db, config: cfg({ REMINDERS_ENABLED: "true", GHL_REMINDER_MODE: "dry" }), sender, now: at(7, 30) });
+        expect(r.ghl).toEqual({ mode: "dry", claimed: 0 });
+        expect(await loggedUsers("ghl")).toEqual([]);
+        expect(await loggedUsers("push")).toEqual([wOff.id]);
+        expect(sent).toHaveLength(1);
+      });
+    });
+
+    it("the cron selection filters on reminder_time: 640 users over the 32 times, a run claims only the groups that are due", async () => {
+      // 640 users, 20 per time. A run at 07:30 claims those at 05:30, 06:00, 06:30, 07:00 and 07:30 (5 x 20), nobody later.
+      const values: string[] = [];
+      for (let i = 0; i < 640; i++) values.push(`('perf${i}', 'p', 'h', now(), ${330 + (i % 32) * 30})`);
+      await db.execute(
+        sql.raw(`insert into users (username, display_name, password_hash, activated_at, reminder_time) values ${values.join(",")}`),
+      );
+      await db.execute(sql`insert into push_subscriptions (user_id, endpoint, p256dh, auth) select id, 'https://fcm.googleapis.com/fcm/send/' || id, 'p', 'a' from users`);
+      const r = await runReminders({ db, config: cfg(), sender: createDryRunPushSender(), now: at(7, 30) });
+      expect(r.claimed).toBe(100);
+      const later = await runReminders({ db, config: cfg(), sender: createDryRunPushSender(), now: at(7, 45) });
+      expect(later.claimed).toBe(0);
     });
   });
 

@@ -115,7 +115,7 @@ test("14 days with the test clock: boundaries, yesterday until midnight, night h
   }
 });
 
-test("the reminders cron runs in dry-run once per user per day (not before 07:30, never sends); cleanup and sync answer", async ({ request }) => {
+test("the reminders cron runs in dry-run once per user per day (not before the user's own time, 07:30 by default, never sends); cleanup and sync answer", async ({ request }) => {
   const auth = { authorization: `Bearer ${CRON}` };
   // reminders go only to users with a push subscription (fake endpoint: in dry-run nothing is sent)
   await pool.query(
@@ -125,10 +125,14 @@ test("the reminders cron runs in dry-run once per user per day (not before 07:30
   expect((await request.get("/api/cron/reminders")).status()).toBe(401);
   expect((await request.get("/api/cron/reminders", { headers: { authorization: "Bearer wrong-secret-value" } })).status()).toBe(401);
 
-  // before 07:30: nothing
+  // before the earliest choice (05:30): the run does nothing at all
+  const earliest = await request.get("/api/cron/reminders", { headers: { ...auth, ...clock(at(3, "05:10")) } });
+  expect(earliest.status()).toBe(200);
+  expect(await earliest.json()).toMatchObject({ skipped: "too_early", day: 3 });
+  // before this user's own time (the default 07:30): the run claims nobody
   const early = await request.get("/api/cron/reminders", { headers: { ...auth, ...clock(at(3, "07:00")) } });
   expect(early.status()).toBe(200);
-  expect(await early.json()).toMatchObject({ skipped: "too_early", day: 3 });
+  expect(await early.json()).toMatchObject({ mode: "dry", claimed: 0, day: 3 });
   const before = (await pool.query("select count(*)::int n from reminder_log where user_id = $1 and date = '2026-12-03'", [s.userId])).rows[0].n;
   expect(before).toBe(0);
 

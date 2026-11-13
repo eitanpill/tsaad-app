@@ -45,6 +45,8 @@ export const users = pgTable(
     activatedAt: ts("activated_at"),
     /** תזכורת הבוקר בוואטסאפ (דרך GHL). ברירת מחדל: פעילה; המשתתף/ת מכבה במסך התזכורות. */
     whatsappReminders: boolean("whatsapp_reminders").notNull().default(true),
+    /** שעת התזכורת היומית (דקות מחצות, שעון ישראל), בצעדים של 30 בין 05:30 ל־21:00. אחת לשני הערוצים (התראה ווטסאפ). ברירת מחדל 07:30. */
+    reminderTime: smallint("reminder_time").notNull().default(450),
     /**
      * null = פעיל. מוגדר על ידי בעל האתר (/admin/participants): משתמש מושבת לא נכנס, ההתחברויות שלו נמחקות, ואין לו
      * תזכורות, התראות, סנכרון או קישורים חדשים. הרשמה חוזרת דרך GHL אף פעם לא מנקה אותו.
@@ -53,6 +55,10 @@ export const users = pgTable(
   },
   (t) => [
     check("users_username_lower", sql`${t.username} = lower(${t.username})`),
+    check(
+      "users_reminder_time_range",
+      sql`${t.reminderTime} between 330 and 1260 and ${t.reminderTime} % 30 = 0`,
+    ),
     index("users_email_idx").on(sql`lower(${t.email})`),
     /** כניסה לפי טלפון (E.164). לא ייחודי בכוונה: אנשי קשר שונים ב־GHL יכולים לחלוק טלפון או מייל, והרשמה ששולמה לא נחסמת. */
     index("users_phone_idx").on(t.phone),

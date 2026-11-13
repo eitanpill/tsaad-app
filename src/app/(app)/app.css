@@ -673,6 +673,16 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .rm-status { margin: 0; padding: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--forest); }
 .rm-status:empty { display: none; }
 .rm-status--bad { color: var(--terracotta-text); }
+/* Time form: the polite status region stays in the DOM (so the result is announced), empty it takes no room. */
+.rm-time-status { margin: 0; padding: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--forest); }
+.rm-time-status:empty { padding: 0; }
+.rm-time-status.rm-time-status--bad { color: var(--terracotta-text); }
+.rm-row--form { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0 8px; }
+.rm-row--form .rm-row-text { flex: none; }
+.rm-time-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.rm-select { box-sizing: border-box; min-height: 44px; min-width: 120px; padding: 0 12px; border: 2px solid var(--muted); border-radius: 12px; background: #fff; color: inherit; font: inherit; font-weight: 700; font-family: ui-monospace, monospace; }
+.rm-save { box-sizing: border-box; min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--forest); color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.rm-save[disabled] { opacity: 0.6; cursor: default; }
 .rm-time { font-family: ui-monospace, monospace; font-size: 14px; font-weight: 700; padding: 8px 12px; border-radius: 12px; background: var(--sand); }
 .t-rem-ios { background: var(--sage); color: var(--forest); padding: 14px 16px; display: flex; gap: 12px; align-items: center; font-size: 14px; line-height: 1.4; }
 .rm-i { flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; background: var(--terracotta-text); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; }

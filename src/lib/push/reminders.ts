@@ -4,8 +4,8 @@ import type { Db } from "@/db";
 import { REMINDERS } from "@/config/constants";
 import type { AppConfig } from "@/config";
 import { rowsOf } from "@/lib/auth/sql";
-import { dayDate, dayStatusAt, isDayUnlocked, makeSchedule, reminderDue } from "@/lib/days";
-import { localDate } from "@/lib/time/zone";
+import { dayDate, dayStatusAt, isDayUnlocked, makeSchedule } from "@/lib/days";
+import { localDate, localMinutes } from "@/lib/time/zone";
 import { logger, type Logger } from "@/lib/logger";
 import { getGhlConfig, type GhlConfig } from "@/lib/ghl/config";
 import { queueGhlReminders, type GhlReminderResult } from "@/lib/ghl/reminders";
@@ -17,7 +17,6 @@ export type ReminderSkip =
   | "no_active_day"
   | "day_not_opened_today"
   | "too_early"
-  | "past_cutoff"
   | "no_vapid";
 
 export type ReminderRunResult = {
@@ -36,7 +35,10 @@ export type ReminderRunResult = {
 const idList = (ids: string[]) => sql.join(ids.map((i) => sql`${i}`), sql`, `);
 
 /**
- * תזכורת אחת למשתמש לתאריך מקומי, בריצה הראשונה ב־reminderTime או אחריה ולפני ה־cutoff.
+ * תזכורת אחת למשתמש לתאריך מקומי, בריצה הראשונה בשעה שהוא בחר (users.reminder_time) או אחריה, ולפני ה־cutoff שלו
+ * (שעת הבחירה + REMINDERS.retryWindowMinutes, עד 23:59). השעה אחת לשני הערוצים (התראה וווטסאפ).
+ * ה־cron רץ כל 15 דקות; כל ריצה תופסת רק את מי שהשעה שלו הגיעה ועוד אין לו שורה ל־reminder_log של היום.
+ * מי ששינה שעה אחרי שהתזכורת של היום כבר נרשמה לא מקבל עוד אחת באותו יום (השורה היא המנעול).
  *
  * הגנה מכפילות: קודם נכנסת שורה ל־reminder_log (ON CONFLICT DO NOTHING על (user, date, channel)),
  * ורק מי ש"זכה" בשורה שולח. ריצות מקבילות לא יכולות לשלוח פעמיים. אם התהליך קורס אחרי
@@ -85,15 +87,10 @@ export async function runReminders(args: {
   // ההודעה אומרת "יום N נפתח": רק אם היום הזה נפתח בתאריך המקומי של היום.
   if (dayDate(day, schedule) !== localDate(now, config.timeZone)) return skip("day_not_opened_today", day);
 
-  const due = reminderDue({
-    now,
-    timeZone: config.timeZone,
-    reminderTime: config.reminderTime,
-    alreadyHandledDates: [],
-    cutoffTime: REMINDERS.cutoffTime,
-  });
-  if (!due.due) return skip(due.reason === "past_cutoff" ? "past_cutoff" : "too_early", day);
-  const date = due.date;
+  // לפני הבחירה המוקדמת ביותר (05:30) אף משתמש לא יכול להיות "בזמן": לא נוגעים ב־DB.
+  const nowMinutes = localMinutes(now, config.timeZone);
+  if (nowMinutes < REMINDERS.timeMinMinutes) return skip("too_early", day);
+  const date = localDate(now, config.timeZone);
 
   // ערוץ ה־GHL (ווטסאפ) בלתי תלוי בהתראות הדפדפן (VAPID, מנויים): רץ קודם, ואחריו הלוגיקה הקיימת.
   const ghl = await queueGhlReminders({
@@ -101,6 +98,7 @@ export async function runReminders(args: {
     cfg: args.ghlConfig ?? getGhlConfig(config.env),
     day,
     date,
+    nowMinutes,
     log,
     claimBatchSize: args.claimBatchSize,
     runBudgetMs: args.runBudgetMs,
@@ -127,7 +125,8 @@ export async function runReminders(args: {
   const startedAt = Date.now();
 
   /**
-   * תופס עד batchSize משתמשים שעוד אין להם שורה לתאריך הזה. not exists לפני ה־limit,
+   * תופס עד batchSize משתמשים שהגיעה שעתם ועוד אין להם שורה לתאריך הזה: reminder_time <= עכשיו
+   * ועכשיו < min(reminder_time + חלון, 23:59) (אותו כלל כמו reminderDueForUser). not exists לפני ה־limit,
    * כדי שמשתמשים שכבר טופלו לא "יבזבזו" מקום בסבב; on conflict נשאר המנעול האמיתי מול
    * ריצה מקבילה.
    */
@@ -138,6 +137,8 @@ export async function runReminders(args: {
             select u.id, ${date}::date, 'push', ${initial}
               from users u
              where u.password_hash is not null and u.activated_at is not null and u.disabled_at is null
+               and u.reminder_time <= ${nowMinutes}::int
+               and ${nowMinutes}::int < least(u.reminder_time + ${REMINDERS.retryWindowMinutes}::int, ${REMINDERS.latestCutoffMinutes}::int)
                and exists (select 1 from push_subscriptions p where p.user_id = u.id)
                and not exists (select 1 from reminder_log r where r.user_id = u.id and r.date = ${date}::date and r.channel = 'push')
              order by u.id

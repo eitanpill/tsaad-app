@@ -66,7 +66,7 @@ On press: set `aria-pressed="true"`, swap to the play icon, keep the label stabl
 
 ## AppReminders
 - Landmarks: header, main, nav.
-- Headings: h1 "תזכורת של בוקר".
+- Headings: h1 "תזכורת יומית".
 - Switch: `<button role="switch" aria-checked="true">` with the accessible name "התראה בטלפון" (via `aria-labelledby` to the row title, and `aria-describedby` to its subtitle). The hit area is 60×44. The OFF state is drawn as an outlined track with a #6B4B45 knob; ON is a forest track with a white knob and a check.
 - Reminder time: a native `<input type="time">` (or `<select>`) with a visible label "שעת התזכורת", 44px+.
 - The notification preview is `aria-hidden` or `role="img" aria-label="דוגמה להתראה: יום 5 נפתח…"`.

@@ -4,11 +4,14 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-let deferred: BeforeInstallPromptEvent | null = null;
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
-
-let started = false;
+/**
+ * המצב יושב על globalThis ולא במשתני מודול: אם חבילת הקוד מפוצלת כך שהמודול הזה נטען בשני chunks (למשל אחרי שינוי
+ * ב־imports של מסך אחר), לכל עותק היה deferred משלו, והאירוע שנלכד במסך הכניסה לא היה מגיע לדף /install.
+ */
+type Shared = { deferred: BeforeInstallPromptEvent | null; listeners: Set<() => void>; started: boolean };
+const G = globalThis as unknown as { __tsaadInstall?: Shared };
+const shared: Shared = (G.__tsaadInstall ??= { deferred: null, listeners: new Set(), started: false });
+const emit = () => shared.listeners.forEach((l) => l());
 
 /**
  * מחברים מאזינים, פעם אחת לכל טעינת דף. נקרא כבר בטעינת המודול (למטה): Chrome יכול להפעיל את האירוע לפני ש־React
@@ -16,21 +19,21 @@ let started = false;
  * /login תופס אותו, והמצב נשמר בניווטים בצד הלקוח עד /install. מחזיר פונקציית ניקוי.
  */
 export function captureInstallPrompt(): () => void {
-  if (started) return () => undefined;
-  started = true;
+  if (shared.started) return () => undefined;
+  shared.started = true;
   const onPrompt = (e: Event) => {
     e.preventDefault();
-    deferred = e as BeforeInstallPromptEvent;
+    shared.deferred = e as BeforeInstallPromptEvent;
     emit();
   };
   const onInstalled = () => {
-    deferred = null;
+    shared.deferred = null;
     emit();
   };
   window.addEventListener("beforeinstallprompt", onPrompt);
   window.addEventListener("appinstalled", onInstalled);
   return () => {
-    started = false;
+    shared.started = false;
     window.removeEventListener("beforeinstallprompt", onPrompt);
     window.removeEventListener("appinstalled", onInstalled);
   };
@@ -39,15 +42,15 @@ export function captureInstallPrompt(): () => void {
 if (typeof window !== "undefined") captureInstallPrompt();
 
 export const subscribeInstallPrompt = (cb: () => void) => {
-  listeners.add(cb);
-  return () => void listeners.delete(cb);
+  shared.listeners.add(cb);
+  return () => void shared.listeners.delete(cb);
 };
-export const hasInstallPrompt = () => deferred !== null;
+export const hasInstallPrompt = () => shared.deferred !== null;
 
 export async function promptInstall(): Promise<"accepted" | "dismissed" | "unavailable"> {
-  const e = deferred;
+  const e = shared.deferred;
   if (!e) return "unavailable";
-  deferred = null; // האירוע חד־פעמי
+  shared.deferred = null; // האירוע חד־פעמי
   emit();
   try {
     await e.prompt();

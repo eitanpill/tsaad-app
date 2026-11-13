@@ -87,9 +87,9 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
       const a = await mkUser();
       await mkUser({ contact: null }); // no contact: skipped
       await mkUser({ activated: false }); // not activated: skipped
-      const r1 = await queueGhlReminders({ db, cfg: dry, day: 3, date: "2026-12-03", log });
+      const r1 = await queueGhlReminders({ db, cfg: dry, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       expect(r1).toEqual({ mode: "dry", claimed: 1 });
-      expect(await queueGhlReminders({ db, cfg: dry, day: 3, date: "2026-12-03", log })).toEqual({ mode: "dry", claimed: 0 });
+      expect(await queueGhlReminders({ db, cfg: dry, day: 3, date: "2026-12-03", nowMinutes: 450, log })).toEqual({ mode: "dry", claimed: 0 });
       expect(await count("reminder_log", sql`channel = 'ghl' and status = 'dry_run'`)).toBe(1);
       expect(await count("sync_outbox")).toBe(0);
       const out = lines.join("\n");
@@ -110,8 +110,8 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
 
     it("live: queues once per user and date, the worker sets the field and the day tag, then marks sent", async () => {
       const u = await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log }); // second run: nothing new
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log }); // second run: nothing new
       expect(await count("sync_outbox", sql`kind = 'ghl_reminder'`)).toBe(1);
       const { client, calls, bodies } = okClient();
       const r = await worker(client, DAY3);
@@ -126,7 +126,7 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
 
     it("a temporary failure retries with backoff and then succeeds; the log row stays pending until then", async () => {
       await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       const { client } = okClient();
       (client.updateCustomFields as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: false, retryable: true, error: "ghl http 503" });
       expect(await worker(client, DAY3)).toMatchObject({ claimed: 1, sent: 0, failed: 1 });
@@ -139,7 +139,7 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
 
     it("a permanent failure goes dead and the log row becomes failed", async () => {
       await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       const { client } = okClient();
       (client.updateCustomFields as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false, retryable: false, error: "ghl http 404" });
       expect(await worker(client, DAY3)).toMatchObject({ dead: 1 });
@@ -147,24 +147,51 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
       expect(await count("sync_outbox", sql`status='dead'`)).toBe(1);
     });
 
-    it("a retry after noon, or the next day, is dropped as stale (no late morning reminder)", async () => {
+    it("a retry after the default user's cut-off (12:00), or the next day, is dropped as stale", async () => {
       await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       const { client, calls } = okClient();
       expect(await worker(client, new Date("2026-12-03T10:30:00Z"))).toMatchObject({ dead: 1 }); // 12:30 Israel
       expect(calls).toHaveLength(0);
     });
 
+    it("the retry cut-off follows the user's own time + 4.5h, capped at 23:59 (replaces the fixed 12:00)", async () => {
+      const set = (id: string, m: number) => db.execute(sql`update users set reminder_time = ${m} where id = ${id}`);
+      // 09:00 user: a retry at 13:29 Israel (11:29Z) still goes out, at 13:30 it is stale
+      const u = await mkUser();
+      await set(u.id, 540);
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 540, log });
+      const a = okClient();
+      expect(await worker(a.client, new Date("2026-12-03T11:30:00Z"))).toMatchObject({ dead: 1, sent: 0 });
+      expect(a.calls).toHaveLength(0);
+      await db.execute(sql`delete from sync_outbox`);
+      await db.execute(sql`delete from reminder_log`);
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 540, log });
+      expect(await worker(a.client, new Date("2026-12-03T11:29:00Z"))).toMatchObject({ sent: 1, dead: 0 });
+      expect(a.calls).toEqual([`field ${u.ghlContactId}`, `add ${u.ghlContactId} tsaad_reminder_day3`]);
+      // 21:00 user: capped at 23:59 (21:59Z), a retry at 23:58 sends, 23:59 is stale
+      await set(u.id, 1260);
+      await db.execute(sql`delete from sync_outbox`);
+      await db.execute(sql`delete from reminder_log`);
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 1260, log });
+      const b = okClient();
+      expect(await worker(b.client, new Date("2026-12-03T21:59:00Z"))).toMatchObject({ dead: 1 });
+      await db.execute(sql`delete from sync_outbox`);
+      await db.execute(sql`delete from reminder_log`);
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 1260, log });
+      expect(await worker(b.client, new Date("2026-12-03T21:58:00Z"))).toMatchObject({ sent: 1 });
+    });
+
     it("live without a client (token missing) claims nothing and touches no rows", async () => {
       await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       expect(await worker(null, DAY3)).toEqual({ claimed: 0, sent: 0, failed: 0, dead: 0 });
       expect(await count("sync_outbox", sql`status='pending' and attempts=0`)).toBe(1);
     });
 
     it("concurrent workers never send the same row twice (SKIP LOCKED)", async () => {
       for (let i = 0; i < 6; i++) await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       const { client, calls } = okClient();
       await Promise.all([worker(client, DAY3), worker(client, DAY3), worker(client, DAY3)]);
       expect(calls.filter((c) => c.startsWith("add"))).toHaveLength(6);
@@ -175,7 +202,7 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
       const later = await mkUser();
       expect(await getWhatsappReminderPref(db, off.id)).toEqual({ on: true, hasContact: true }); // default on
       expect(await setWhatsappReminderPref(db, off.id, false)).toBe(false);
-      expect(await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log })).toEqual({ mode: "live", claimed: 1 });
+      expect(await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log })).toEqual({ mode: "live", claimed: 1 });
       expect(await count("reminder_log", sql`channel = 'ghl' and user_id = ${off.id}`)).toBe(0);
       await setWhatsappReminderPref(db, later.id, false);
       const { client, calls } = okClient();
@@ -184,13 +211,13 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
       expect(await count("sync_outbox", sql`last_error = 'opted out'`)).toBe(1);
       // switching it back on takes effect from the next date
       await setWhatsappReminderPref(db, off.id, true);
-      expect((await queueGhlReminders({ db, cfg: live, day: 4, date: "2026-12-04", log }))?.claimed).toBe(1);
+      expect((await queueGhlReminders({ db, cfg: live, day: 4, date: "2026-12-04", nowMinutes: 450, log }))?.claimed).toBe(1);
       expect(await getWhatsappReminderPref(db, "00000000-0000-0000-0000-000000000000")).toBeNull();
     });
 
     it("a 429 with Retry-After is not retried before that time", async () => {
       await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       const { client } = okClient();
       (client.updateCustomFields as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: false, retryable: true, error: "ghl http 429", retryAfterSeconds: 1800 });
       expect(await worker(client, DAY3)).toMatchObject({ failed: 1 });
@@ -200,7 +227,7 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
 
     it("claims in small chunks up to the row cap, and stops claiming once the run budget is spent", async () => {
       for (let i = 0; i < 5; i++) await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       const { client, calls } = okClient();
       const base = { db, cfg: live, client, now: DAY3, log, timeZone: "Asia/Jerusalem", origin: ORIGIN, makeLink: async () => "x", random: () => 0 };
       expect(await runGhlOutbox({ ...base, runBudgetMs: 0 })).toMatchObject({ claimed: 0 });
@@ -211,7 +238,7 @@ describe.skipIf(!runIntegration)("ghl (integration)", () => {
 
     it("the tracker worker never claims GHL rows, and the GHL worker never claims tracker rows", async () => {
       const u = await mkUser();
-      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", log });
+      await queueGhlReminders({ db, cfg: live, day: 3, date: "2026-12-03", nowMinutes: 450, log });
       await enqueueTrackerSync(db, { userId: u.id, day: 3 });
       const adapter = { name: "t", send: vi.fn(async () => ({ ok: true as const })) };
       const r = await runSyncWorker({ db, enabled: true, adapter, log });

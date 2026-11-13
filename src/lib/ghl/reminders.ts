@@ -10,7 +10,7 @@ import { GHL_REMINDER_KIND, reminderDedupeKey } from "./outbox";
 export type GhlReminderResult = { mode: "dry" | "live"; claimed: number };
 
 /**
- * תזכורת הבוקר דרך GHL: לכל משתתף שהופעל, יש לו ghl_contact_id ולא כיבה את תזכורת הוואטסאפ (מסך התזכורות), שורה אחת ב־reminder_log (channel ghl) לכל תאריך מקומי,
+ * תזכורת הבוקר דרך GHL, בשעה שכל משתתף בחר (users.reminder_time, אותו כלל חלון כמו בהתראה): לכל משתתף שהופעל, יש לו ghl_contact_id ולא כיבה את תזכורת הוואטסאפ (מסך התזכורות), שורה אחת ב־reminder_log (channel ghl) לכל תאריך מקומי,
  * ובמצב live גם שורת outbox (באותה טרנזקציה). ה־outbox שולח (שדה מותאם ותג) עם ניסיונות חוזרים. dry: רושם שורת dry_run
  * ושורת יומן לכל משתמש, ולא קורא ל־GHL. null כש־GHL_REMINDER_MODE כבוי.
  */
@@ -19,11 +19,13 @@ export async function queueGhlReminders(args: {
   cfg: GhlConfig;
   day: number;
   date: string;
+  /** דקות מחצות מקומיות של עכשיו; רק מי ש־reminder_time שלו הגיע (ועוד בתוך החלון) נתפס. */
+  nowMinutes: number;
   log?: Logger;
   claimBatchSize?: number;
   runBudgetMs?: number;
 }): Promise<GhlReminderResult | null> {
-  const { db, cfg, day, date } = args;
+  const { db, cfg, day, date, nowMinutes } = args;
   const log = args.log ?? logger;
   if (cfg.reminderMode === "off") return null;
   const live = cfg.reminderMode === "live";
@@ -43,6 +45,8 @@ export async function queueGhlReminders(args: {
                 from users u
                where u.password_hash is not null and u.activated_at is not null and u.ghl_contact_id is not null and u.disabled_at is null
                  and u.whatsapp_reminders
+                 and u.reminder_time <= ${nowMinutes}::int
+                 and ${nowMinutes}::int < least(u.reminder_time + ${REMINDERS.retryWindowMinutes}::int, ${REMINDERS.latestCutoffMinutes}::int)
                  and not exists (select 1 from reminder_log r where r.user_id = u.id and r.date = ${date}::date and r.channel = 'ghl')
                order by u.id
                limit ${batch}

@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useState, useSyncExternalStore, type ReactNode } from "react";
 import { copy } from "@/content/copy.he";
-import { fill } from "@/lib/format";
 import { isStandalone } from "@/lib/pwa/install-prompt";
 import { detectStatus, disableReminders, enableReminders, type ReminderStatus } from "@/lib/pwa/push-client";
 import { AlertCircle, CheckIcon } from "../_components/icons";
@@ -11,19 +10,18 @@ import { AlertCircle, CheckIcon } from "../_components/icons";
 const noopSubscribe = () => () => undefined;
 
 /**
- * מתג ההתראות, שעת התזכורת (קבועה) והערת האייפון. המצב נקבע בדפדפן:
+ * מתג ההתראות, מקום לטופס שעת התזכורת והערת האייפון. המצב נקבע בדפדפן:
  *  unsupported (אין תמיכה, או אין מפתח VAPID מהשרת), blocked (הרשאה נדחתה), off, on, error (נכשל, אפשר לנסות שוב).
  * המתג הוא role="switch" עם aria-checked; כשאי אפשר להפעיל הוא aria-disabled (נשאר בפוקוס, והסיבה כתובה לידו).
  * הודעת המצב נמצאת באזור role="status" (polite) אחד.
  */
 export function RemindersControls({
   vapidKey,
-  unlockTime,
-  reminderTime,
+  timeSlot,
 }: {
   vapidKey: string | null;
-  unlockTime: string;
-  reminderTime: string;
+  /** טופס שעת התזכורת (ReminderTimeForm), שמוצג בתוך אותה קבוצה. */
+  timeSlot?: ReactNode;
 }) {
   const [status, setStatus] = useState<ReminderStatus>("checking");
   // ההתראות פעילות בפועל (מנוי קיים). נפרד מהודעת המצב: כיבוי שנכשל משאיר on, והשגיאה מוצגת לידו.
@@ -102,16 +100,7 @@ export function RemindersControls({
             </>
           ) : null}
         </p>
-        <div className="rm-row rm-row--time">
-          <span className="rm-row-text">
-            <b>{copy.reminders.timeLabel}</b>
-            <br />
-            <span className="rm-sub">{fill(copy.reminders.timeNote, { unlockTime, reminderTime })}</span>
-          </span>
-          <span className="rm-time" dir="ltr">
-            {reminderTime}
-          </span>
-        </div>
+        {timeSlot}
       </section>
 
       {standalone ? null : (
