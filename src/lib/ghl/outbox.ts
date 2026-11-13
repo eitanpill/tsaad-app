@@ -12,16 +12,25 @@ import { setFieldAndTag, type GhlClient, type GhlResult } from "./client";
 import type { GhlConfig } from "./config";
 
 export const GHL_REMINDER_KIND = "ghl_reminder";
+export const GHL_LIVE_REMINDER_KIND = "ghl_live_reminder";
 export const GHL_LINK_KIND = "ghl_link";
 export type LinkKind = "activate" | "reset";
 
 /** המטענים אינם כוללים פרטים אישיים ולא קישורים: רק יום ותאריך, או מטרת הקישור (האסימון מונפק מחדש בשליחה). */
 export const reminderPayloadSchema = z.strictObject({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), day: z.number().int().min(1).max(14) });
+/** תזכורת לייב: התאריך (של יום הלייב), היום, שעת המפגש ("HH:MM") ורגע ההתחלה (ISO); אחרי ההתחלה לא שולחים. */
+export const liveReminderPayloadSchema = z.strictObject({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  day: z.number().int().min(1).max(14),
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  startsAt: z.iso.datetime(),
+});
 export const linkPayloadSchema = z.strictObject({ purpose: z.enum(["activate", "reset"]) });
 
 type Exec = Pick<Db, "execute">;
 
 export const reminderDedupeKey = (userId: string, date: string) => `${GHL_REMINDER_KIND}:${userId}:${date}`;
+export const liveReminderDedupeKey = (userId: string, date: string) => `${GHL_LIVE_REMINDER_KIND}:${userId}:${date}`;
 export const linkDedupeKey = (userId: string, purpose: LinkKind) => `${GHL_LINK_KIND}:${userId}:${purpose}`;
 
 /**
@@ -81,7 +90,7 @@ export async function runGhlOutbox(deps: GhlWorkerDeps): Promise<GhlRunResult> {
   const log = deps.log ?? logger;
   const result: GhlRunResult = { claimed: 0, sent: 0, failed: 0, dead: 0 };
   const kinds: string[] = [];
-  if (deps.cfg.reminderMode === "live") kinds.push(GHL_REMINDER_KIND);
+  if (deps.cfg.reminderMode === "live") kinds.push(GHL_REMINDER_KIND, GHL_LIVE_REMINDER_KIND);
   if (deps.cfg.deliveryMode === "live") kinds.push(GHL_LINK_KIND);
   if (!deps.client || kinds.length === 0) return result;
   const now = deps.now ?? new Date();
@@ -114,7 +123,7 @@ async function processRows(deps: GhlWorkerDeps, rows: ClaimedRow[], now: Date, r
     }
     if (outcome.ok) {
       if (await markSent(deps.db, row)) result.sent++;
-      if (row.kind === GHL_REMINDER_KIND) await setReminderStatus(deps.db, row, "sent");
+      await setReminderStatus(deps.db, row, "sent");
     } else {
       const state = await markFailed(deps.db, row, outcome.error, {
         retryable: outcome.retryable,
@@ -123,7 +132,7 @@ async function processRows(deps: GhlWorkerDeps, rows: ClaimedRow[], now: Date, r
       });
       if (state === "dead") {
         result.dead++;
-        if (row.kind === GHL_REMINDER_KIND) await setReminderStatus(deps.db, row, "failed");
+        await setReminderStatus(deps.db, row, "failed");
         log.warn("ghl outbox row gave up", { kind: row.kind, userId, error: outcome.error });
       } else if (state === "failed") result.failed++;
     }
@@ -131,11 +140,22 @@ async function processRows(deps: GhlWorkerDeps, rows: ClaimedRow[], now: Date, r
 }
 
 async function setReminderStatus(db: Exec, row: ClaimedRow, status: "sent" | "failed") {
-  const p = reminderPayloadSchema.safeParse(row.payload);
-  if (!p.success) return;
+  let channel: "ghl" | "live_ghl";
+  let date: string;
+  if (row.kind === GHL_REMINDER_KIND) {
+    const p = reminderPayloadSchema.safeParse(row.payload);
+    if (!p.success) return;
+    channel = "ghl";
+    date = p.data.date;
+  } else if (row.kind === GHL_LIVE_REMINDER_KIND) {
+    const p = liveReminderPayloadSchema.safeParse(row.payload);
+    if (!p.success) return;
+    channel = "live_ghl";
+    date = p.data.date;
+  } else return;
   await db.execute(
     sql`update reminder_log set status = ${status}
-        where channel = 'ghl' and date = ${p.data.date}::date and status = 'pending'
+        where channel = ${channel} and date = ${date}::date and status = 'pending'
           and user_id = (select user_id from sync_outbox where id = ${row.id})`,
   );
 }
@@ -175,6 +195,25 @@ async function processRow(deps: GhlWorkerDeps, row: ClaimedRow, now: Date): Prom
       value: `${deps.origin}${REMINDERS.openPath}`,
       tag: `${cfg.tags.reminderPrefix}${p.data.day}`,
       rearm: false,
+      locationId: cfg.locationId,
+    });
+    return { outcome, userId };
+  }
+
+  if (row.kind === GHL_LIVE_REMINDER_KIND) {
+    const p = liveReminderPayloadSchema.safeParse(row.payload);
+    if (!p.success) return dead("invalid payload");
+    if (!user.whatsapp_reminders) return dead("opted out");
+    // אף פעם לא אחרי שהמפגש התחיל.
+    if (now.getTime() >= new Date(p.data.startsAt).getTime()) return dead("live already started");
+    const outcome = await setFieldAndTag(client, {
+      contactId,
+      fieldKey: cfg.fields.liveTime,
+      fieldId: cfg.fields.liveTimeId,
+      value: p.data.time,
+      tag: cfg.tags.liveReminder,
+      // אותו תג לשני הלייבים: מסירים לפני ההוספה, כדי שגם ביום 14 (כשהתג כבר קיים מיום 7) ה־Workflow יופעל שוב.
+      rearm: true,
       locationId: cfg.locationId,
     });
     return { outcome, userId };

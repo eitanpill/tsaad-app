@@ -1,0 +1,2 @@
+ALTER TABLE "reminder_log" DROP CONSTRAINT "reminder_log_channel";--> statement-breakpoint
+ALTER TABLE "reminder_log" ADD CONSTRAINT "reminder_log_channel" CHECK ("reminder_log"."channel" in ('push','ghl','live_push','live_ghl'));

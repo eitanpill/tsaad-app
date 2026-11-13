@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { copy } from "@/content/copy.he";
 import { DAYS } from "@/content/days";
 import { isAllowedPushEndpoint } from "./endpoints";
-import { buildReminderMessage } from "./message";
+import { buildLiveReminderMessage, buildReminderMessage } from "./message";
 import { createDryRunPushSender, createWebPushSender, getPushSender, readVapid } from "./sender";
 
 const VAPID = { subject: "mailto:a@example.test", publicKey: "pub", privateKey: "priv" };
@@ -58,26 +58,40 @@ describe("isAllowedPushEndpoint", () => {
 
 describe("buildReminderMessage", () => {
   it("uses perDay with the day's habit on normal days", () => {
-    const m = buildReminderMessage(3, {});
+    const m = buildReminderMessage(3);
     expect(m.body).toBe(copy.push.perDay.replace("{day}", "3").replace("{habit}", DAYS[2].habit.title));
     expect(m.title).toBe(copy.push.title);
     expect(m.url).toBe("/today");
   });
   it("keeps every day's reminder short enough for a notification (the longest habit included)", () => {
     for (const d of DAYS) {
-      const m = buildReminderMessage(d.day, { 7: "20:00", 14: "19:30" });
+      const m = buildReminderMessage(d.day);
       expect(m.body.length, `day ${d.day}: ${m.body}`).toBeLessThanOrEqual(100);
     }
   });
-  it("uses liveDay with the configured time on live days", () => {
-    expect(buildReminderMessage(7, { 7: "20:00" }).body).toBe(
-      copy.push.liveDay.replace("{day}", "7").replace("{time}", "20:00"),
-    );
-    expect(buildReminderMessage(14, { 14: "19:30" }).body).toContain("19:30");
+  it("never mentions the live session, on any day (live days 7 and 14 use the practice text)", () => {
+    for (const day of [7, 14]) {
+      const m = buildReminderMessage(day);
+      expect(m.body).toBe(copy.push.perDay.replace("{day}", String(day)).replace("{habit}", DAYS[day - 1].habit.title));
+      expect(m.body).not.toMatch(/לייב|מפגש|\d\d:\d\d/);
+      expect(m.url).toBe("/today");
+    }
+    for (const d of DAYS) expect(buildReminderMessage(d.day).body).not.toMatch(/לייב|מפגש/);
   });
-  it("falls back to generic on a live day without a time (never invents one)", () => {
-    expect(buildReminderMessage(7, {}).body).toBe(copy.push.generic.replace("{day}", "7"));
-    expect(buildReminderMessage(14, { 7: "20:00" }).body).toBe(copy.push.generic.replace("{day}", "14"));
+  it("falls back to generic for a day without content", () => {
+    expect(buildReminderMessage(99).body).toBe(copy.push.generic.replace("{day}", "99"));
+  });
+});
+
+describe("buildLiveReminderMessage", () => {
+  it("is a separate plural-voice text that points at the live screen", () => {
+    const m = buildLiveReminderMessage(7);
+    expect(m.title).toBe(copy.push.liveTitle);
+    expect(m.body).toBe(copy.push.liveBody);
+    expect(m.url).toBe("/live");
+    expect(m.tag).toBe("live-7");
+    expect(m.tag).not.toBe(buildReminderMessage(7).tag);
+    expect(m.body.length).toBeLessThanOrEqual(100);
   });
 });
 
@@ -136,7 +150,7 @@ describe("push senders", () => {
 
 describe("push payload as the service worker reads it", () => {
   it("is JSON with title, body, a same-origin path url, and a tag (what public/sw.js expects)", () => {
-    const m = buildReminderMessage(5, {});
+    const m = buildReminderMessage(5);
     const parsed = JSON.parse(JSON.stringify(m)) as Record<string, unknown>;
     expect(Object.keys(parsed).sort()).toEqual(["body", "tag", "title", "url"]);
     expect(parsed.url).toBe("/today");

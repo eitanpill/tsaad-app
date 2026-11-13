@@ -200,7 +200,8 @@ export const pushSubscriptions = pgTable(
 export const REMINDER_STATUSES = ["pending", "dry_run", "sent", "failed"] as const;
 
 /** push: התראת דפדפן. ghl: תזכורת ווטסאפ דרך GHL (שדה מותאם ותג). שורה אחת לכל (משתמש, תאריך, ערוץ). */
-export const REMINDER_CHANNELS = ["push", "ghl"] as const;
+/** push/ghl: התזכורת היומית; live_push/live_ghl: תזכורת הלייב (נפרדת, שורה אחת למשתתף לתאריך של יום הלייב). */
+export const REMINDER_CHANNELS = ["push", "ghl", "live_push", "live_ghl"] as const;
 
 export const reminderLog = pgTable(
   "reminder_log",
@@ -215,7 +216,7 @@ export const reminderLog = pgTable(
   },
   (t) => [
     unique("reminder_log_user_date_channel").on(t.userId, t.date, t.channel),
-    check("reminder_log_channel", sql`${t.channel} in ('push','ghl')`),
+    check("reminder_log_channel", sql`${t.channel} in ('push','ghl','live_push','live_ghl')`),
     check("reminder_log_status", sql`${t.status} in ('pending','dry_run','sent','failed')`),
   ],
 );

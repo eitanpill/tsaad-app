@@ -33,6 +33,7 @@ export default async function RemindersPage() {
       <section className="t t-rem-hero" aria-labelledby="rem-h">
         <h1 id="rem-h">{copy.reminders.title}</h1>
         <p>{fill(copy.reminders.intro, times)}</p>
+        <div className="rm-live-note">{copy.reminders.liveNote}</div>
       </section>
 
       <section className="t t-rem-preview" aria-label={fill(copy.a11y.reminders.preview, { text: previewText })}>

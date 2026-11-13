@@ -342,22 +342,22 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
     });
 
     describe("message text", () => {
-      it("normal day uses the habit; live day uses the configured time; missing time falls back to generic", async () => {
+      it("the daily text is about the practice on every day, and never mentions the live (also on live days, with or without a live time)", async () => {
         await mkUser();
         const { sender, sent } = fakeSender();
         await runReminders({ db, config: live(), sender, now: DAY1_0730 });
         expect(JSON.parse(sent[0].payload).body).toContain("הרגל להיום");
 
-        await db.execute(sql`delete from reminder_log`);
-        const withTime = cfg({ REMINDERS_ENABLED: "true", LIVE_TIME_DAY7: "20:00" });
-        await runReminders({ db, config: withTime, sender, now: d("2026-12-07T05:30:00Z") });
-        expect(JSON.parse(sent[1].payload).body).toContain("20:00");
-
-        await db.execute(sql`delete from reminder_log`);
-        await runReminders({ db, config: live(), sender, now: d("2026-12-07T05:30:00Z") });
-        const body = JSON.parse(sent[2].payload).body as string;
-        expect(body).not.toContain("מפגש לייב");
-        expect(body).toContain("יום 7");
+        for (const [i, [day, iso]] of ([[7, "2026-12-07T05:30:00Z"], [14, "2026-12-14T05:30:00Z"]] as const).entries()) {
+          for (const [j, env] of [{} as Record<string, string>, { LIVE_TIME_DAY7: "20:00", LIVE_TIME_DAY14: "19:30" }].entries()) {
+            await db.execute(sql`delete from reminder_log`);
+            await runReminders({ db, config: cfg({ REMINDERS_ENABLED: "true", ...env }), sender, now: d(iso) });
+            const body = JSON.parse(sent[1 + i * 2 + j].payload).body as string;
+            expect(body).toContain(`יום ${day}`);
+            expect(body).toContain("הרגל להיום");
+            expect(body).not.toMatch(/לייב|מפגש|\d\d:\d\d/);
+          }
+        }
       });
     });
 

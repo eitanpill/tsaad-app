@@ -643,6 +643,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .t-rem-hero { background: var(--sky); padding: 18px; }
 .t-rem-hero h1 { margin: 0; font-size: 32px; line-height: 1.05; font-weight: 900; overflow-wrap: break-word; }
 .t-rem-hero p { margin: 6px 0 0; font-size: 15px; line-height: 1.45; }
+.t-rem-hero .rm-live-note { margin: 6px 0 0; font-size: 15px; line-height: 1.45; }
 .t-rem-preview { background: var(--sand); padding: 16px; }
 .rm-eyebrow { font-size: 12px; font-weight: 700; color: var(--muted); }
 .rm-notif {

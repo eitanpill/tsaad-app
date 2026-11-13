@@ -46,6 +46,7 @@ const ALLOWED_TOKENS = new Set([
   "total",
   "unlockTime",
   "reminderTime",
+  "liveTime",
   "n",
   "prev",
   "day",
@@ -267,9 +268,19 @@ describe("copy", () => {
     expect(copy.a11y.reminders.switchName).toBe(copy.reminders.toggleTitle);
   });
 
-  it("has a push text for each live day and a generic one", () => {
+  it("has a generic daily push text, and a separate live-reminder text", () => {
     expect(copy.push.generic).toContain("{day}");
-    expect(copy.push.liveDay).toContain("{time}");
+    expect(copy.push.perDay).toContain("{habit}");
+    expect(copy.push.liveTitle).toContain("שעה");
+    expect(copy.push.liveBody).not.toMatch(/\{/);
+  });
+
+  it("keeps live mentions out of the daily reminder texts (they live only in the separate live reminder)", () => {
+    for (const t of [copy.push.title, copy.push.generic, copy.push.perDay]) {
+      expect(t).not.toMatch(/לייב|מפגש|חי\b/);
+    }
+    expect(copy.reminders.liveNote).toMatch(/שעה/);
+    expect(copy.reminders.liveNote).toMatch(/רבים|תגיע|כשעה/);
   });
 });
 

@@ -1,25 +1,23 @@
 import { copy } from "@/content/copy.he";
 import { DAYS } from "@/content/days";
-import { REMINDERS } from "@/config/constants";
+import { LIVE_REMINDER, REMINDERS } from "@/config/constants";
 import { fill } from "@/lib/format";
-import { isLiveDay } from "@/lib/days/schedule";
 
 export type PushMessage = { title: string; body: string; url: string; tag: string };
 
 /**
- * נוסח התזכורת של יום. יום לייב עם שעה מוגדרת: liveDay; יום לייב בלי שעה: generic
- * (לא ממציאים שעה); יום רגיל: perDay עם ההרגל של היום.
+ * נוסח התזכורת היומית: עוסק בתרגול של היום בלבד, בלי אזכור של הלייב (גם בימים 7 ו־14).
+ * יש תוכן ליום: perDay עם ההרגל של היום; אחרת generic.
  */
-export function buildReminderMessage(day: number, liveTimes: { 7?: string; 14?: string }): PushMessage {
+export function buildReminderMessage(day: number): PushMessage {
   const content = DAYS.find((d) => d.day === day);
-  let body: string;
-  if (isLiveDay(day)) {
-    const time = day === 7 ? liveTimes[7] : liveTimes[14];
-    body = time ? fill(copy.push.liveDay, { day, time }) : fill(copy.push.generic, { day });
-  } else if (content) {
-    body = fill(copy.push.perDay, { day, habit: content.habit.title });
-  } else {
-    body = fill(copy.push.generic, { day });
-  }
+  const body = content
+    ? fill(copy.push.perDay, { day, habit: content.habit.title })
+    : fill(copy.push.generic, { day });
   return { title: copy.push.title, body, url: REMINDERS.openPath, tag: `day-${day}` };
+}
+
+/** נוסח תזכורת הלייב (נפרדת מהיומית): בלשון רבים, מפנה למסך הלייב באפליקציה. */
+export function buildLiveReminderMessage(day: number): PushMessage {
+  return { title: copy.push.liveTitle, body: copy.push.liveBody, url: LIVE_REMINDER.openPath, tag: `live-${day}` };
 }
