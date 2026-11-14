@@ -172,3 +172,26 @@ function Swatch({ fill: f, state, dashed = false }: { fill: 0 | 0.5 | 1; state: 
     </span>
   );
 }
+
+/**
+ * "ההרגלים שלי" בשביל: לכל יום שנפתח, כמה מההרגלים של אותו יום סומנו ("X מתוך N הרגלים"). רשימה בטקסט, בלי להעמיס על המפה.
+ * ההרגלים הישנים הם לעצמם ואינם משנים את מצב האבן.
+ */
+export function PathHabits({ counts }: { counts: Array<{ day: number; done: number; total: number }> }) {
+  if (counts.length === 0) return null;
+  return (
+    <section className="t t-habit-counts" aria-labelledby="path-habits-h">
+      <h2 id="path-habits-h" className="act-title">
+        {copy.habits.pathTitle}
+      </h2>
+      <ul className="habit-counts">
+        {counts.map((c) => (
+          <li key={c.day} data-day={c.day}>
+            <b>{fill(copy.common.dayLabel, { n: c.day })}</b>
+            <span>{fill(c.total === 1 ? copy.habits.countOne : copy.habits.count, { done: c.done, total: c.total })}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}

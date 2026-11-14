@@ -916,3 +916,54 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .preview-banner p { margin: 0; }
 .preview-banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; padding: 6px 12px; min-height: 44px; border-radius: var(--radius-btn); background: var(--maroon); color: #fff; font-weight: 700; }
 .preview-banner .linkbtn { color: #fff; min-height: 44px; min-width: 44px; text-decoration: underline; }
+
+/* ---- "ההרגלים שלי": cumulative habit checklist ---- */
+.t-habits { background: var(--sand); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.habits-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; min-width: 0; }
+.habits-count { max-width: 100%; box-sizing: border-box; padding: 4px 10px; border-radius: 999px; background: #fff; border: 2px solid var(--line); font-size: 13px; font-weight: 700; color: var(--maroon); }
+.habit-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.habit { position: relative; }
+.habit-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 8px 14px;
+  border: 2px solid var(--terracotta);
+  border-radius: var(--radius-btn);
+  background: #fff;
+  color: var(--maroon);
+  font-size: 14px;
+  cursor: pointer;
+}
+/* the native checkbox stays in the layout (keyboard, screen reader, no-style fallback) and is drawn by .habit-tick */
+.habit-box { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.habit-tick {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--terracotta);
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--forest);
+}
+.habit-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
+.habit-new { align-self: flex-start; font-size: 12px; font-weight: 800; color: var(--terracotta-text); }
+.habit[data-checked='true'] .habit-label { background: var(--forest); border-color: var(--forest); color: #fff; }
+.habit[data-checked='true'] .habit-tick { background: var(--cream); border-color: var(--cream); }
+.habit[data-checked='true'] .habit-new { color: #fff; }
+.habit-label:has(.habit-box:focus-visible) { outline: 3px solid #123021; outline-offset: 2px; box-shadow: 0 0 0 2px #FAF8F4; }
+.ro-item .habit-text { grid-column: 1 / -1; }
+.t-habit-counts { background: #fff; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.habit-counts { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 14px; }
+.habit-counts li { display: flex; flex-direction: column; gap: 1px; }
+.habit-counts b { font-weight: 800; }
+.habit-counts span { color: var(--muted); font-size: 13px; }
+@media (max-width: 359px) { .habit-counts { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 900px) { .ar-habits { grid-column: 1; } }

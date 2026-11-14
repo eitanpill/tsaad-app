@@ -10,6 +10,8 @@ import { fill } from "@/lib/format";
 import { getAppClock } from "@/lib/preview/context";
 import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listCompletions } from "@/lib/today/completions";
+import { listDayHabitChecks } from "@/lib/habits/checks";
+import { getHabitList } from "@/lib/habits/list";
 import { getVideoConfig, hasVideo, posterUrl } from "@/lib/today/video";
 import { firstNameOf } from "@/lib/today/first-name";
 import { actionKey, greetingKey, nextBoundary, todayModel } from "@/lib/today/view";
@@ -35,12 +37,16 @@ export default async function TodayPage() {
     );
   }
 
-  const rows = await listCompletions(getDb(), user.userId);
+  const db = getDb();
+  const rows = await listCompletions(db, user.userId);
   const completions = rows.map((r) => actionKey(r.day, r.action));
   const day = model.day;
   const yesterday = model.yesterday;
   const yesterdayDone = yesterday ? stepsFor(yesterday, rows.filter((r) => r.day === yesterday).map((r) => r.action)) : 0;
   const tz = schedule.timeZone;
+  // "ההרגלים שלי": ההרגלים 1..היום (כולם כבר נפתחו) והישנים שסומנו היום.
+  const habits = day !== null ? getHabitList(day).map(({ habitDay, title }) => ({ habitDay, title })) : [];
+  const olderChecked = day !== null ? await listDayHabitChecks(db, user.userId, day) : [];
 
   const greeting = copy.today.greeting[greetingKey(now, tz)];
   const first = firstNameOf(user.displayName, user.username);
@@ -83,6 +89,8 @@ export default async function TodayPage() {
         hero={hero}
         opening={day !== null ? dayOpening(day) : null}
         titles={titles}
+        habits={habits}
+        olderChecked={olderChecked}
         videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
         poster={day !== null ? posterUrl(day, getVideoConfig(cfg.env), cfg.env.BUNNY_CDN_HOST) : null}
         offerOpen={offerOpen}

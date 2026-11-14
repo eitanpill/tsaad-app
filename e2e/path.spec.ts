@@ -341,11 +341,11 @@ test.describe("day screen", () => {
     await expect(page.locator(".eyebrow-s")).toHaveText("לא נספר");
     await expect(page.getByText("הסימון של יום 2 נסגר, ולכן הוא לא נספר. אפשר לצפות בסרטון.")).toBeVisible();
     // the day's own content is shown, but nothing can be marked
-    await expect(page.getByText(DAYS[1].habit.title)).toBeVisible();
+    await expect(page.getByText(DAYS[1].habit.title).first()).toBeVisible();
     await expect(page.locator("p.opening")).toHaveText(DAYS[1].opening);
     await expect(page.getByRole("button", { name: /^(הרגל|תנועה|מדיטציה)/ })).toHaveCount(0);
-    await expect(page.locator(".ro-item")).toHaveCount(3);
-    await expect(page.getByText("לא סומן")).toHaveCount(3);
+    await expect(page.locator(".t-actions .ro-item")).toHaveCount(3);
+    await expect(page.locator(".t-actions").getByText("לא סומן")).toHaveCount(3);
     await expect(page.getByRole("button", { name: /הפעלת סרטון יום 2/ })).toBeVisible();
     await expect(page.getByRole("link", { name: "חזרה לשביל" })).toHaveAttribute("href", "/path");
     await expect(page.getByRole("navigation", { name: "ניווט ראשי" }).getByRole("link", { name: "השביל" })).toHaveAttribute("aria-current", "page");

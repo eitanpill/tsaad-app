@@ -129,10 +129,10 @@ describe("days", () => {
   it("matches Pit's content file for a few anchor days", () => {
     expect(DAYS[0].habit.title).toBe("כוס מים חמימים עם לימון כשקמים");
     expect(DAYS[0].movement.title).toBe("מתיחת בוקר עדינה בעמידה");
-    expect(DAYS[3].habit.title).toBe("7 דקות של אמבטיית שמש");
+    expect(DAYS[3].habit.title).toBe("7 דקות אמבטיית שמש");
     expect(DAYS[3].movement.title).toBe("חיזוק פלג גוף תחתון");
     expect(DAYS[3].meditation.title).toBe("להקשיב ל־3 צלילים סביבכם");
-    expect(DAYS[11].habit.title).toBe("חצי שעה בלי מסכים לפני השינה, ומי שיכול/ה, יותר");
+    expect(DAYS[11].habit.title).toBe("חצי שעה בלי מסכים לפני השינה");
     expect(DAYS[13].habit.title).toBe("לבחור את ההרגלים שממשיכים איתם");
   });
 

@@ -183,6 +183,30 @@ export const actionCompletions = pgTable(
   ],
 );
 
+/**
+ * "ההרגלים שלי": רשימת ההרגלים המצטברת (ביום N מופיעים הרגלים 1..N, מ־days[].habit.title). לכל יום רשימה חדשה, ולכן הסימון הוא
+ * לפי (משתמש, יום אתגר, הרגל). כאן נשמרים רק ההרגלים הישנים (habit_day < day): ההרגל החדש של היום הוא שלב "הרגל" הקיים
+ * ב־action_completions (מקור אמת יחיד לכוס, ל־12 מתוך 14 ולסנכרון), ולכן אין לו שורה כאן. סימון = insert, ביטול = delete.
+ */
+export const habitChecks = pgTable(
+  "habit_checks",
+  {
+    id: id(),
+    userId: userRef(),
+    /** יום האתגר שבו סומן (1..14). */
+    day: smallint("day").notNull(),
+    /** מספר ההרגל ברשימה (1..day-1): ההרגל שנוסף ביום הזה. */
+    habitDay: smallint("habit_day").notNull(),
+    checkedAt: ts("checked_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("habit_checks_user_day_habit").on(t.userId, t.day, t.habitDay),
+    check("habit_checks_day", sql`${t.day} between 1 and 14`),
+    check("habit_checks_habit_day", sql`${t.habitDay} >= 1 and ${t.habitDay} < ${t.day}`),
+    index("habit_checks_user_day_idx").on(t.userId, t.day),
+  ],
+);
+
 export const pushSubscriptions = pgTable(
   "push_subscriptions",
   {

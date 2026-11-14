@@ -7,15 +7,33 @@ import { actionKey } from "@/lib/today/view";
 import { AlertCircle, CheckIcon } from "../../_components/icons";
 import { toggleAction } from "../../today/actions";
 import { actionDetail, actionTitle, type DayTitles } from "../../today/action-labels";
+import { HabitChecklist, habitKey, type HabitRow } from "../../today/HabitChecklist";
 import { ActionButton } from "../../today/ActionButton";
 
-type Toast = { kind: "saved" | "undone"; text: string } | { kind: "error"; text: string; retry: { action: Action; to: boolean } };
+type Toast =
+  | { kind: "saved" | "undone"; text: string }
+  | { kind: "error"; text: string; retry: { action: Action; to: boolean } }
+  | { kind: "error"; text: string; retryHabit: { run: () => void; focusKey: string } };
 
 /**
  * הפעולות של יום קודם שעוד אפשר לסמן (אתמול, עד חצות). הכלל נאכף בשרת (toggleAction); כאן רק הממשק.
  * מקבל רק את הכותרות של היום הזה, כדי שתוכן של ימים אחרים לא יגיע ללקוח.
  */
-export function DayActions({ day, titles, done }: { day: number; titles: DayTitles; done: Action[] }) {
+export function DayActions({
+  day,
+  titles,
+  done,
+  heading,
+  habits,
+  olderChecked,
+}: {
+  day: number;
+  titles: DayTitles;
+  done: Action[];
+  heading: string;
+  habits: HabitRow[];
+  olderChecked: number[];
+}) {
   const initial = useMemo(() => done.map((a) => actionKey(day, a)), [done, day]);
   const [saved, setSaved] = useState<string[]>(initial);
   const [optimistic, applyOptimistic] = useOptimistic(
@@ -57,7 +75,11 @@ export function DayActions({ day, titles, done }: { day: number; titles: DayTitl
 
   return (
     <>
-      <div className="act-grid">
+      <section className="t t-actions" aria-labelledby="day-actions-h">
+        <h2 id="day-actions-h" className="act-title">
+          {heading}
+        </h2>
+        <div className="act-grid">
         {actionsForDay(day).map((a, i) => (
           <ActionButton
             key={a}
@@ -70,7 +92,19 @@ export function DayActions({ day, titles, done }: { day: number; titles: DayTitl
             onToggle={(_, action) => setAction(action, !optimistic.includes(actionKey(day, action)))}
           />
         ))}
-      </div>
+        </div>
+      </section>
+      <HabitChecklist
+        key={day}
+        day={day}
+        habits={habits}
+        initialOlder={olderChecked}
+        stepDone={optimistic.includes(actionKey(day, "habit"))}
+        onToggleStep={() => setAction("habit", !optimistic.includes(actionKey(day, "habit")))}
+        onSaved={(to) => setToast(to ? { kind: "saved", text: copy.habits.saved } : { kind: "undone", text: copy.states.success.undone })}
+        onError={(run, h) => setToast({ kind: "error", text: copy.states.saveFailed, retryHabit: { run, focusKey: habitKey(day, h) } })}
+        markNew={false}
+      />
       <div
         className="toast-region"
         role="status"
@@ -90,6 +124,13 @@ export function DayActions({ day, titles, done }: { day: number; titles: DayTitl
               <button
                 type="button"
                 onClick={() => {
+                  if ("retryHabit" in toast) {
+                    const rh = toast.retryHabit;
+                    setToast(null);
+                    document.querySelector<HTMLInputElement>(`[data-habit-key="${rh.focusKey}"]`)?.focus();
+                    rh.run();
+                    return;
+                  }
                   const r = toast.retry;
                   setToast(null);
                   focusAction(r.action);
