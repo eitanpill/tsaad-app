@@ -214,6 +214,8 @@ test("off: the switch is a labelled role=switch, off, with the status in a polit
 
 test("turning on: asks permission, subscribes, saves the subscription on the server, announces it; keyboard works", async ({ browser }) => {
   const { ctx, page, mock } = await openReminders(browser, { permission: "default" });
+  // the switch ignores presses while the initial status check runs: wait for it, or Space can land in that window (flake)
+  await expect(status(page)).toHaveText("ההתראות כבויות");
   await sw(page).focus();
   await page.keyboard.press("Space");
   await expect(sw(page)).toHaveAttribute("aria-checked", "true");

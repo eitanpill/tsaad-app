@@ -46,7 +46,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 2,
     live: false,
-    opening: "יום 2. ההרגל של היום: חמש נשימות עמוקות במיטה. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 2. ההרגל של היום: לסדר את המיטה מיד כשקמים. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "לסדר את המיטה מיד כשקמים" },
     movement: { type: "move", title: "חימום עמוד השדרה ושיווי משקל" },
     meditation: { type: "meditate", title: "סריקת גוף קצרה, מהראש לרגליים" },
@@ -54,7 +54,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 3,
     live: false,
-    opening: "יום 3. ההרגל של היום: חצי שעה בלי טלפון מרגע שקמים. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 3. ההרגל של היום: חצי שעה בלי טלפון מרגע ההתעוררות. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "חצי שעה בלי טלפון מרגע ההתעוררות" },
     movement: { type: "move", title: "כפיפה קדימה רכה ופתיחת חזה" },
     meditation: { type: "meditate", title: "לשים לב לתחושות בגוף" },
@@ -62,7 +62,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 4,
     live: false,
-    opening: "יום 4. ההרגל של היום: שבע דקות של אמבטיית שמש. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 4. ההרגל של היום: 7 דקות אמבטיית שמש. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "7 דקות אמבטיית שמש" },
     movement: { type: "move", title: "חיזוק פלג גוף תחתון" },
     meditation: { type: "meditate", title: "להקשיב ל־3 צלילים סביבכם" },
@@ -70,7 +70,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 5,
     live: false,
-    opening: "יום 5. ההרגל של היום: לקום מהכיסא פעם בשעה. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 5. ההרגל של היום: מדרגות במקום מעלית, והליכה במקום נסיעה קצרה. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "מדרגות במקום מעלית, והליכה במקום נסיעה קצרה" },
     movement: { type: "move", title: "חיזוק פלג גוף עליון" },
     meditation: { type: "meditate", title: "הודיה" },
@@ -78,7 +78,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 6,
     live: false,
-    opening: "יום 6. ההרגל של היום: בדיקת יציבה. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 6. ההרגל של היום: הודעה אחת טובה לאדם שאוהבים. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "הודעה אחת טובה לאדם שאוהבים" },
     movement: { type: "move", title: "תנועה דינמית להזרמת הדם" },
     meditation: { type: "meditate", title: "נשימה שמאריכה את הגב" },
@@ -94,7 +94,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 8,
     live: false,
-    opening: "יום 8. ההרגל של היום: שלושת הביסים הראשונים לאט. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 8. ההרגל של היום: אכילה קשובה, 3 ביסים ראשונים לאט. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "אכילה קשובה, 3 ביסים ראשונים לאט" },
     movement: { type: "move", title: "ברכת השמש" },
     meditation: { type: "meditate", title: "הליכה מודעת" },
@@ -102,7 +102,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 9,
     live: false,
-    opening: "יום 9. ההרגל של היום: כוס מים לפני הארוחות. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 9. ההרגל של היום: כוס מים לפני כל ארוחה, ולפחות 2 ליטר ביום. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "כוס מים לפני כל ארוחה, ולפחות 2 ליטר ביום" },
     movement: { type: "move", title: "תנוחות הלוחם" },
     meditation: { type: "meditate", title: "5 דקות מודרכות על אי־פגיעה" },
@@ -110,7 +110,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 10,
     live: false,
-    opening: "יום 10. ההרגל של היום: שלוש הודיות. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 10. ההרגל של היום: 3 תודות. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "3 תודות" },
     movement: { type: "move", title: "פתיחת לב, ידיים לאחור וחזה קדימה" },
     meditation: { type: "meditate", title: "5 דקות מודרכות בנושא חמלה" },
@@ -118,7 +118,7 @@ export const DAYS: readonly DayContent[] = [
   {
     day: 11,
     live: false,
-    opening: "יום 11. ההרגל של היום: הטלפון נטען מחוץ לחדר השינה. קחו נשימה אחת איתי, ומתחילים.",
+    opening: "יום 11. ההרגל של היום: הטלפון נטען מחוץ לחדר. קחו נשימה אחת איתי, ומתחילים.",
     habit: { type: "habit", title: "הטלפון נטען מחוץ לחדר" },
     movement: { type: "move", title: "תנוחות הפוכות עדינות" },
     meditation: { type: "meditate", title: "נשימה: שאיפה ב־4, נשיפה ב־6 לפני השינה" },

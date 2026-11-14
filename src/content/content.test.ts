@@ -150,6 +150,7 @@ describe("days", () => {
       expect(d.opening.startsWith(`יום ${d.day}. ההרגל של היום: `), d.opening).toBe(true);
       expect(d.opening.endsWith("קחו נשימה אחת איתי, ומתחילים."), d.opening).toBe(true);
       expect(d.opening.includes('"'), d.opening).toBe(false);
+      expect(d.opening).toBe(`יום ${d.day}. ההרגל של היום: ${d.habit.title}. קחו נשימה אחת איתי, ומתחילים.`);
     }
     expect(DAYS[11].opening).toBe(
       "יום 12. ההרגל של היום: חצי שעה בלי מסכים לפני השינה. קחו נשימה אחת איתי, ומתחילים.",
