@@ -12,6 +12,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:check": "node --env-file=.env.local --import tsx scripts/check-migrations.ts",
+    "deploy:prod": "npm run db:check && npx vercel deploy --prod",
     "test:db": "scripts/test-db.sh run -- vitest run --no-file-parallelism",
     "test:e2e": "scripts/test-db.sh run -- playwright test",
     "dev:create-user": "NODE_ENV=development tsx scripts/create-dev-user.ts",
