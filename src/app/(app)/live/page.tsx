@@ -16,6 +16,7 @@ import {
 } from "@/lib/live/model";
 import { getAppClock } from "@/lib/preview/context";
 import { listCompletions } from "@/lib/today/completions";
+import { WithRoundPhoto } from "@/components/AvitalPhoto";
 import { LiveIcon } from "../_components/icons";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
 import { AttendanceToggle } from "./AttendanceToggle";
@@ -101,10 +102,15 @@ export default async function LivePage() {
       <RefreshAtBoundary atIso={nextLiveChange(sessions)?.toISOString() ?? null} />
 
       <section className="t t-live-hero" aria-labelledby="live-h">
-        <span className="lv-tag">
-          <i className="lv-dot" aria-hidden="true" />
-          {g.tag}
-        </span>
+        <WithRoundPhoto
+          slot="live" priority
+          tag={
+          <span className="lv-tag">
+            <i className="lv-dot" aria-hidden="true" />
+            {g.tag}
+          </span>
+          }
+        />
         <h1 id="live-h">{g.title}</h1>
         <p className="lv-when">
           <When s={focus} tz={tz} />

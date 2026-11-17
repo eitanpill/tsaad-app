@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WithRoundPhoto } from "@/components/AvitalPhoto";
 import { SprigDoodle, SunDoodle } from "@/components/Doodles";
 import { copy } from "@/content/copy.he";
 import { fill, withStartDate } from "@/lib/format";
@@ -60,10 +61,15 @@ export function BeforeStart({
       aria-labelledby="open-live-h"
       data-testid="opening-live"
     >
-      <span className="lv-tag">
-        <i className="lv-dot" aria-hidden="true" />
-        {openingIsToday ? B.live.todayTag : L.day0.tag}
-      </span>
+      <WithRoundPhoto
+        slot="live"
+        tag={
+        <span className="lv-tag">
+          <i className="lv-dot" aria-hidden="true" />
+          {openingIsToday ? B.live.todayTag : L.day0.tag}
+        </span>
+        }
+      />
       <h2 id="open-live-h">{L.day0.title}</h2>
       <p className="lv-when">
         {w ? (

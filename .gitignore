@@ -44,3 +44,6 @@ next-env.d.ts
 !.env.example
 test-results/
 playwright-report/
+
+# e2e-only generated photo fixtures (playwright.config.ts); never real photos
+/public/avital/e2e-*

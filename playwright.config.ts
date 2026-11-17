@@ -3,12 +3,16 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { writePhotoFixtures } from "./e2e/photo-fixtures";
 
 /**
  * בדיקות דפדפן (Playwright + axe) מול build מקומי ומסד זמני.
  * הרצה: npm run test:e2e   (מרים מסד זמני דרך scripts/test-db.sh, ובונה ומריץ את האפליקציה).
  * דפדפן: משתמשים ב־Chromium שכבר מותקן (PLAYWRIGHT_BROWSERS_PATH); לא מריצים `playwright install`.
  */
+// Generated placeholder images for the Avital photo slots (git-ignored, removed in global-teardown). Server B turns the slots on.
+writePhotoFixtures();
+
 const PORT = 3100;
 const ORIGIN = `http://localhost:${PORT}`;
 // Per-run key for the test-clock header (src/lib/today/test-clock.ts). Set once in the runner process so the
@@ -55,6 +59,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: "list",
+  globalTeardown: "./e2e/global-teardown.ts",
   use: { baseURL: ORIGIN, trace: "off", locale: "he-IL" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // A: the default environment (day 14 live time, offer window, payment links and contacts all unset: placeholder states).
@@ -94,6 +99,8 @@ export default defineConfig({
         NEXT_COHORT_URL: "https://next.example.test/updates",
         // dry: the WhatsApp switch shows on /reminders; nothing is ever sent (live is refused under TSAAD_E2E anyway).
         GHL_REMINDER_MODE: "dry",
+        // Avital photo slots on, with the generated fixtures (A leaves them off: the no-photo design).
+        TSAAD_E2E_PHOTOS: "1",
       },
     },
   ],
