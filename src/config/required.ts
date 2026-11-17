@@ -51,7 +51,7 @@ export function checkProductionEnv(src: Source): string[] {
       warnings.push(`${m}=live without GHL_API_TOKEN and GHL_LOCATION_ID: it runs as off`);
     }
   }
-  if ((src.VERCEL || src.VERCEL_ENV) && (src.TSAAD_E2E || src.TSAAD_TEST_NOW || src.TSAAD_TEST_CLOCK_KEY)) {
+  if ((src.VERCEL || src.VERCEL_ENV) && (src.TSAAD_E2E || src.TSAAD_TEST_NOW || src.TSAAD_TEST_CLOCK_KEY || src.TSAAD_E2E_PHOTOS)) {
     warnings.push("test clock variables are set on Vercel; they are ignored there, remove them");
   }
   return warnings;
