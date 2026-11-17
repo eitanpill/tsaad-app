@@ -12,8 +12,9 @@ const VERSION = "v1";
 
 const sig = (secret: string, userId: string, day: number, exp: number) => hmacHex(secret, "preview", `${userId}\u0000${day}\u0000${exp}`);
 
+/** 0 = לפני ההתחלה (היום שלפני יום 1, מפגש הפתיחה); 1..14 = יום באתגר. */
 export function isPreviewDay(day: unknown): day is number {
-  return typeof day === "number" && Number.isInteger(day) && day >= 1 && day <= CHALLENGE.totalDays;
+  return typeof day === "number" && Number.isInteger(day) && day >= 0 && day <= CHALLENGE.totalDays;
 }
 
 export function signPreviewCookie(secret: string, userId: string, day: number, nowMs: number): { value: string; maxAge: number } {

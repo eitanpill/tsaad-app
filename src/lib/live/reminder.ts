@@ -1,6 +1,6 @@
 import { LIVE_REMINDER } from "@/config/constants";
-import { dayDate, type Schedule } from "@/lib/days";
-import { LIVE_DAYS, sessionStart, type LiveDay, type LiveInput } from "./model";
+import { type Schedule } from "@/lib/days";
+import { LIVE_DAYS, liveDate, sessionStart, type LiveDay, type LiveInput } from "./model";
 
 /** ללא server-only: מודל טהור שנבדק עם שעון מדומה. */
 const MIN = 60_000;
@@ -37,7 +37,7 @@ export function dueLiveReminders(
     const time = inputs[day].time;
     const startsAt = sessionStart(day, schedule, time);
     if (time && startsAt && liveReminderDue(now, startsAt)) {
-      out.push({ day, date: dayDate(day, schedule), time, startsAt });
+      out.push({ day, date: liveDate(day, schedule), time, startsAt });
     }
   }
   return out;

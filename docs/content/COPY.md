@@ -153,6 +153,9 @@
 | `before.prepare` | שתי הכנות קטנות |  |
 | `before.remindersCta` | להפעלת תזכורות |  |
 | `before.installCta` | להוספה למסך הבית |  |
+| `before.live.heading` | מפגש פתיחה בלייב |  |
+| `before.live.todayTag` | היום: מפגש הפתיחה | חדש. ביום 0 עצמו כרטיס מפגש הפתיחה מודגש ועולה מיד אחרי הכותרת. |
+| `before.live.lead` | פותחים יחד, יום לפני היום הראשון. |  |
 
 ## יום נעול
 
@@ -176,7 +179,11 @@
 | מפתח | טקסט | הערות |
 |---|---|---|
 | `live.title` | לייב |  |
-| `live.count` | 2 מפגשים |  |
+| `live.count` | 3 מפגשים |  |
+| `live.day0.tag` | מפגש פתיחה | חדש: מפגש הפתיחה ("יום 0"), היום הקלנדרי שלפני START_DATE. לא נספר בכוס ולא חלק מ־12 מתוך 14. אין לו סימון נוכחות. |
+| `live.day0.title` | מפגש הפתיחה, יחד עם אביטל |  |
+| `live.day0.time` | [LIVE_DAY0_TIME] | מציין מקום מהמפרט. מוחלף מהקונפיג (LIVE_TIME_DAY0). כשלא הוגדר, המשתתפים רואים את live.timeTba. |
+| `live.day0.note` | המפגש לא נספר בכוס ולא נכלל ב־12 הימים. נשמח לראות אתכם שם, וגם אם לא מצליחים, האתגר מחכה בלי לחץ. | חדש. מוצג בכרטיס מפגש הפתיחה במסך שלפני ההתחלה. בלי לחץ ובלי הבטחות. |
 | `live.day7.tag` | מפגש לייב ביום 7 |  |
 | `live.day7.title` | חצי הדרך, יחד עם אביטל |  |
 | `live.day7.time` | [LIVE_DAY7_TIME] | מציין מקום מהמפרט. מוחלף מהקונפיג (LIVE_TIME_DAY7). כשלא הוגדר, המשתתפים רואים את live.timeTba. |
@@ -196,6 +203,11 @@
 | `live.attendedHint` | הסימון לא חובה. |  |
 | `live.attendedDone` | סומן: הייתי במפגש |  |
 | `live.ended` | המפגש הסתיים. |  |
+| `live.allHeading` | כל המפגשים |  |
+| `live.allLabel` | שלושת מפגשי הלייב לפי הסדר |  |
+| `live.stateUpcoming` | בקרוב |  |
+| `live.stateOpen` | הקישור פתוח עכשיו |  |
+| `live.stateEnded` | הסתיים |  |
 | `live.cantAttend` | אי אפשר להגיע? | ללא שורת ההקלטה עד שיוחלט אם מקליטים. ראו שאלה 2. |
 | `live.cantAttendBody` | אפשר לסמן את ההרגל, והיום ייספר גם בלי המפגש. |  |
 
@@ -210,7 +222,7 @@
 | `reminders.toggleSub` | דרך האפליקציה שבמסך הבית |  |
 | `reminders.whatsappTitle` | תזכורת בוואטסאפ |  |
 | `reminders.timeLabel` | שעת התזכורת היומית |  |
-| `reminders.liveNote` | בימי המפגש החי (יום 7 ויום 14) תגיע גם תזכורת נפרדת, כשעה לפני המפגש, כשהקישור נפתח באפליקציה. |  |
+| `reminders.liveNote` | לפני כל מפגש לייב (מפגש הפתיחה, יום 7 ויום 14) תגיע גם תזכורת נפרדת, כשעה לפני המפגש, כשהקישור נפתח באפליקציה. |  |
 | `reminders.timeNote` | ההתראה והתזכורת בוואטסאפ מגיעות בשעה שבחרתם. ברירת המחדל היא {reminderTime}, והיום נפתח ב־{unlockTime}. | חדש: שעת התזכורת נבחרת בדף התזכורות, כל 30 דקות בין 05:30 ל־21:00, ואחת לשני הערוצים (התראה ווטסאפ). ההודעה לא מבטיחה זמן מעבר ל“בשעה שבחרתם”. |
 | `reminders.timeSave` | שמירת השעה |  |
 | `reminders.timeSaved` | השעה נשמרה. התזכורת תגיע בשעה שבחרתם. |  |
@@ -339,6 +351,8 @@
 | `admin.participants.preview.start` | הפעלת תצוגה מקדימה |  |
 | `admin.participants.preview.stop` | הפסקת התצוגה המקדימה |  |
 | `admin.participants.preview.active` | תצוגה מקדימה פעילה: יום {n}. |  |
+| `admin.participants.preview.activeBefore` | תצוגה מקדימה פעילה: לפני ההתחלה (יום 0, מפגש הפתיחה). |  |
+| `admin.participants.preview.optionBefore` | 0 (לפני ההתחלה, מפגש הפתיחה) |  |
 | `admin.participants.preview.toToday` | למסך היום |  |
 | `admin.participants.errors.generic` | משהו השתבש. נסו שוב. |  |
 | `admin.participants.errors.forbidden` | הבקשה נדחתה. |  |
@@ -349,12 +363,13 @@
 | `admin.participants.errors.self` | אי אפשר לבצע את זה על החשבון שלכם. |  |
 | `admin.participants.errors.disabledUser` | החשבון מושבת. הפעילו אותו מחדש כדי להנפיק קישור. |  |
 | `admin.participants.errors.confirmMismatch` | שם המשתמש שהוקלד לא תואם. לא נמחק כלום. |  |
-| `admin.participants.errors.invalidDay` | בחרו יום בין 1 ל־14. |  |
+| `admin.participants.errors.invalidDay` | בחרו יום בין 0 ל־14. |  |
 | `admin.participants.done.disabled` | {name} הושבת/ה. |  |
 | `admin.participants.done.enabled` | {name} הופעל/ה מחדש. |  |
 | `admin.participants.done.deleted` | המשתתף נמחק. |  |
 | `admin.participants.done.previewStopped` | התצוגה המקדימה הופסקה. |  |
 | `admin.previewBanner.text` | מצב תצוגה מקדימה: יום {n} |  |
+| `admin.previewBanner.textBefore` | מצב תצוגה מקדימה: לפני ההתחלה (יום 0) |  |
 | `admin.previewBanner.label` | תצוגה מקדימה |  |
 | `admin.previewBanner.stop` | הפסקה |  |
 | `admin.previewBanner.stopLabel` | הפסקה של מצב התצוגה המקדימה |  |
@@ -512,14 +527,15 @@
 | `landing.how.daily` | כל יום נפתח ב־{unlockTime}. אם מפעילים תזכורת, מגיעה הודעה בשעה שבחרתם (ברירת המחדל {reminderTime}). |  |
 | `landing.how.access` | אחרי ההרשמה נשלח קישור אישי למייל. דרכו בוחרים סיסמה ונכנסים. |  |
 | `landing.map.heading` | מה יש ב־14 הימים |  |
-| `landing.map.lead` | ביום 7 וביום 14 נפגשים בלייב עם אביטל. |  |
+| `landing.map.lead` | נפגשים בלייב עם אביטל שלוש פעמים: מפגש פתיחה לפני שמתחילים, וביום 7 וביום 14. |  |
 | `landing.map.liveTitle` | לייב עם אביטל |  |
 | `landing.audience.heading` | למי זה מתאים | מחליף את “נשים וגברים בגילאי 30–55”. |
 | `landing.audience.body` | למי שרוצה להתחיל בקטן. לא צריך ניסיון קודם ולא צריך גמישות. | מחליף את “נשים וגברים בגילאי 30–55”. |
 | `landing.avital.heading` | אביטל פלס | בעמוד הנחיתה אביטל מדברת בגוף ראשון. |
-| `landing.avital.body` | אני מורה ליוגה, ו־YOGIT היא יוגה לאנשים חושבים. ביום 7 וביום 14 אני איתכם בלייב. | בעמוד הנחיתה אביטל מדברת בגוף ראשון. |
+| `landing.avital.body` | אני מורה ליוגה, ו־YOGIT היא יוגה לאנשים חושבים. אני איתכם בלייב במפגש הפתיחה, וגם ביום 7 וביום 14. | בעמוד הנחיתה אביטל מדברת בגוף ראשון. |
 | `landing.avital.media` | [MEDIA_*] | מציין מקום מהמפרט. |
-| `landing.lives.heading` | שני מפגשי לייב |  |
+| `landing.lives.heading` | שלושה מפגשי לייב |  |
+| `landing.lives.day0` | מפגש פתיחה, יום לפני היום הראשון: [LIVE_DAY0_TIME] | חדש. מציין המקום [LIVE_DAY0_TIME] מוחלף מהקונפיג (LIVE_TIME_DAY0); בלי שעה מוצג live.timeTba. |
 | `landing.lives.day7` | יום 7: [LIVE_DAY7_TIME] |  |
 | `landing.lives.day14` | יום 14: [LIVE_DAY14_TIME] |  |
 | `landing.lives.note` | הקישור למפגש מופיע באפליקציה, למי שנרשמו לאתגר. |  |
@@ -536,8 +552,10 @@
 | `landing.faq.items.4.a` | אחרי ההרשמה נשלח קישור אישי למייל. דרכו בוחרים סיסמה. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
 | `landing.faq.items.5.q` | צריך להתקין משהו? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
 | `landing.faq.items.5.a` | אפשר להשתמש בדפדפן. כדי לקבל תזכורת, מוסיפים את האפליקציה למסך הבית. באייפון זה נדרש. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
-| `landing.faq.items.6.q` | מה קורה ביום 14? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
-| `landing.faq.items.6.a` | יש מפגש סיום בלייב, ואחריו הצעות להמשך למי שרוצה. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.6.q` | יש מפגש לפני שמתחילים? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.6.a` | כן, מפגש פתיחה בלייב עם אביטל, ביום שלפני היום הראשון. הוא לא נספר בכוס ולא נכלל ב־12 הימים. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.7.q` | מה קורה ביום 14? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.7.a` | יש מפגש סיום בלייב, ואחריו הצעות להמשך למי שרוצה. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
 | `landing.close.heading` | מתחילים ב־[START_DATE] |  |
 | `landing.close.headingTba` | מתחילים בקרוב | חדש בשלב 10. מוצג כש־START_DATE לא הוגדר. |
 | `landing.close.body` | צעד קטן ביום. מתחילים בקטן. |  |
@@ -672,6 +690,8 @@
 | `a11y.live.addToCalendar14` | הוספה ליומן: המפגש ביום 14 |  |
 | `a11y.live.join7` | הצטרפות למפגש של יום 7 |  |
 | `a11y.live.join14` | הצטרפות למפגש של יום 14 |  |
+| `a11y.live.addToCalendar0` | הוספה ליומן: מפגש הפתיחה |  |
+| `a11y.live.join0` | הצטרפות למפגש הפתיחה |  |
 | `a11y.live.joinDisabled` | ההצטרפות עוד לא זמינה. הקישור ייפתח שעה לפני המפגש. |  |
 | `a11y.live.joinOpened` | הקישור למפגש פתוח |  |
 | `a11y.live.attended` | סימון: הייתי במפגש |  |
@@ -840,7 +860,7 @@
 | `legal.terms.lead` | התנאים האלה חלים על השימוש באפליקציה ״צעד קטן ביום״ של YOGIT, אביטל פלס. השימוש באפליקציה מהווה הסכמה להם. |
 | `legal.terms.sections.0.id` | t-service |
 | `legal.terms.sections.0.heading` | מה השירות |
-| `legal.terms.sections.0.body.0` | האפליקציה מלווה את האתגר ״צעד קטן ביום״: 14 ימים עם סרטוני תרגול, סימון פעולות, שני מפגשי לייב עם אביטל (ביום 7 וביום 14) ותזכורות לבחירה. |
+| `legal.terms.sections.0.body.0` | האפליקציה מלווה את האתגר ״צעד קטן ביום״: 14 ימים עם סרטוני תרגול, סימון פעולות, שלושה מפגשי לייב עם אביטל (מפגש פתיחה לפני היום הראשון, וביום 7 וביום 14) ותזכורות לבחירה. |
 | `legal.terms.sections.1.id` | t-signup |
 | `legal.terms.sections.1.heading` | הרשמה ותשלום |
 | `legal.terms.sections.1.body.0` | ההרשמה לאתגר עולה 79 ₪. זה תשלום חד־פעמי ואינו מנוי. ההרשמה והתשלום מתבצעים מחוץ לאפליקציה, ואחריהם מגיע קישור אישי להפעלת החשבון. |
@@ -908,4 +928,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 753 מחרוזות.
+סך הכול 773 מחרוזות.

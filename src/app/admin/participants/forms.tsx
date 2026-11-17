@@ -181,9 +181,9 @@ export function PreviewForm({ current }: { current: number | null }) {
       <label htmlFor="adm-preview-day">{P.preview.dayLabel}</label>
       <div>
         <select id="adm-preview-day" name="day" defaultValue={current ?? 1}>
-          {Array.from({ length: 14 }, (_, i) => (
-            <option key={i + 1} value={i + 1}>
-              {i + 1}
+          {Array.from({ length: 15 }, (_, i) => (
+            <option key={i} value={i}>
+              {i === 0 ? P.preview.optionBefore : i}
             </option>
           ))}
         </select>

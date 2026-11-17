@@ -248,6 +248,32 @@ test("a server action replayed with a foreign Origin is refused", async ({ brows
 });
 
 test.describe("day preview", () => {
+  test("preview day 0 shows the before-start screen with the opening live card (time and disabled join), banner says before start", async ({ browser }) => {
+    const { ctx, page } = await adminCtx(browser); // test clock: 2026-12-04 14:00 (day 4); preview day 0 makes today the day before day 1
+    await page.goto("/admin/participants");
+    await page.getByLabel("יום", { exact: true }).selectOption("0");
+    await page.getByRole("button", { name: "הפעלת תצוגה מקדימה" }).click();
+    await page.waitForURL("**/today");
+    await expect(page.getByTestId("preview-banner")).toContainText("מצב תצוגה מקדימה: לפני ההתחלה (יום 0)");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("האתגר מתחיל ב");
+    await expect(page.locator(".chip")).toHaveCount(0);
+    const card = page.getByTestId("opening-live");
+    await expect(card).toHaveClass(/t-live-open--today/); // the preview "today" is the opening day
+    await expect(card.locator("time")).toContainText("19:00");
+    await expect(card.locator("time")).toHaveAttribute("datetime", "2026-12-04T17:00:00.000Z");
+    // 14:00 is before the window (18:00): disabled, and the real URL is not in the page
+    await expect(card.locator("button.lv-join[aria-disabled='true']")).toBeVisible();
+    expect(await page.content()).not.toContain("e2e-room-day0");
+    await axe(page);
+    // /live in the same preview
+    await page.goto("/live");
+    await expect(page.locator(".lv-all li")).toHaveCount(3);
+    await expect(page.locator(".lv-all li").first()).toHaveAttribute("aria-current", "step");
+    await page.getByTestId("preview-banner").getByRole("button", { name: "הפסקה של מצב התצוגה המקדימה" }).click();
+    await page.waitForURL("**/admin/participants");
+    await ctx.close();
+  });
+
   test("banner on app pages shows day N, the path and day views follow, stop clears it; marking yesterday does not crash", async ({ browser }) => {
     const { ctx, page } = await adminCtx(browser);
     await page.goto("/admin/participants");

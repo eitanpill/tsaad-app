@@ -59,7 +59,7 @@ export default async function ParticipantsPage({ searchParams }: Props) {
         <p className="adm-lead">{P.preview.lead}</p>
         {previewDay !== null ? (
           <p role="status">
-            {fill(P.preview.active, { n: previewDay })}{" "}
+            {previewDay === 0 ? P.preview.activeBefore : fill(P.preview.active, { n: previewDay })}{" "}
             <Link href="/today">{P.preview.toToday}</Link>
           </p>
         ) : null}

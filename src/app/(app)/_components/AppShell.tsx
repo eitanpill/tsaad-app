@@ -23,7 +23,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       {previewDay !== null ? (
         // a labelled region (landmark), not a live region: it is there from the first paint, on every app page
         <section className="preview-banner" aria-label={copy.admin.previewBanner.label} data-testid="preview-banner">
-          <p>{fill(copy.admin.previewBanner.text, { n: previewDay })}</p>
+          <p>{previewDay === 0 ? copy.admin.previewBanner.textBefore : fill(copy.admin.previewBanner.text, { n: previewDay })}</p>
           <form action={stopPreviewAction}>
             <button type="submit" className="linkbtn" aria-label={copy.admin.previewBanner.stopLabel}>
               {copy.admin.previewBanner.stop}

@@ -77,6 +77,9 @@ export default defineConfig({
         ...APP_ENV,
         APP_ORIGIN: ORIGIN_B,
         LIVE_TIME_DAY14: "20:00",
+        // Day 0 (opening live, 2026-11-30) is configured only on B; A leaves it unset (the "time to be announced" state).
+        LIVE_TIME_DAY0: "19:00",
+        LIVE_URL_DAY0: "https://live.example.test/e2e-room-day0",
         OFFER_WINDOW_HOURS: "48",
         SESSION_SPOTS: "5",
         MORNING_URL_CHALLENGE_79: "https://pay.example.test/challenge79",

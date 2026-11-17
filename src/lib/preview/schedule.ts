@@ -2,7 +2,7 @@ import { addDays } from "@/lib/time/zone";
 import { challengeDate, makeSchedule, type Schedule } from "@/lib/days";
 
 /**
- * לוח וירטואלי לתצוגה מקדימה: התאריך של "היום" באתגר (לפי שעת הפתיחה) הוא יום N, ולכן ההתחלה היא היום פחות N-1 ימים.
+ * לוח וירטואלי לתצוגה מקדימה: התאריך של "היום" באתגר (לפי שעת הפתיחה) הוא יום N, ולכן ההתחלה היא היום פחות N-1 ימים. יום 0 = לפני ההתחלה: ההתחלה מחר (היום הקלנדרי שלפני יום 1).
  * לא תלוי ב־START_DATE (גם כשהוא לא מוגדר, וגם כשהוא מוגדר).
  */
 export function previewSchedule(now: Date, day: number, opts: { timeZone: string; unlockTime: string }): Schedule {

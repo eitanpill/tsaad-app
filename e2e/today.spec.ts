@@ -119,6 +119,13 @@ test.describe("states (axe, copy, server clock)", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("האתגר מתחיל ב");
     await expect(page.getByRole("button", { name: /^הרגל/ })).toHaveCount(0);
     await expect(page.locator(".chip")).toHaveCount(0);
+    // the opening live card on a server where LIVE_TIME_DAY0 / LIVE_URL_DAY0 are unset: neutral "to be announced", disabled button, no placeholder
+    const card = page.getByTestId("opening-live");
+    await expect(card.getByRole("heading", { level: 2 })).toHaveText("מפגש הפתיחה, יחד עם אביטל");
+    await expect(card.locator(".lv-tba")).toHaveText("השעה תפורסם בקרוב.");
+    await expect(card.locator("button.lv-join[aria-disabled='true']")).toHaveText("הקישור ייפתח כאן שעה לפני המפגש.");
+    await expect(card.getByRole("link")).toHaveCount(0); // no join link and no calendar file without a time
+    expect(await page.content()).not.toContain("[LIVE_DAY");
     await axe(page);
     await shot(page, "today-before-start");
     await ctx.close();

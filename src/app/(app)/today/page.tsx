@@ -17,6 +17,8 @@ import { firstNameOf } from "@/lib/today/first-name";
 import { actionKey, greetingKey, nextBoundary, todayModel } from "@/lib/today/view";
 import { stepsFor, unlockInstant } from "@/lib/days";
 import { diffDays, localDate } from "@/lib/time/zone";
+import { getLiveInputs } from "@/lib/live/config";
+import { liveDate, liveSession, nextLiveChange } from "@/lib/live/model";
 import { getOfferModel } from "@/lib/offer/config";
 import { OfferEntry } from "./OfferEntry";
 import { OfferTiles } from "../offer/OfferTiles";
@@ -32,8 +34,21 @@ export default async function TodayPage() {
   if (model.phase === "before_start" || !schedule) {
     const first = schedule ? unlockInstant(1, schedule) : null;
     const daysUntil = schedule ? diffDays(localDate(now, schedule.timeZone), schedule.startDate) : null;
+    // מפגש הפתיחה (יום 0, היום שלפני START_DATE). בלי START_DATE אין תאריך, ולכן גם שעה לא מוצגת (לא ממציאים).
+    const opening = liveSession(0, now, schedule, schedule ? getLiveInputs(cfg.env)[0] : {});
+    const openingIsToday = schedule !== null && localDate(now, schedule.timeZone) === liveDate(0, schedule);
+    const nextMs = [first && first.getTime() > now.getTime() ? first : null, nextLiveChange([opening])]
+      .filter((d): d is Date => d !== null)
+      .map((d) => d.getTime());
     return (
-      <BeforeStart startDate={cfg.startDate} daysUntil={daysUntil} nextChangeIso={first && first.getTime() > now.getTime() ? first.toISOString() : null} />
+      <BeforeStart
+        startDate={cfg.startDate}
+        daysUntil={daysUntil}
+        nextChangeIso={nextMs.length ? new Date(Math.min(...nextMs)).toISOString() : null}
+        opening={opening}
+        openingIsToday={openingIsToday}
+        timeZone={cfg.timeZone}
+      />
     );
   }
 

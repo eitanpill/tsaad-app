@@ -20,6 +20,9 @@ const d = (iso: string) => new Date(iso);
 // START 2026-12-01 (Israel winter +02:00): day 7 = 2026-12-07 live 20:00 (window opens 19:00 local = 17:00Z).
 const IN_WINDOW = d("2026-12-07T19:20:00+02:00");
 const LIVE_ENV = { START_DATE: "2026-12-01", LIVE_TIME_DAY7: "20:00", LIVE_TIME_DAY14: "19:30" };
+// Day 0 (opening session) = the calendar day before START_DATE: 2026-11-30, live 19:00 (window opens 18:00 local).
+const DAY0_ENV = { ...LIVE_ENV, LIVE_TIME_DAY0: "19:00" };
+const DAY0_WINDOW = d("2026-11-30T18:20:00+02:00");
 
 describe.skipIf(!runIntegration)("live reminders (integration)", () => {
   let db: Db;
@@ -289,6 +292,103 @@ describe.skipIf(!runIntegration)("live reminders (integration)", () => {
       const r = await runLiveReminders({ db, config, sender: dryRunSender, now: IN_WINDOW, ghlConfig: ghlLive(), log });
       expect(r.skipped).toBe("no_live_in_window");
       expect(await count("sync_outbox")).toBe(0);
+    });
+  });
+
+  describe("day 0: the opening session (the day before START_DATE)", () => {
+    it("push: sends the live text once, on its own date row, in dry-run and live mode", async () => {
+      await mkUser({ subs: 1 });
+      const dry = await runLiveReminders({ db, config: buildConfig(DAY0_ENV), sender: dryRunSender, now: DAY0_WINDOW });
+      expect(dry).toMatchObject({ mode: "dry", day: 0, claimed: 1, sent: 0 });
+      expect(await count("reminder_log", sql`channel = 'live_push' and status = 'dry_run' and date = '2026-11-30'`)).toBe(1);
+      await db.execute(sql`delete from reminder_log`);
+      const { sender, sent } = fakeSender();
+      const r = await runLiveReminders({ db, config: buildConfig({ ...DAY0_ENV, REMINDERS_ENABLED: "true" }), sender, now: DAY0_WINDOW });
+      expect(r).toMatchObject({ mode: "live", day: 0, claimed: 1, sent: 1 });
+      expect(JSON.parse(sent[0].payload)).toMatchObject({ title: copy.push.liveTitle, url: "/live", tag: "live-0" });
+      expect(await count("reminder_log", sql`channel = 'live_push' and status = 'sent' and date = '2026-11-30'`)).toBe(1);
+    });
+
+    it("push: idempotent across repeated and parallel runs", async () => {
+      await mkUser({ subs: 1 });
+      await mkUser({ subs: 1 });
+      const { sender, sent } = fakeSender();
+      const config = buildConfig({ ...DAY0_ENV, REMINDERS_ENABLED: "true" });
+      await Promise.all(Array.from({ length: 5 }, () => runLiveReminders({ db, config, sender, now: DAY0_WINDOW })));
+      expect((await runLiveReminders({ db, config, sender, now: d("2026-11-30T18:50:00+02:00") })).claimed).toBe(0);
+      expect(sent).toHaveLength(2);
+      expect(await count("reminder_log", sql`channel = 'live_push'`)).toBe(2);
+    });
+
+    it("push: window is start-60 to the start, and nothing without LIVE_TIME_DAY0", async () => {
+      await mkUser({ subs: 1 });
+      const { sender, sent } = fakeSender();
+      const config = buildConfig({ ...DAY0_ENV, REMINDERS_ENABLED: "true" });
+      for (const iso of ["2026-11-30T17:59:59+02:00", "2026-11-30T19:00:00+02:00", "2026-11-29T18:20:00+02:00", "2026-12-01T18:20:00+02:00"]) {
+        expect((await runLiveReminders({ db, config, sender, now: d(iso) })).skipped, iso).toBe("no_live_in_window");
+      }
+      const unset = await runLiveReminders({ db, config: buildConfig({ ...LIVE_ENV, REMINDERS_ENABLED: "true" }), sender, now: DAY0_WINDOW });
+      expect(unset.skipped).toBe("no_live_in_window");
+      expect(sent).toHaveLength(0);
+      expect(await count("reminder_log")).toBe(0);
+    });
+
+    it("does not collide with day 7 or day 14: three separate rows, three sends", async () => {
+      await mkUser({ subs: 1 });
+      const { sender, sent } = fakeSender();
+      const config = buildConfig({ ...DAY0_ENV, REMINDERS_ENABLED: "true" });
+      await runLiveReminders({ db, config, sender, now: DAY0_WINDOW });
+      await runLiveReminders({ db, config, sender, now: IN_WINDOW });
+      await runLiveReminders({ db, config, sender, now: d("2026-12-14T18:45:00+02:00") });
+      expect(sent.map((x) => JSON.parse(x.payload).tag)).toEqual(["live-0", "live-7", "live-14"]);
+      expect(await count("reminder_log", sql`channel = 'live_push'`)).toBe(3);
+      expect(await count("reminder_log", sql`channel = 'live_push' and date = '2026-11-30'`)).toBe(1);
+    });
+
+    it("the daily reminder never runs before day 1: nothing on day 0, even at the user's time", async () => {
+      await mkUser({ subs: 1 });
+      const { sender, sent } = fakeSender();
+      const config = buildConfig({ ...DAY0_ENV, REMINDERS_ENABLED: "true" });
+      const r = await runReminders({ db, config, sender, now: d("2026-11-30T07:30:00+02:00") });
+      expect(r.sent).toBe(0);
+      expect(sent).toHaveLength(0);
+      expect(await count("reminder_log", sql`channel in ('push','ghl')`)).toBe(0);
+    });
+
+    it("ghl: dry writes a live_ghl dry_run row for 2026-11-30 once; live queues once and the worker sends the day-0 time and the same tag", async () => {
+      const u = await mkUser();
+      const dryCfg = buildConfig({ ...DAY0_ENV, GHL_REMINDER_MODE: "dry" });
+      expect((await runLiveReminders({ db, config: dryCfg, sender: dryRunSender, now: DAY0_WINDOW, log })).ghl).toEqual({ mode: "dry", claimed: 1 });
+      expect((await runLiveReminders({ db, config: dryCfg, sender: dryRunSender, now: DAY0_WINDOW, log })).ghl).toEqual({ mode: "dry", claimed: 0 });
+      expect(await count("reminder_log", sql`channel = 'live_ghl' and status = 'dry_run' and date = '2026-11-30'`)).toBe(1);
+      expect(await count("sync_outbox")).toBe(0);
+      await db.execute(sql`delete from reminder_log`);
+
+      const config = buildConfig({ ...DAY0_ENV, GHL_REMINDER_MODE: "live", ...GHL });
+      const cfg = getGhlConfig(config.env, {});
+      await runLiveReminders({ db, config, sender: dryRunSender, now: DAY0_WINDOW, ghlConfig: cfg, log });
+      await runLiveReminders({ db, config, sender: dryRunSender, now: d("2026-11-30T18:40:00+02:00"), ghlConfig: cfg, log });
+      expect(await count("sync_outbox", sql`kind = 'ghl_live_reminder'`)).toBe(1);
+      const { client, calls, bodies } = okClient();
+      const w = await runGhlOutbox({ db, cfg, client, now: d("2026-11-30T18:21:00+02:00"), log, timeZone: "Asia/Jerusalem", origin: ORIGIN, makeLink: async () => "x", random: () => 0 });
+      expect(w).toMatchObject({ claimed: 1, sent: 1, failed: 0, dead: 0 });
+      expect(calls).toEqual([`field ${u.ghlContactId}`, `remove ${u.ghlContactId} tsaad_live_reminder`, `add ${u.ghlContactId} tsaad_live_reminder`]);
+      expect(bodies[0]).toEqual([{ key: "tsaad_live_time", value: "19:00" }]);
+      expect(await count("reminder_log", sql`channel = 'live_ghl' and status = 'sent' and date = '2026-11-30'`)).toBe(1);
+    });
+
+    it("ghl: a retry that lands after the day-0 start is dropped, never sent; no collision with day 7's row", async () => {
+      await mkUser();
+      const config = buildConfig({ ...DAY0_ENV, GHL_REMINDER_MODE: "live", ...GHL });
+      const cfg = getGhlConfig(config.env, {});
+      await runLiveReminders({ db, config, sender: dryRunSender, now: DAY0_WINDOW, ghlConfig: cfg, log });
+      await runLiveReminders({ db, config, sender: dryRunSender, now: IN_WINDOW, ghlConfig: cfg, log });
+      expect(await count("reminder_log", sql`channel = 'live_ghl'`)).toBe(2);
+      const { client, calls } = okClient();
+      const r = await runGhlOutbox({ db, cfg, client, now: d("2026-11-30T19:00:00+02:00"), log, timeZone: "Asia/Jerusalem", origin: ORIGIN, makeLink: async () => "x", random: () => 0 });
+      // day 0 is dropped (started); day 7's start is a week away, so it is still sendable
+      expect(r).toMatchObject({ claimed: 2, sent: 1, dead: 1 });
+      expect(calls.filter((c) => c.startsWith("add"))).toHaveLength(1);
     });
   });
 });

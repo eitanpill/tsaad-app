@@ -21,7 +21,7 @@ export const reminderPayloadSchema = z.strictObject({ date: z.string().regex(/^\
 /** תזכורת לייב: התאריך (של יום הלייב), היום, שעת המפגש ("HH:MM") ורגע ההתחלה (ISO); אחרי ההתחלה לא שולחים. */
 export const liveReminderPayloadSchema = z.strictObject({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  day: z.number().int().min(1).max(14),
+  day: z.number().int().min(0).max(14),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   startsAt: z.iso.datetime(),
 });

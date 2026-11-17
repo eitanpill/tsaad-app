@@ -27,12 +27,27 @@ describe("preview cookie", () => {
     expect(verifyPreviewCookie(SECRET, "u1", value, NOW + (PREVIEW_TTL_SECONDS + 1) * 1000)).toBeNull();
   });
   it("rejects garbage, empty and out-of-range days", () => {
-    for (const bad of [undefined, "", "x", "v1.1.2", "v2.1.99999999999.abc", "v1.0.99999999999.abc", "v1.15.99999999999.abc", "v1.1.1.1.1", "a".repeat(300)]) {
+    for (const bad of [undefined, "", "x", "v1.1.2", "v2.1.99999999999.abc", "v1.-1.99999999999.abc", "v1.15.99999999999.abc", "v1.1.1.1.1", "a".repeat(300)]) {
       expect(verifyPreviewCookie(SECRET, "u1", bad, NOW)).toBeNull();
     }
-    expect(() => signPreviewCookie(SECRET, "u1", 0, NOW)).toThrow();
+    expect(() => signPreviewCookie(SECRET, "u1", -1, NOW)).toThrow();
     expect(() => signPreviewCookie(SECRET, "u1", 15, NOW)).toThrow();
     expect(isPreviewDay(1) && isPreviewDay(14) && !isPreviewDay(1.5) && !isPreviewDay("3")).toBe(true);
+  });
+});
+
+describe("preview day 0 (before the start, the opening live)", () => {
+  it("is a valid preview day and round-trips through the cookie", () => {
+    expect(isPreviewDay(0)).toBe(true);
+    const { value } = signPreviewCookie(SECRET, "u1", 0, NOW);
+    expect(verifyPreviewCookie(SECRET, "u1", value, NOW + 1000)).toBe(0);
+  });
+  it("makes today the day before day 1: the status is before_start and day 1 opens tomorrow", () => {
+    const opts = { timeZone: "Asia/Jerusalem", unlockTime: "05:00" };
+    const now = new Date("2026-11-11T10:00:00Z");
+    const s = previewSchedule(now, 0, opts);
+    expect(dayStatusAt(now, s)).toEqual({ phase: "before_start" });
+    expect(s.startDate).toBe("2026-11-12");
   });
 });
 

@@ -577,6 +577,20 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .lv-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--terracotta); animation: appulse 2.4s ease-in-out 2; }
 .lv-when { margin: 0; font-size: 19px; font-weight: 700; }
 .lv-when time { font-weight: 700; }
+/* Opening live (day 0) card on the before-start screen. Sand tile like the live action tile; on the day itself a terracotta frame. */
+.t-live-open { background: var(--sand); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.t-live-open h2 { margin: 0; font-size: 22px; line-height: 1.15; font-weight: 800; overflow-wrap: break-word; }
+.t-live-open .lv-tag { align-self: flex-start; }
+.t-live-open--today { border: 3px solid var(--terracotta); padding: 18px; }
+.t-live-open--today h2 { font-size: 26px; }
+.t-live-all { background: var(--sage); color: var(--forest); padding: 16px; }
+.t-live-all h2 { margin: 0 0 8px; font-size: 20px; line-height: 1.15; font-weight: 800; }
+.lv-all { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.lv-all li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--forest); font-size: 15px; }
+.lv-all li:first-child { border-top: 0; }
+.lv-all b { font-weight: 800; }
+.lv-all [aria-current] b::after { content: " •"; }
+.lv-all-state { margin-inline-start: auto; font-weight: 700; font-size: 14px; }
 .t-live-act { background: var(--sand); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .lv-join {
   display: flex;
@@ -908,7 +922,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
   .finish-wrap > .t-map { grid-column: 2; grid-row: span 3; align-self: start; }
   /* the before-start screen */
   .today--before .t-count, .today--before .t-bs-art { min-height: 200px; }
-  .today--before .ar-note { grid-column: 1 / -1; }
+  .today--before .ar-note, .today--before .ar-live { grid-column: 1 / -1; }
   .ar-note { grid-column: 2; }
 }
 

@@ -7,7 +7,7 @@ import { liveSession } from "./model";
 const at = (iso: string) => new Date(iso);
 // START 2026-12-01 (Israel winter, +02:00): day 7 = 2026-12-07, day 14 = 2026-12-14.
 const winter = makeSchedule("2026-12-01");
-const T = { 7: { time: "20:00" }, 14: { time: "19:30" } };
+const T = { 0: {}, 7: { time: "20:00" }, 14: { time: "19:30" } };
 
 describe("live reminder lead time", () => {
   it("is the same hour as when the link opens in the app", () => {
@@ -64,8 +64,8 @@ describe("dueLiveReminders", () => {
     expect(dueLiveReminders(at("2026-12-07T20:05:00+02:00"), winter, T)).toEqual([]);
   });
   it("returns nothing when that day's live time is not configured (never invents one)", () => {
-    expect(dueLiveReminders(at("2026-12-07T19:20:00+02:00"), winter, { 7: {}, 14: T[14] })).toEqual([]);
-    expect(dueLiveReminders(at("2026-12-14T19:00:00+02:00"), winter, { 7: T[7], 14: {} })).toEqual([]);
+    expect(dueLiveReminders(at("2026-12-07T19:20:00+02:00"), winter, { 0: {}, 7: {}, 14: T[14] })).toEqual([]);
+    expect(dueLiveReminders(at("2026-12-14T19:00:00+02:00"), winter, { 0: {}, 7: T[7], 14: {} })).toEqual([]);
   });
   it("returns nothing without a schedule (START_DATE unset)", () => {
     expect(dueLiveReminders(at("2026-12-07T19:20:00+02:00"), null, T)).toEqual([]);
@@ -91,9 +91,36 @@ describe("dueLiveReminders", () => {
     });
     it("an early live time right after the clock change still sends exactly one hour before", () => {
       const s = makeSchedule("2027-03-20");
-      const early = { 7: { time: "06:00" }, 14: T[14] };
+      const early = { 0: {}, 7: { time: "06:00" }, 14: T[14] };
       expect(dueLiveReminders(at("2027-03-26T04:59:00+03:00"), s, early)).toEqual([]);
       expect(dueLiveReminders(at("2027-03-26T05:00:00+03:00"), s, early)).toHaveLength(1);
     });
+  });
+});
+
+describe("dueLiveReminders: day 0 (the opening session)", () => {
+  const T0 = { 0: { time: "19:00" }, 7: { time: "20:00" }, 14: { time: "19:30" } };
+  it("returns day 0 with its own date (the day before START_DATE) inside the window", () => {
+    const r = dueLiveReminders(at("2026-11-30T18:20:00+02:00"), winter, T0);
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ day: 0, date: "2026-11-30", time: "19:00" });
+    expect(r[0].startsAt.toISOString()).toBe(at("2026-11-30T19:00:00+02:00").toISOString());
+  });
+  it("uses the same 60-minute window: not before, due at start-60, never at or after the start", () => {
+    expect(dueLiveReminders(at("2026-11-30T17:59:59+02:00"), winter, T0)).toEqual([]);
+    expect(dueLiveReminders(at("2026-11-30T18:00:00+02:00"), winter, T0).map((r) => r.day)).toEqual([0]);
+    expect(dueLiveReminders(at("2026-11-30T19:00:00+02:00"), winter, T0)).toEqual([]);
+  });
+  it("is on a different date than day 1, 7 and 14, so reminder_log rows cannot collide", () => {
+    const dates = [0, 7, 14].map((d) => dueLiveReminders(at(d === 0 ? "2026-11-30T18:20:00+02:00" : d === 7 ? "2026-12-07T19:20:00+02:00" : "2026-12-14T18:45:00+02:00"), winter, T0)[0].date);
+    expect(new Set(dates).size).toBe(3);
+    expect(dates).toEqual(["2026-11-30", "2026-12-07", "2026-12-14"]);
+  });
+  it("returns nothing when day 0 has no configured time (never invents one), or without a schedule", () => {
+    expect(dueLiveReminders(at("2026-11-30T18:20:00+02:00"), winter, { ...T0, 0: {} })).toEqual([]);
+    expect(dueLiveReminders(at("2026-11-30T18:20:00+02:00"), null, T0)).toEqual([]);
+  });
+  it("month boundary: START_DATE 2026-12-01 gives 2026-11-30; START_DATE 2027-01-01 gives 2026-12-31", () => {
+    expect(dueLiveReminders(at("2026-12-31T18:20:00+02:00"), makeSchedule("2027-01-01"), T0)[0]).toMatchObject({ day: 0, date: "2026-12-31" });
   });
 });

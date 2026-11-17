@@ -137,6 +137,9 @@ export const envSchema = z.object({
   REMINDER_TIME: withDefault(hhmm, DEFAULT_REMINDER_TIME),
   TZ_NAME: withDefault(timeZone, DEFAULT_TZ_NAME),
 
+  /** מפגש הפתיחה: היום הקלנדרי שלפני START_DATE ("יום 0"). אותו פורמט ואותה בדיקה כמו ימים 7 ו־14. */
+  LIVE_URL_DAY0: optional(httpsUrl),
+  LIVE_TIME_DAY0: optional(hhmm),
   LIVE_URL_DAY7: optional(httpsUrl),
   LIVE_URL_DAY14: optional(httpsUrl),
   LIVE_TIME_DAY7: optional(hhmm),

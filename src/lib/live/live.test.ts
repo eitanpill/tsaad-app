@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { LIVE } from "@/config/constants";
 import { makeSchedule } from "@/lib/days";
 import { buildIcs, icsEscape, icsFold, icsUtc } from "./ics";
-import { focusSession, liveSession, liveSessions, liveWhen, nextLiveChange } from "./model";
+import { LIVE_DAYS, focusSession, liveDate, liveSession, liveSessions, liveWhen, nextLiveChange } from "./model";
 
 // START 2026-12-01 (Israel winter time, +02:00): day 7 is 2026-12-07, day 14 is 2026-12-14.
 const schedule = makeSchedule("2026-12-01");
@@ -60,7 +60,7 @@ describe("liveSession without a time (nothing is invented)", () => {
 });
 
 describe("focus and next change", () => {
-  const inputs = { 7: IN, 14: { time: "19:30" } };
+  const inputs = { 0: {}, 7: IN, 14: { time: "19:30" } };
   it("focuses the first session that has not passed, else the last", () => {
     expect(focusSession(liveSessions(at("2026-12-03T10:00:00+02:00"), schedule, inputs)).day).toBe(7);
     expect(focusSession(liveSessions(at("2026-12-09T10:00:00+02:00"), schedule, inputs)).day).toBe(14);
@@ -126,5 +126,61 @@ describe("ics", () => {
   });
   it("never carries the live link", () => {
     expect(unfolded).not.toContain(IN.url);
+  });
+});
+
+describe("day 0: the opening session (the calendar day before START_DATE)", () => {
+  it("lists the three sessions in order, and the cup live days stay 7 and 14", () => {
+    expect([...LIVE_DAYS]).toEqual([0, 7, 14]);
+  });
+  it("derives its date from START_DATE: the day before", () => {
+    expect(liveDate(0, schedule)).toBe("2026-11-30");
+    expect(liveDate(7, schedule)).toBe("2026-12-07");
+  });
+  it("crosses month and year boundaries", () => {
+    expect(liveDate(0, makeSchedule("2026-12-01"))).toBe("2026-11-30");
+    expect(liveDate(0, makeSchedule("2027-01-01"))).toBe("2026-12-31");
+    expect(liveDate(0, makeSchedule("2028-03-01"))).toBe("2028-02-29");
+  });
+  it("starts at the configured time on that date (Israel winter +02:00)", () => {
+    const s = liveSession(0, at("2026-11-20T10:00:00+02:00"), schedule, { time: "20:00", url: IN.url });
+    expect(s.startsAt?.toISOString()).toBe("2026-11-30T18:00:00.000Z");
+    expect(s.calendarAvailable).toBe(true);
+    const w = liveWhen(s, "Asia/Jerusalem")!;
+    expect(w.date).toContain("30");
+    expect(w.datetime).toBe("2026-11-30T18:00:00.000Z");
+  });
+  it("uses the same window as the other lives: opens 60 minutes before, closes 120 minutes after the start", () => {
+    const t = (iso: string) => liveSession(0, at(iso), schedule, { time: "20:00", url: IN.url });
+    expect(t("2026-11-30T18:59:59+02:00").state).toBe("before");
+    expect(t("2026-11-30T18:59:59+02:00").joinUrl).toBeNull();
+    expect(t("2026-11-30T19:00:00+02:00")).toMatchObject({ state: "open", joinUrl: IN.url });
+    expect(t("2026-11-30T21:59:59+02:00").state).toBe("open");
+    expect(t("2026-11-30T22:00:00+02:00")).toMatchObject({ state: "passed", joinUrl: null });
+  });
+  it("unset time: no start, no calendar, never invents one; passed only once day 1 opens", () => {
+    const s = liveSession(0, at("2026-11-30T21:00:00+02:00"), schedule, { url: IN.url });
+    expect(s).toMatchObject({ time: null, startsAt: null, state: "before", calendarAvailable: false, joinUrl: null });
+    expect(liveWhen(s, "Asia/Jerusalem")).toBeNull();
+    expect(liveSession(0, at("2026-12-01T04:59:00+02:00"), schedule, {}).state).toBe("before");
+    expect(liveSession(0, at("2026-12-01T05:00:00+02:00"), schedule, {}).state).toBe("passed");
+  });
+  it("unset URL: an open window has no link (linkMissing), never a placeholder", () => {
+    const s = liveSession(0, at("2026-11-30T19:30:00+02:00"), schedule, { time: "20:00" });
+    expect(s).toMatchObject({ state: "open", joinUrl: null, linkMissing: true });
+  });
+  it("without START_DATE nothing is computed", () => {
+    const s = liveSession(0, at("2026-11-30T19:30:00+02:00"), null, { time: "20:00" });
+    expect(s).toMatchObject({ startsAt: null, state: "before", calendarAvailable: false });
+  });
+  it("is the focus before the challenge, then hands over to day 7 once it has passed", () => {
+    const inputs = { 0: { time: "20:00" }, 7: IN, 14: { time: "19:30" } };
+    expect(focusSession(liveSessions(at("2026-11-20T10:00:00+02:00"), schedule, inputs)).day).toBe(0);
+    expect(focusSession(liveSessions(at("2026-11-30T23:00:00+02:00"), schedule, inputs)).day).toBe(7);
+    expect(focusSession(liveSessions(at("2026-12-02T10:00:00+02:00"), schedule, inputs)).day).toBe(7);
+  });
+  it("DST: a start date right after the autumn change still yields the day before in local time", () => {
+    const s = makeSchedule("2026-10-26");
+    expect(liveSession(0, at("2026-10-20T10:00:00+03:00"), s, { time: "20:00" }).startsAt?.toISOString()).toBe("2026-10-25T18:00:00.000Z");
   });
 });

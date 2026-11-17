@@ -192,8 +192,9 @@ export default async function LandingPage() {
       <section className="pt pt--sand pt-lives" aria-labelledby="land-live-h">
         <h2 id="land-live-h">{L.lives.heading}</h2>
         <ul>
-          <li>{slot(L.lives.day7, "[LIVE_DAY7_TIME]", whenNode(sessions[0], cfg.timeZone))}</li>
-          <li>{slot(L.lives.day14, "[LIVE_DAY14_TIME]", whenNode(sessions[1], cfg.timeZone))}</li>
+          <li>{slot(L.lives.day0, "[LIVE_DAY0_TIME]", whenNode(sessions[0], cfg.timeZone))}</li>
+          <li>{slot(L.lives.day7, "[LIVE_DAY7_TIME]", whenNode(sessions[1], cfg.timeZone))}</li>
+          <li>{slot(L.lives.day14, "[LIVE_DAY14_TIME]", whenNode(sessions[2], cfg.timeZone))}</li>
         </ul>
         <p className="n">{L.lives.note}</p>
       </section>

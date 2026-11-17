@@ -26,8 +26,8 @@ export type LiveReminderRunResult = {
 };
 
 /**
- * תזכורת הלייב, נפרדת מהיומית: ביום לייב (7 ו־14) בלבד, פעם אחת לכל משתתף מופעל, בריצה הראשונה בטווח
- * [התחלה פחות LIVE_REMINDER.leadMinutes, התחלה). ריצה שמאחרת אל אחרי ההתחלה לא שולחת. בלי שעה מוגדרת (LIVE_TIME_DAYn)
+ * תזכורת הלייב, נפרדת מהיומית: ביום מפגש (0 = מפגש הפתיחה, היום שלפני START_DATE; 7; 14) בלבד, פעם אחת לכל משתתף מופעל, בריצה הראשונה בטווח
+ * [התחלה פחות LIVE_REMINDER.leadMinutes, התחלה). ריצה שמאחרת אל אחרי ההתחלה לא שולחת. בלי שעה מוגדרת (LIVE_TIME_DAYn, כולל LIVE_TIME_DAY0)
  * לא נשלח דבר. ה־cron רץ כל 15 דקות, ולכן ההודעה מגיעה 45 עד 60 דקות לפני.
  *
  * אותה הגנה מכפילות כמו ביומית: שורת reminder_log (channel live_push / live_ghl, התאריך הוא תאריך יום הלייב)
@@ -53,6 +53,7 @@ export async function runLiveReminders(args: {
   if (!config.startDate) return { ...base, skipped: "no_start_date" };
   const schedule = makeSchedule(config.startDate, { timeZone: config.timeZone, unlockTime: config.unlockTime });
   const due = dueLiveReminders(now, schedule, {
+    0: { time: config.env.LIVE_TIME_DAY0 },
     7: { time: config.env.LIVE_TIME_DAY7 },
     14: { time: config.env.LIVE_TIME_DAY14 },
   })[0];
