@@ -33,5 +33,6 @@ describe("checkProductionEnv", () => {
     expect(w.join("\n")).toContain("ACCESSIBILITY_CONTACT");
     expect(w.join("\n")).toContain("without VAPID keys");
     expect(w.join("\n")).toContain("test clock");
+    expect(checkProductionEnv({ ...base, VERCEL: "1", TSAAD_E2E_PHOTOS: "1" }).join("\n")).toContain("test clock");
   });
 });
