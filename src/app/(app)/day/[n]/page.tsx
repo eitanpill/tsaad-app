@@ -8,15 +8,18 @@ import { requireUser } from "@/lib/auth/dal";
 import { actionsForDay, stepsFor, type Action } from "@/lib/days";
 import { fill } from "@/lib/format";
 import { dayScreen, parseDayParam } from "@/lib/path/view";
-import { serverNow } from "@/lib/today/clock";
+import { getAppClock } from "@/lib/preview/context";
 import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listDayCompletions } from "@/lib/today/completions";
-import { getSchedule } from "@/lib/today/schedule";
+import { buildChecklist } from "@/lib/habits/model";
+import { listDayHabitChecks } from "@/lib/habits/checks";
+import { getHabitList } from "@/lib/habits/list";
 import { getVideoConfig, hasVideo } from "@/lib/today/video";
 import { nextBoundary, todayModel } from "@/lib/today/view";
 import { CheckIcon } from "../../_components/icons";
 import { RefreshAtBoundary } from "../../_components/RefreshAtBoundary";
 import { TYPE_LABEL, actionDetail, actionTitle } from "../../today/action-labels";
+import { HabitChecklistReadOnly } from "../../today/HabitChecklist";
 import { VideoTile } from "../../today/VideoTile";
 import { DayActions } from "./DayActions";
 import { LockedDay } from "./LockedDay";
@@ -40,8 +43,7 @@ export default async function DayPage({ params }: Props) {
   const n = parseDayParam((await params).n);
   if (n === null) notFound();
   const user = await requireUser();
-  const now = await serverNow();
-  const schedule = getSchedule();
+  const { now, schedule } = await getAppClock();
   const cfg = getConfig();
 
   // הסימונים של היום הזה בלבד; לימים נעולים אין סימונים ממילא.
@@ -72,6 +74,9 @@ export default async function DayPage({ params }: Props) {
   const titles = dayTitles(n);
   const stateText = screen.markable ? copy.path.stone.yesterday : screen.counted ? copy.path.stone.counted : copy.path.stone.missed;
   const available = hasVideo(n, getVideoConfig(cfg.env));
+  // "ההרגלים שלי" של היום הזה (1..n; כולם כבר נפתחו). אתמול ניתן לעריכה עד חצות; ישן יותר לקריאה בלבד.
+  const habitRows = getHabitList(n).map(({ habitDay, title }) => ({ habitDay, title }));
+  const olderChecked = await listDayHabitChecks(getDb(), user.userId, n);
   return (
     <>
       {refresh}
@@ -83,14 +88,21 @@ export default async function DayPage({ params }: Props) {
 
       <VideoTile day={n} available={available} title={fill(copy.day.videoTitle, { n })} />
 
-      <section className="t t-actions" aria-labelledby="day-actions-h">
-        <h2 id="day-actions-h" className="act-title">
-          {fill(copy.today.yesterdayDayLabel, { n })}
-        </h2>
-        {screen.markable ? (
-          <DayActions day={n} titles={titles} done={done} />
-        ) : (
-          <>
+      {screen.markable ? (
+        <DayActions
+          day={n}
+          titles={titles}
+          done={done}
+          heading={fill(copy.today.yesterdayDayLabel, { n })}
+          habits={habitRows}
+          olderChecked={olderChecked}
+        />
+      ) : (
+        <>
+          <section className="t t-actions" aria-labelledby="day-actions-h">
+            <h2 id="day-actions-h" className="act-title">
+              {fill(copy.today.yesterdayDayLabel, { n })}
+            </h2>
             <ul className="ro-list">
               {actionsForDay(n).map((a) => {
                 const marked = done.includes(a);
@@ -110,9 +122,10 @@ export default async function DayPage({ params }: Props) {
               })}
             </ul>
             <p className="act-hint">{fill(screen.counted ? copy.day.closedCounted : copy.day.closedMissed, { n })}</p>
-          </>
-        )}
-      </section>
+          </section>
+          <HabitChecklistReadOnly day={n} items={buildChecklist(n, habitRows, done.includes("habit"), olderChecked)} />
+        </>
+      )}
 
       <section className="t t-links">
         <Link href="/path" className="btn-s">

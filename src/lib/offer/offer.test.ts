@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { makeSchedule } from "@/lib/days";
-import { formatDeadline, formatValidUntil, liveEndsAt, offerState, parseExpiry, yesodotValidity } from "./model";
+import { formatDeadline, liveEndsAt, offerState, offerWindow, yesodotValidity } from "./model";
 import { offerLink, safeHttpsUrl } from "./links";
 
 // START_DATE 2026-12-01 (winter, +02:00): day 14 is 2026-12-14, live at 20:00 = 18:00Z; ends 60 min later (19:00Z).
@@ -46,20 +46,38 @@ describe("offerState (server clock)", () => {
   });
 });
 
-describe("Yesodot validity (its own, separate from the 48h window)", () => {
-  const tz = "Asia/Jerusalem";
-  it("unset is neutral", () => {
-    expect(yesodotValidity(new Date(), undefined, tz)).toEqual({ kind: "unset" });
+describe("Yesodot validity (same window as the day-14 offers)", () => {
+  const deadline = "2026-12-16T19:00:00.000Z"; // live end 19:00Z on 2026-12-14 + 48h
+  it("offerWindow is the single source for the window", () => {
+    expect(offerWindow(schedule, inputs)?.deadline.toISOString()).toBe(deadline);
+    expect(offerWindow(null, inputs)).toBeNull();
+    expect(offerWindow(schedule, { liveTime: undefined, windowHours: 48 })).toBeNull();
+    expect(offerWindow(schedule, { liveTime: "20:00", windowHours: undefined })).toBeNull();
   });
-  it("a date means through the end of that day in Israel", () => {
-    expect(parseExpiry("2026-12-31", tz)?.toISOString()).toBe("2026-12-31T22:00:00.000Z");
-    expect(yesodotValidity(at("2026-12-31T23:30:00+02:00"), "2026-12-31", tz).kind).toBe("valid");
-    expect(yesodotValidity(at("2027-01-01T00:00:00+02:00"), "2026-12-31", tz).kind).toBe("expired");
-    expect(formatValidUntil("2026-12-31", parseExpiry("2026-12-31", tz)!, tz)).toBe("31 בדצמבר");
+  it("before day 14 it is valid until the window end (page stays open, deadline shown)", () => {
+    const v = yesodotValidity(at("2026-12-05T10:00:00+02:00"), schedule, inputs);
+    expect(v.kind).toBe("valid");
+    expect(v.kind === "valid" && v.until.toISOString()).toBe(deadline);
+    expect(yesodotValidity(at("2026-12-14T20:30:00+02:00"), schedule, inputs).kind).toBe("valid"); // live still running
   });
-  it("a full instant is used as given", () => {
-    expect(yesodotValidity(at("2026-12-20T10:00:00Z"), "2026-12-20T12:00:00Z", tz).kind).toBe("valid");
-    expect(yesodotValidity(at("2026-12-20T12:00:00Z"), "2026-12-20T12:00:00Z", tz).kind).toBe("expired");
+  it("inside the window it is valid and matches the offer deadline", () => {
+    const now = at("2026-12-15T12:00:00+02:00");
+    const v = yesodotValidity(now, schedule, inputs);
+    const o = offerState(now, schedule, inputs);
+    expect(v.kind).toBe("valid");
+    expect(o.state === "open" && v.kind === "valid" && o.deadline.getTime() === v.until.getTime()).toBe(true);
+    expect(yesodotValidity(new Date("2026-12-16T18:59:59.999Z"), schedule, inputs).kind).toBe("valid");
+    expect(formatDeadline(v.kind === "valid" ? v.until : now, "Asia/Jerusalem")).toMatch(/21:00/);
+  });
+  it("after the window it is expired", () => {
+    expect(yesodotValidity(new Date(deadline), schedule, inputs).kind).toBe("expired");
+    expect(yesodotValidity(at("2027-01-30T10:00:00+02:00"), schedule, inputs)).toMatchObject({ kind: "expired" });
+  });
+  it("is unset (expiryTba) when the window cannot be computed", () => {
+    const now = at("2026-12-20T10:00:00+02:00");
+    expect(yesodotValidity(now, schedule, { liveTime: undefined, windowHours: 48 })).toEqual({ kind: "unset" });
+    expect(yesodotValidity(now, null, inputs)).toEqual({ kind: "unset" });
+    expect(yesodotValidity(now, schedule, { liveTime: "20:00", windowHours: undefined })).toEqual({ kind: "unset" });
   });
 });
 

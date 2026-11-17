@@ -37,7 +37,7 @@
 | `common.save` | שמירה |  |
 | `common.dayLabel` | יום {n} |  |
 | `common.logout` | יציאה |  |
-| `common.loggingOut` | רגע, יוצאים… | חדש (סקירת UI, סבב 2): מצב עסוק גלוי של כפתור היציאה. |
+| `common.loggingOut` | רגע, יוצאים… |  |
 | `common.dayOfTotal` | יום {n} מתוך 14 | n מגיע מהקוד. |
 | `common.countOfTotal` | {n} מתוך 14 |  |
 | `common.actionTypes.habit` | הרגל |  |
@@ -66,7 +66,7 @@
 | `today.afterCompletion` | אפשר להמשיך עד יום 14. |  |
 | `today.ended` | האתגר הסתיים |  |
 | `today.videoPending` | הסרטון יעלה לכאן בקרוב. |  |
-| `today.videoLoading` | רגע, הסרטון נטען… | חדש (סקירת UI, סבב 2): מצב טעינה גלוי של הסרטון. |
+| `today.videoLoading` | רגע, הסרטון נטען… |  |
 | `today.yesterdayDayLabel` | הפעולות של יום {n} |  |
 | `today.cup.empty` | כוס ריקה |  |
 | `today.cup.one` | חצי כוס |  |
@@ -104,6 +104,22 @@
 | `path.completed` | {n} מתוך 14. האתגר הושלם. |  |
 | `path.liveNote` | מפגשי לייב ביום 7 וביום 14. |  |
 
+## ההרגלים שלי (חדש: רשימת הרגלים מצטברת)
+
+| מפתח | טקסט | הערות |
+|---|---|---|
+| `habits.title` | ההרגלים שלי | הכותרת של בעל האתר, כלשונה. |
+| `habits.intro` | כל בוקר מצטרף הרגל חדש, וההרגלים הקודמים נשארים כאן. כל יום מתחילים רשימה נקייה. |  |
+| `habits.newTag` | חדש היום |  |
+| `habits.note` | ההרגל החדש הוא זה שממלא את הכוס ונספר ליום. את ההרגלים מהימים הקודמים אפשר לסמן לעצמכם, והם לא משנים את הספירה. | הכלל מרוכז ב־src/lib/habits/rule.ts. אם בעל האתר יחליט ש“כל הרגל” או “כל ההרגלים” סופרים, מחליפים שם ואת הנוסח הזה. |
+| `habits.count` | {done} מתוך {total} הרגלים |  |
+| `habits.countOne` | {done} מתוך הרגל אחד |  |
+| `habits.saved` | נשמר. ההרגל סומן. |  |
+| `habits.marked` | סומן |  |
+| `habits.notMarked` | לא סומן |  |
+| `habits.closed` | הסימון של ההרגלים ביום {n} נסגר. |  |
+| `habits.pathTitle` | ההרגלים שלי בכל יום |  |
+
 ## day
 
 | מפתח | טקסט | הערות |
@@ -138,13 +154,16 @@
 | `before.prepare` | שתי הכנות קטנות |  |
 | `before.remindersCta` | להפעלת תזכורות |  |
 | `before.installCta` | להוספה למסך הבית |  |
+| `before.live.heading` | מפגש פתיחה בלייב |  |
+| `before.live.todayTag` | היום: מפגש הפתיחה | חדש. ביום 0 עצמו כרטיס מפגש הפתיחה מודגש ועולה מיד אחרי הכותרת. |
+| `before.live.lead` | פותחים יחד, יום לפני היום הראשון. |  |
 
 ## יום נעול
 
 | מפתח | טקסט | הערות |
 |---|---|---|
 | `locked.title` | יום {n} נפתח מחר בבוקר |  |
-| `locked.body` | הסרטון והפעולות יופיעו כאן ב־{unlockTime}. אם התזכורות פעילות, תגיע הודעה ב־{reminderTime}. | 05:00 ו־07:30 לפי ההחלטה. המשפט על ההודעה מותנה בכך שהתזכורות פעילות. |
+| `locked.body` | הסרטון והפעולות יופיעו כאן ב־{unlockTime}. אם התזכורות פעילות, תגיע הודעה בשעה שבחרתם (ברירת המחדל {reminderTime}). | 05:00 הוא שעת הפתיחה. השעה של ההודעה היא בחירת המשתתפים, ברירת המחדל 07:30 (החלטת פית). המשפט על ההודעה מותנה בכך שהתזכורות פעילות. |
 | `locked.tomorrowTag` | נפתח מחר בבוקר |  |
 | `locked.previousOpen` | את יום {prev} אפשר לסמן עד חצות |  |
 | `locked.backToToday` | חזרה להיום |  |
@@ -161,7 +180,11 @@
 | מפתח | טקסט | הערות |
 |---|---|---|
 | `live.title` | לייב |  |
-| `live.count` | 2 מפגשים |  |
+| `live.count` | 3 מפגשים |  |
+| `live.day0.tag` | מפגש פתיחה | חדש: מפגש הפתיחה ("יום 0"), היום הקלנדרי שלפני START_DATE. לא נספר בכוס ולא חלק מ־12 מתוך 14. אין לו סימון נוכחות. |
+| `live.day0.title` | מפגש הפתיחה, יחד עם אביטל |  |
+| `live.day0.time` | [LIVE_DAY0_TIME] | מציין מקום מהמפרט. מוחלף מהקונפיג (LIVE_TIME_DAY0). כשלא הוגדר, המשתתפים רואים את live.timeTba. |
+| `live.day0.note` | המפגש לא נספר בכוס ולא נכלל ב־12 הימים. נשמח לראות אתכם שם, וגם אם לא מצליחים, האתגר מחכה בלי לחץ. | חדש. מוצג בכרטיס מפגש הפתיחה במסך שלפני ההתחלה. בלי לחץ ובלי הבטחות. |
 | `live.day7.tag` | מפגש לייב ביום 7 |  |
 | `live.day7.title` | חצי הדרך, יחד עם אביטל |  |
 | `live.day7.time` | [LIVE_DAY7_TIME] | מציין מקום מהמפרט. מוחלף מהקונפיג (LIVE_TIME_DAY7). כשלא הוגדר, המשתתפים רואים את live.timeTba. |
@@ -181,6 +204,11 @@
 | `live.attendedHint` | הסימון לא חובה. |  |
 | `live.attendedDone` | סומן: הייתי במפגש |  |
 | `live.ended` | המפגש הסתיים. |  |
+| `live.allHeading` | כל המפגשים |  |
+| `live.allLabel` | שלושת מפגשי הלייב לפי הסדר |  |
+| `live.stateUpcoming` | בקרוב |  |
+| `live.stateOpen` | הקישור פתוח עכשיו |  |
+| `live.stateEnded` | הסתיים |  |
 | `live.cantAttend` | לא מצליחים להגיע? | ללא שורת ההקלטה עד שיוחלט אם מקליטים. ראו שאלה 2. |
 | `live.cantAttendBody` | אפשר לסמן את ההרגל, והיום ייספר גם בלי המפגש. |  |
 
@@ -188,13 +216,18 @@
 
 | מפתח | טקסט | הערות |
 |---|---|---|
-| `reminders.title` | תזכורת של בוקר |  |
-| `reminders.intro` | הודעה אחת בכל בוקר ב־{reminderTime}, אחרי שהיום החדש נפתח. אפשר לכבות בכל רגע. |  |
+| `reminders.title` | תזכורת יומית |  |
+| `reminders.intro` | הודעה אחת בכל יום בשעה שבחרתם, אחרי שהיום החדש נפתח. ברירת המחדל היא {reminderTime}. אפשר לכבות בכל רגע. |  |
 | `reminders.previewLabel` | ככה זה ייראה |  |
 | `reminders.toggleTitle` | התראה בטלפון |  |
 | `reminders.toggleSub` | דרך האפליקציה שבמסך הבית |  |
-| `reminders.timeLabel` | שעת התזכורת |  |
-| `reminders.timeNote` | היום נפתח ב־{unlockTime}, והתזכורת מגיעה ב־{reminderTime}. |  |
+| `reminders.whatsappTitle` | תזכורת בוואטסאפ |  |
+| `reminders.timeLabel` | שעת התזכורת היומית |  |
+| `reminders.liveNote` | לפני כל מפגש לייב (מפגש הפתיחה, יום 7 ויום 14) תגיע גם תזכורת נפרדת, כשעה לפני המפגש, כשהקישור נפתח באפליקציה. |  |
+| `reminders.timeNote` | ההתראה והתזכורת בוואטסאפ מגיעות בשעה שבחרתם. ברירת המחדל היא {reminderTime}, והיום נפתח ב־{unlockTime}. | חדש: שעת התזכורת נבחרת בדף התזכורות, כל 30 דקות בין 05:30 ל־21:00, ואחת לשני הערוצים (התראה ווטסאפ). ההודעה לא מבטיחה זמן מעבר ל“בשעה שבחרתם”. |
+| `reminders.timeSave` | שמירת השעה |  |
+| `reminders.timeSaved` | השעה נשמרה. התזכורת תגיע בשעה שבחרתם. |  |
+| `reminders.timeError` | לא הצלחנו לשמור את השעה. אפשר לנסות שוב בעוד רגע. |  |
 | `reminders.iosNote` | באייפון ההתראות עובדות אחרי שמוסיפים את האפליקציה למסך הבית. |  |
 | `reminders.installLink` | איך מוסיפים למסך הבית |  |
 | `reminders.status.on` | ההתראות פעילות | מוצג באזור סטטוס מוקרא. |
@@ -220,7 +253,7 @@
 | `install.android.body` | אם מופיע כפתור “התקנה”, לוחצים עליו. אם לא, פותחים את תפריט הדפדפן ובוחרים “התקנת אפליקציה” או “הוספה למסך הבית”. |  |
 | `install.android.installButton` | התקנה |  |
 | `install.why.heading` | בשביל התזכורת | במקום “למה זה חשוב”. הניסוח מדויק לאייפון בלבד. |
-| `install.why.body` | באייפון, בלי הוספה למסך הבית לא מגיעה תזכורת בוקר. | במקום “למה זה חשוב”. הניסוח מדויק לאייפון בלבד. |
+| `install.why.body` | באייפון, בלי הוספה למסך הבית לא מגיעה תזכורת. | במקום “למה זה חשוב”. הניסוח מדויק לאייפון בלבד. |
 | `install.done` | הוספתי, אפשר להתחיל |  |
 | `install.later` | אחר כך |  |
 | `install.installed` | האפליקציה כבר על המסך שלכם. | חדש בשלב 9. מוצג במקום ההוראות כשהאפליקציה כבר נפתחה מהמסך הראשי. |
@@ -256,6 +289,91 @@
 | `admin.stats.offers.names.bundle` | באנדל |  |
 | `admin.stats.offers.names.yesodot` | יסודות היוגה |  |
 | `admin.stats.notes` | יום נספר מפעולה אחת ומעלה. ״חזרו״ נגזר מהסימונים: משתמש שסימן ביום הזה וגם ביום מוקדם יותר. אין מעקב אחרי כניסות, ואין עוגיות או כלי ניתוח של צד שלישי. |  |
+| `admin.nav.label` | דפי הבעלים |  |
+| `admin.nav.stats` | סטטיסטיקה |  |
+| `admin.nav.participants` | משתתפים |  |
+| `admin.participants.title` | משתתפים |  |
+| `admin.participants.lead` | ניהול משתתפים ידני. הקישורים נוצרים כאן ונשלחים על ידכם בלבד: האפליקציה לא שולחת כלום. |  |
+| `admin.participants.search.label` | חיפוש לפי שם, שם משתמש, אימייל או טלפון |  |
+| `admin.participants.search.button` | חיפוש |  |
+| `admin.participants.search.clear` | ניקוי החיפוש |  |
+| `admin.participants.list.heading` | הרשימה |  |
+| `admin.participants.list.count` | {n} משתתפים |  |
+| `admin.participants.list.none` | אין משתתפים להצגה. |  |
+| `admin.participants.list.username` | שם משתמש |  |
+| `admin.participants.list.phone` | טלפון |  |
+| `admin.participants.list.email` | אימייל |  |
+| `admin.participants.list.created` | נרשמו |  |
+| `admin.participants.list.activated` | הופעל |  |
+| `admin.participants.list.disabled` | מושבת |  |
+| `admin.participants.list.lastActivity` | פעילות אחרונה |  |
+| `admin.participants.list.yes` | כן |  |
+| `admin.participants.list.no` | לא |  |
+| `admin.participants.list.never` | אין עדיין |  |
+| `admin.participants.list.none2` | אין |  |
+| `admin.participants.list.you` | (החשבון שלכם) |  |
+| `admin.participants.list.noEmail` | אין מייל: שלחו קישור ידנית |  |
+| `admin.participants.list.prev` | הקודם |  |
+| `admin.participants.list.next` | הבא |  |
+| `admin.participants.list.pageOf` | עמוד {page} מתוך {pages} |  |
+| `admin.participants.list.pagination` | דפדוף ברשימה |  |
+| `admin.participants.add.heading` | הוספת משתתפת או משתתף ידנית |  |
+| `admin.participants.add.name` | שם |  |
+| `admin.participants.add.phone` | טלפון (אפשר להשאיר ריק אם יש אימייל) |  |
+| `admin.participants.add.email` | אימייל (אפשר להשאיר ריק אם יש טלפון) |  |
+| `admin.participants.add.submit` | יצירה וקבלת קישור |  |
+| `admin.participants.add.note` | שם משתמש נוצר אוטומטית, באותו כלל כמו בהרשמה האוטומטית. |  |
+| `admin.participants.link.showOnce` | הקישור מוצג פעם אחת. שלחו אותו בעצמכם בוואטסאפ או במייל. |  |
+| `admin.participants.link.forActivate` | קישור הפעלה עבור {name} (שם משתמש: {username}). בתוקף עד {until}. |  |
+| `admin.participants.link.forReset` | קישור לאיפוס סיסמה עבור {name} (שם משתמש: {username}). בתוקף עד {until}. |  |
+| `admin.participants.link.label` | הקישור |  |
+| `admin.participants.link.copy` | העתקת הקישור |  |
+| `admin.participants.link.copied` | הקישור הועתק |  |
+| `admin.participants.link.copyFailed` | ההעתקה לא הצליחה. סמנו את הקישור והעתיקו ידנית. |  |
+| `admin.participants.link.issueActivate` | קישור הפעלה חדש |  |
+| `admin.participants.link.issueReset` | קישור איפוס סיסמה |  |
+| `admin.participants.link.issueActivateFor` | קישור הפעלה חדש עבור {name} |  |
+| `admin.participants.link.issueResetFor` | קישור איפוס סיסמה עבור {name} |  |
+| `admin.participants.disable.button` | השבתה |  |
+| `admin.participants.disable.enable` | הפעלה מחדש |  |
+| `admin.participants.disable.buttonFor` | השבתה של {name} |  |
+| `admin.participants.disable.enableFor` | הפעלה מחדש של {name} |  |
+| `admin.participants.disable.hint` | משתמש מושבת לא יכול להיכנס, נותקים אותו מיד, והוא לא מקבל תזכורות או קישורים. |  |
+| `admin.participants.remove.button` | מחיקה |  |
+| `admin.participants.remove.buttonFor` | מחיקה של {name} |  |
+| `admin.participants.remove.heading` | מחיקה לצמיתות |  |
+| `admin.participants.remove.warning` | מחיקת {name} היא לצמיתות: כל הנתונים של המשתתף או המשתתפת נמחקים, ואי אפשר לשחזר. כדי לאשר, הקלידו את שם המשתמש ({username}). |  |
+| `admin.participants.remove.confirmLabel` | שם המשתמש לאישור |  |
+| `admin.participants.remove.submit` | מחיקה סופית |  |
+| `admin.participants.remove.cancel` | ביטול |  |
+| `admin.participants.preview.heading` | תצוגה מקדימה של יום |  |
+| `admin.participants.preview.lead` | לבדיקת האפליקציה לפני ההתחלה: ממשיכים לראות את מסכי היום, השביל והלייב כאילו זה יום מסוים. רק אצלכם, רק בחשבון המחובר. סימונים שתעשו נשמרים בחשבון שלכם. |  |
+| `admin.participants.preview.dayLabel` | יום |  |
+| `admin.participants.preview.start` | הפעלת תצוגה מקדימה |  |
+| `admin.participants.preview.stop` | הפסקת התצוגה המקדימה |  |
+| `admin.participants.preview.active` | תצוגה מקדימה פעילה: יום {n}. |  |
+| `admin.participants.preview.activeBefore` | תצוגה מקדימה פעילה: לפני ההתחלה (יום 0, מפגש הפתיחה). |  |
+| `admin.participants.preview.optionBefore` | 0 (לפני ההתחלה, מפגש הפתיחה) |  |
+| `admin.participants.preview.toToday` | למסך היום |  |
+| `admin.participants.errors.generic` | משהו השתבש. נסו שוב. |  |
+| `admin.participants.errors.forbidden` | הבקשה נדחתה. |  |
+| `admin.participants.errors.tooMany` | יותר מדי פעולות בזמן קצר. נסו שוב בעוד כמה דקות. |  |
+| `admin.participants.errors.invalidName` | הכניסו שם. |  |
+| `admin.participants.errors.invalidContact` | הכניסו טלפון תקין או אימייל תקין (לפחות אחד). |  |
+| `admin.participants.errors.notFound` | המשתתף לא נמצא. |  |
+| `admin.participants.errors.self` | אי אפשר לבצע את זה על החשבון שלכם. |  |
+| `admin.participants.errors.disabledUser` | החשבון מושבת. הפעילו אותו מחדש כדי להנפיק קישור. |  |
+| `admin.participants.errors.confirmMismatch` | שם המשתמש שהוקלד לא תואם. לא נמחק כלום. |  |
+| `admin.participants.errors.invalidDay` | בחרו יום בין 0 ל־14. |  |
+| `admin.participants.done.disabled` | {name} הושבת/ה. |  |
+| `admin.participants.done.enabled` | {name} הופעל/ה מחדש. |  |
+| `admin.participants.done.deleted` | המשתתף נמחק. |  |
+| `admin.participants.done.previewStopped` | התצוגה המקדימה הופסקה. |  |
+| `admin.previewBanner.text` | מצב תצוגה מקדימה: יום {n} |  |
+| `admin.previewBanner.textBefore` | מצב תצוגה מקדימה: לפני ההתחלה (יום 0) |  |
+| `admin.previewBanner.label` | תצוגה מקדימה |  |
+| `admin.previewBanner.stop` | הפסקה |  |
+| `admin.previewBanner.stopLabel` | הפסקה של מצב התצוגה המקדימה |  |
 
 ## כניסה
 
@@ -269,7 +387,7 @@
 | `login.submitting` | נכנסים… |  |
 | `login.forgot` | שכחתי סיסמה |  |
 | `login.firstTime.heading` | כניסה ראשונה? |  |
-| `login.firstTime.body` | אחרי ההרשמה מגיע קישור אישי בוואטסאפ ובמייל. דרכו בוחרים סיסמה, ומכאן נכנסים איתה. |  |
+| `login.firstTime.body` | אחרי ההרשמה נשלח קישור אישי למייל שמסרתם. דרכו בוחרים סיסמה, ומכאן נכנסים איתה. |  |
 | `login.notRegistered` | עוד לא נרשמתם? |  |
 | `login.toLanding` | לפרטים על האתגר |  |
 | `login.errors.usernameRequired` | יש להזין שם משתמש, טלפון או מייל. |  |
@@ -306,7 +424,7 @@
 | `activate.errors.network` | אין חיבור כרגע. אפשר לנסות שוב כשהחיבור יחזור. |  |
 | `activate.errors.generic` | משהו לא עבד. אפשר לנסות שוב בעוד רגע. |  |
 | `activate.expired.heading` | הקישור כבר לא בתוקף | מוצג במקום הטופס כשהקישור לא תקף או כבר נוצל. |
-| `activate.expired.body` | הקישור עובד פעם אחת ולזמן מוגבל. אפשר לבקש קישור חדש לוואטסאפ ולמייל שמסרתם בהרשמה. | מוצג במקום הטופס כשהקישור לא תקף או כבר נוצל. |
+| `activate.expired.body` | הקישור עובד פעם אחת ולזמן מוגבל. אפשר לבקש קישור חדש למייל שמסרתם בהרשמה. | מוצג במקום הטופס כשהקישור לא תקף או כבר נוצל. |
 | `activate.expired.action` | שליחת קישור חדש | מוצג במקום הטופס כשהקישור לא תקף או כבר נוצל. |
 
 ## שכחתי סיסמה
@@ -325,11 +443,11 @@
 | `forgot.errors.network` | אין חיבור כרגע. אפשר לנסות שוב כשהחיבור יחזור. |  |
 | `forgot.errors.generic` | משהו לא עבד. אפשר לנסות שוב בעוד רגע. |  |
 | `forgot.confirmation.heading` | אם הפרטים נכונים, יגיע קישור | אותו נוסח בדיוק בין אם יש חשבון ובין אם אין. |
-| `forgot.confirmation.body` | אם יש חשבון עם הפרטים האלה, הקישור נשלח לוואטסאפ ולמייל שמסרתם בהרשמה, ומגיע תוך כמה דקות. לא הגיע? כדאי לבדוק גם בתיקיית הספאם. | אותו נוסח בדיוק בין אם יש חשבון ובין אם אין. |
+| `forgot.confirmation.body` | אם יש חשבון עם הפרטים האלה, הקישור נשלח למייל שמסרתם בהרשמה. לא הגיע? כדאי לבדוק גם בתיקיית הספאם. | אותו נוסח בדיוק בין אם יש חשבון ובין אם אין. |
 | `forgot.confirmation.resend` | שליחה מחדש | אותו נוסח בדיוק בין אם יש חשבון ובין אם אין. |
 | `forgot.confirmation.resendWait` | אפשר לשלוח שוב בעוד {seconds} שניות | seconds מהמגבלה בפועל. |
 | `forgot.forgotUsername.heading` | לא זוכרים את שם המשתמש? |  |
-| `forgot.forgotUsername.body` | הוא מופיע בהודעה ששלחנו אחרי ההרשמה, בוואטסאפ ובמייל. |  |
+| `forgot.forgotUsername.body` | הוא מופיע במייל ששלחנו אחרי ההרשמה. |  |
 
 ## מצבים: שגיאה, אין חיבור, טעינה, הצלחה
 
@@ -356,30 +474,30 @@
 | `states.success.undo` | ביטול הסימון |  |
 | `states.success.undone` | הסימון בוטל. |  |
 
-## התראת בוקר (07:30)
+## התראות: יומית (בשעה שבחרתם, בלי אזכור לייב) ותזכורת לייב (כשעה לפני)
 
 | מפתח | טקסט | הערות |
 |---|---|---|
 | `push.title` | צעד קטן ביום |  |
 | `push.generic` | יום {day} נפתח. דבר אחד קטן מספיק. | ברירת המחדל. דבר אחד קטן מספיק. |
 | `push.perDay` | יום {day} נפתח. הרגל להיום: {habit}. | אופציונלי. נגזר מכותרת ההרגל של היום ב־days.ts, בלי טענות נוספות. |
-| `push.liveDay` | יום {day} נפתח. היום יש מפגש לייב עם אביטל ב־{time}. | בימים 7 ו־14. time מהקונפיג. |
 | `push.previewDay` | 5 | היום שמוצג בתצוגה המקדימה במסך התזכורות. |
+| `push.liveTitle` | המפגש החי מתחיל בעוד כשעה | תזכורת הלייב (נפרדת מהיומית): ביום 7 וביום 14 בלבד, כשעה לפני המפגש. לשון רבים. |
+| `push.liveBody` | הקישור למפגש עם אביטל נפתח עכשיו באפליקציה. נשמח לראות אתכם שם. | מפנה למסך הלייב באפליקציה. בלי טענות בריאות ובלי מחסור מומצא. |
 
 ## הודעות שהמערכת החיצונית תשלח (טיוטה, לא נשלח)
 
 | מפתח | טקסט | הערות |
 |---|---|---|
 | `messages.status` | draft, not sent | כל ההודעות כאן הן טיוטה. אין שליחה. |
-| `messages.activation.whatsapp` | שלום {name}, כמה טוב שהגעתם לצעד קטן ביום.<br>שם המשתמש: {username} (אפשר להיכנס גם עם הטלפון או המייל)<br>הקישור האישי לבחירת סיסמה: {link}<br>הקישור עובד פעם אחת ולזמן מוגבל. הוא אישי, ולא כדאי להעביר אותו לאף אחד.<br>האתגר מתחיל ב־[START_DATE]. | קישור חד־פעמי. אחריו בוחרים סיסמה לבד. אין סיסמה בהודעה, ויש בה בקשה לא להעביר את הקישור. |
 | `messages.activation.emailSubject` | הקישור שלכם לצעד קטן ביום | קישור חד־פעמי. אחריו בוחרים סיסמה לבד. אין סיסמה בהודעה, ויש בה בקשה לא להעביר את הקישור. |
 | `messages.activation.emailBody` | שלום {name},<br><br>כמה טוב שהגעתם לצעד קטן ביום.<br><br>שם המשתמש: {username} (אפשר להיכנס גם עם הטלפון או המייל)<br>לבחירת סיסמה ולכניסה: {link}<br><br>הקישור עובד פעם אחת ולזמן מוגבל. הוא אישי, ולא כדאי להעביר אותו לאף אחד. אם הוא כבר לא בתוקף, אפשר לבקש חדש במסך הכניסה, דרך “שכחתי סיסמה”.<br>האתגר מתחיל ב־[START_DATE].<br><br>אביטל, YOGIT | קישור חד־פעמי. אחריו בוחרים סיסמה לבד. אין סיסמה בהודעה, ויש בה בקשה לא להעביר את הקישור. |
-| `messages.forgot.whatsapp` | שלום {name}, קיבלנו בקשה לבחירת סיסמה חדשה.<br>הקישור: {link}<br>הוא עובד פעם אחת ולזמן מוגבל, ולא כדאי להעביר אותו לאף אחד. אם לא ביקשתם, אפשר להתעלם מההודעה. | נשלח רק כשיש חשבון, ורק לוואטסאפ ולמייל שנמסרו בהרשמה. המסך מציג תמיד את אותו אישור, ולכן הוא לא חושף אם יש חשבון. בלי סיסמה בהודעה. |
-| `messages.forgot.emailSubject` | בחירת סיסמה חדשה לצעד קטן ביום | נשלח רק כשיש חשבון, ורק לוואטסאפ ולמייל שנמסרו בהרשמה. המסך מציג תמיד את אותו אישור, ולכן הוא לא חושף אם יש חשבון. בלי סיסמה בהודעה. |
-| `messages.forgot.emailBody` | שלום {name},<br><br>קיבלנו בקשה לבחירת סיסמה חדשה.<br>הקישור: {link}<br><br>הוא עובד פעם אחת ולזמן מוגבל, ולא כדאי להעביר אותו לאף אחד. אם לא ביקשתם, אפשר להתעלם מההודעה, והסיסמה הקיימת תישאר כמו שהיא.<br><br>שם המשתמש שלכם: {username} | נשלח רק כשיש חשבון, ורק לוואטסאפ ולמייל שנמסרו בהרשמה. המסך מציג תמיד את אותו אישור, ולכן הוא לא חושף אם יש חשבון. בלי סיסמה בהודעה. |
-| `messages.day14.whatsapp` | יום 14, והגעתם לסוף. תודה שהייתם איתנו.<br>אפשר להמשיך בשתי דרכים:<br>פגישת זום אישית של 45 דקות, 271 ₪: {sessionLink}<br>באנדל של הקורסים “לשחרר את הכיסא” ו“ריסט”, 139 ₪: {bundleLink}<br>ההצעה פתוחה {hours} שעות מסוף הלייב.<br><br>ובנפרד, למי שרוצה להעמיק: מסלול יסודות היוגה, 1,265 ₪, עד [YESODOT_OFFER_EXPIRY]: {yesodotLink} | ההודעה הוגדרה במפרט. הנוסח טיוטה. |
-| `messages.sessionReminder.whatsapp` | תזכורת: ההצעה לפגישת הזום האישית פתוחה עוד 24 שעות.<br>פגישה של 45 דקות, 271 ₪: {sessionLink}<br>באנדל של הקורסים “לשחרר את הכיסא” ו“ריסט”, 139 ₪: {bundleLink} | 24 שעות לפני סוף חלון ההצעה. שורת יסודות לכל המשתתפים, מוצגת בנפרד עם תוקף משלה (החלטת פית, 2026-11-08). |
-| `messages.sessionReminder.yesodotLine` | ובנפרד, למי שרוצה להעמיק: מסלול יסודות היוגה, 1,265 ₪, עד [YESODOT_OFFER_EXPIRY]: {yesodotLink} | 24 שעות לפני סוף חלון ההצעה. שורת יסודות לכל המשתתפים, מוצגת בנפרד עם תוקף משלה (החלטת פית, 2026-11-08). |
+| `messages.forgot.emailSubject` | בחירת סיסמה חדשה לצעד קטן ביום | נשלח רק כשיש חשבון, ורק למייל שנמסר בהרשמה (בלי מייל: לא נשלח כלום). המסך מציג תמיד את אותו אישור, ולכן הוא לא חושף אם יש חשבון. בלי סיסמה בהודעה. |
+| `messages.forgot.emailBody` | שלום {name},<br><br>קיבלנו בקשה לבחירת סיסמה חדשה.<br>הקישור: {link}<br><br>הוא עובד פעם אחת ולזמן מוגבל, ולא כדאי להעביר אותו לאף אחד. אם לא ביקשתם, אפשר להתעלם מההודעה, והסיסמה הקיימת תישאר כמו שהיא.<br><br>שם המשתמש שלכם: {username} | נשלח רק כשיש חשבון, ורק למייל שנמסר בהרשמה (בלי מייל: לא נשלח כלום). המסך מציג תמיד את אותו אישור, ולכן הוא לא חושף אם יש חשבון. בלי סיסמה בהודעה. |
+| `messages.liveReminder.whatsapp` | שלום {name}, המפגש החי עם אביטל מתחיל היום ב־{liveTime}. הקישור למפגש נפתח עכשיו באפליקציה, במסך הלייב. נתראה שם. לא רוצים תזכורת בוואטסאפ? אפשר לכבות במסך התזכורות באפליקציה. | תבנית 4. נשלחת כשעה לפני הלייב (תג tsaad_live_reminder). בלי קישור סיסמה. ב־GHL לא מוסיפים Wait. |
+| `messages.day14.whatsapp` | יום 14, והגעתם לסוף. תודה שהייתם איתנו.<br>אפשר להמשיך בשתי דרכים:<br>פגישת זום אישית של 45 דקות, 271 ₪: {sessionLink}<br>באנדל של הקורסים “לשחרר את הכיסא” ו“ריסט”, 139 ₪: {bundleLink}<br>ההצעה פתוחה {hours} שעות מסוף הלייב.<br><br>ובנפרד, למי שרוצה להעמיק: מסלול יסודות היוגה, 1,265 ₪, באותו חלון זמן: {yesodotLink} | ההודעה הוגדרה במפרט. הנוסח טיוטה. Pit 2026-11-11: valid 48h from the end of the challenge, same window as the day-14 offers; no strikethrough price. |
+| `messages.sessionReminder.whatsapp` | תזכורת: ההצעה לפגישת הזום האישית פתוחה עוד 24 שעות.<br>פגישה של 45 דקות, 271 ₪: {sessionLink}<br>באנדל של הקורסים “לשחרר את הכיסא” ו“ריסט”, 139 ₪: {bundleLink} | 24 שעות לפני סוף חלון ההצעה. שורת יסודות לכל המשתתפים, מוצגת בנפרד (החלטת פית, 2026-11-08). |
+| `messages.sessionReminder.yesodotLine` | גם המחיר של מסלול יסודות היוגה, 1,265 ₪, תקף עוד 24 שעות: {yesodotLink} | 24 שעות לפני סוף חלון ההצעה. שורת יסודות לכל המשתתפים. Pit 2026-11-11: valid 48h from the end of the challenge, same window as the day-14 offers; no strikethrough price. |
 
 ## עמוד נחיתה /tsaad
 
@@ -407,17 +525,18 @@
 | `landing.how.meditate` | מדיטציה |  |
 | `landing.how.example` | למשל ביום 1: כוס מים חמימים עם לימון כשקמים, מתיחת בוקר עדינה בעמידה ודקה של נשימה עם כוס המים. | דוגמה אמיתית מיום 1 בתוכן. |
 | `landing.how.completion` | 12 ימים מתוך 14 מספיקים כדי להשלים את האתגר. |  |
-| `landing.how.daily` | כל יום נפתח ב־{unlockTime}. אם מפעילים תזכורת, מגיעה הודעה ב־{reminderTime}. |  |
-| `landing.how.access` | אחרי ההרשמה מגיע קישור אישי בוואטסאפ ובמייל. דרכו בוחרים סיסמה ונכנסים. |  |
+| `landing.how.daily` | כל יום נפתח ב־{unlockTime}. אם מפעילים תזכורת, מגיעה הודעה בשעה שבחרתם (ברירת המחדל {reminderTime}). |  |
+| `landing.how.access` | אחרי ההרשמה נשלח קישור אישי למייל. דרכו בוחרים סיסמה ונכנסים. |  |
 | `landing.map.heading` | מה יש ב־14 הימים |  |
-| `landing.map.lead` | ביום 7 וביום 14 נפגשים בלייב עם אביטל. |  |
+| `landing.map.lead` | נפגשים בלייב עם אביטל שלוש פעמים: מפגש פתיחה לפני שמתחילים, וביום 7 וביום 14. |  |
 | `landing.map.liveTitle` | לייב עם אביטל |  |
 | `landing.audience.heading` | למי זה מתאים | מחליף את “נשים וגברים בגילאי 30–55”. |
 | `landing.audience.body` | למי שרוצה להתחיל בקטן. לא צריך ניסיון קודם ולא צריך גמישות. | מחליף את “נשים וגברים בגילאי 30–55”. |
 | `landing.avital.heading` | אביטל פלס | בעמוד הנחיתה אביטל מדברת בגוף ראשון. |
-| `landing.avital.body` | אני מורה ליוגה, ו־YOGIT היא יוגה לאנשים חושבים. ביום 7 וביום 14 אני איתכם בלייב. | בעמוד הנחיתה אביטל מדברת בגוף ראשון. |
+| `landing.avital.body` | אני מורה ליוגה, ו־YOGIT היא יוגה לאנשים חושבים. אני איתכם בלייב במפגש הפתיחה, וגם ביום 7 וביום 14. | בעמוד הנחיתה אביטל מדברת בגוף ראשון. |
 | `landing.avital.media` | [MEDIA_*] | מציין מקום מהמפרט. |
-| `landing.lives.heading` | שני מפגשי לייב |  |
+| `landing.lives.heading` | שלושה מפגשי לייב |  |
+| `landing.lives.day0` | מפגש פתיחה, יום לפני היום הראשון: [LIVE_DAY0_TIME] | חדש. מציין המקום [LIVE_DAY0_TIME] מוחלף מהקונפיג (LIVE_TIME_DAY0); בלי שעה מוצג live.timeTba. |
 | `landing.lives.day7` | יום 7: [LIVE_DAY7_TIME] |  |
 | `landing.lives.day14` | יום 14: [LIVE_DAY14_TIME] |  |
 | `landing.lives.note` | הקישור למפגש מופיע באפליקציה, למי שנרשמו לאתגר. |  |
@@ -431,11 +550,13 @@
 | `landing.faq.items.3.q` | ואם יום אחד לא הולך? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
 | `landing.faq.items.3.a` | יש מקום ל־2 ימים שלא נספרו. שכחתם לסמן? אפשר לסמן את אתמול עד חצות. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
 | `landing.faq.items.4.q` | איך נכנסים? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
-| `landing.faq.items.4.a` | אחרי ההרשמה מגיע קישור אישי בוואטסאפ ובמייל. דרכו בוחרים סיסמה. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.4.a` | אחרי ההרשמה נשלח קישור אישי למייל. דרכו בוחרים סיסמה. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
 | `landing.faq.items.5.q` | צריך להתקין משהו? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
-| `landing.faq.items.5.a` | אפשר להשתמש בדפדפן. כדי לקבל תזכורת בבוקר, מוסיפים את האפליקציה למסך הבית. באייפון זה נדרש. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
-| `landing.faq.items.6.q` | מה קורה ביום 14? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
-| `landing.faq.items.6.a` | יש מפגש סיום בלייב, ואחריו הצעות להמשך למי שרוצה. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.5.a` | אפשר להשתמש בדפדפן. כדי לקבל תזכורת, מוסיפים את האפליקציה למסך הבית. באייפון זה נדרש. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.6.q` | יש מפגש לפני שמתחילים? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.6.a` | כן, מפגש פתיחה בלייב עם אביטל, ביום שלפני היום הראשון. הוא לא נספר בכוס ולא נכלל ב־12 הימים. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.7.q` | מה קורה ביום 14? | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
+| `landing.faq.items.7.a` | יש מפגש סיום בלייב, ואחריו הצעות להמשך למי שרוצה. | כל התשובות נגזרות מההחלטות. אין בהן טענות חדשות. |
 | `landing.close.heading` | מתחילים ב־[START_DATE] |  |
 | `landing.close.headingTba` | מתחילים בקרוב | חדש בשלב 10. מוצג כש־START_DATE לא הוגדר. |
 | `landing.close.body` | צעד קטן ביום. מתחילים בקטן. |  |
@@ -477,12 +598,12 @@
 | `offer.yesodot.lead` | מסלול ההמשך, פתוח לכל משתתפי האתגר. | פתוח לכל המשתתפים (החלטת פית, 2026-11-08). האתגר מוביל ליסודות. |
 | `offer.yesodot.price` | 1,265 ₪ | פתוח לכל המשתתפים (החלטת פית, 2026-11-08). האתגר מוביל ליסודות. |
 | `offer.yesodot.priceNote` | מחיר למשתתפי האתגר. | פתוח לכל המשתתפים (החלטת פית, 2026-11-08). האתגר מוביל ליסודות. |
-| `offer.yesodot.expiry` | המחיר הזה תקף עד [YESODOT_OFFER_EXPIRY]. | מועד הסיום עוד פתוח. ראו שאלה 3. |
+| `offer.yesodot.expiry` | המחיר הזה תקף עד {until}. | Pit 2026-11-11: valid 48h from the end of the challenge, same window as the day-14 offers; no strikethrough price. {until} הוא מועד סוף חלון יום 14. |
 | `offer.yesodot.cta` | להרשמה ליסודות היוגה | פתוח לכל המשתתפים (החלטת פית, 2026-11-08). האתגר מוביל ליסודות. |
 | `offer.yesodot.ctaTarget` | [MORNING_URL_YESODOT_1265] | פתוח לכל המשתתפים (החלטת פית, 2026-11-08). האתגר מוביל ליסודות. |
 | `offer.yesodot.utm` | [UTM_YESODOT] | פתוח לכל המשתתפים (החלטת פית, 2026-11-08). האתגר מוביל ליסודות. |
 | `offer.yesodot.emailTiming` | [YESODOT_EMAIL_TIMING] | מועד יציאת שני המיילים עוד פתוח. ראו שאלה 3. |
-| `offer.yesodot.expiryTba` | תוקף המחיר יפורסם בקרוב. | חדש בשלב 10. מוצג כש־YESODOT_OFFER_EXPIRY לא הוגדר, במקום המציין. |
+| `offer.yesodot.expiryTba` | תוקף המחיר יפורסם בקרוב. | חדש בשלב 10. מוצג כשאי אפשר לחשב את חלון יום 14 (חסר START_DATE או LIVE_TIME_DAY14), במקום expiry. |
 | `offer.yesodot.expired` | המחיר הזה כבר לא תקף. | חדש בשלב 10. אחרי תום התוקף: בלי כפתור. |
 | `offer.yesodot.more` | לפרטים על יסודות היוגה | חדש בשלב 10. כפתור בתקציר שבמסך ההצעות, מוביל ל־/yesodot. |
 | `offer.yesodot.disabled` | הכפתור יהיה פעיל כשהקישור יהיה מוכן. | חדש בשלב 10 (כפל של offer.day14.disabled, למסך הנפרד). |
@@ -558,6 +679,8 @@
 | `a11y.cup.three` | הכוס של היום, מלאה | טקסט חלופי לאיור הכוס. |
 | `a11y.action.name` | {type}, {title} | השם הנגיש של כפתור פעולה. המצב מגיע מ־aria-pressed. |
 | `a11y.action.pressedHint` | סומן |  |
+| `a11y.habits.group` | ההרגלים שלי, יום {n} |  |
+| `a11y.habits.list` | ההרגלים של יום {n} |  |
 | `a11y.video.play` | הפעלת סרטון יום {n} |  |
 | `a11y.video.frameTitle` | סרטון התרגול של יום {n} |  |
 | `a11y.path.summary` | 14 ימים, {counted} נספרו. מפגשי לייב ביום 7 וביום 14 |  |
@@ -568,6 +691,8 @@
 | `a11y.live.addToCalendar14` | הוספה ליומן: המפגש ביום 14 |  |
 | `a11y.live.join7` | הצטרפות למפגש של יום 7 |  |
 | `a11y.live.join14` | הצטרפות למפגש של יום 14 |  |
+| `a11y.live.addToCalendar0` | הוספה ליומן: מפגש הפתיחה |  |
+| `a11y.live.join0` | הצטרפות למפגש הפתיחה |  |
 | `a11y.live.joinDisabled` | ההצטרפות עוד לא זמינה. הקישור ייפתח שעה לפני המפגש. |  |
 | `a11y.live.joinOpened` | הקישור למפגש פתוח |  |
 | `a11y.live.attended` | סימון: הייתי במפגש |  |
@@ -667,10 +792,11 @@
 | `legal.privacy.sections.1.body.1.list.3` | קישורי הפעלה ואיפוס סיסמה: נשמר רק גיבוב של הקישור, סוגו ותוקפו. |
 | `legal.privacy.sections.1.body.1.list.4` | התקדמות באתגר: אילו פעולות סומנו (הרגל, תנועה, מדיטציה, לייב), באיזה יום ובאיזו שעה. |
 | `legal.privacy.sections.1.body.1.list.5` | התראות בטלפון (רק למי שהפעילו): כתובת המנוי של הדפדפן והמפתחות הנדרשים לשליחה אליו, ויומן תזכורות עם התאריך והסטטוס. |
-| `legal.privacy.sections.1.body.1.list.6` | אבטחה והגבלת קצב: ניסיונות כניסה כושלים ופעולות רגישות נרשמים כגיבוב של המזהה ושל כתובת ה־IP, בלי הערכים עצמם. |
-| `legal.privacy.sections.1.body.1.list.7` | תור עדכונים למערכת ההרשמה: מזהה איש הקשר, מספר היום, כמה ימים נספרו, האם האתגר הושלם והאם סומנה נוכחות בלייב. בלי שם, אימייל או טלפון. |
-| `legal.privacy.sections.1.body.1.list.8` | ספירות שימוש מצטברות, בלי קשר לאדם מסוים: כמה לחיצות נרשמו על כפתורי ההצעות (לפי הצעה ולפי יום). מספרים כלליים על האתגר (כמה נרשמו, הפעילו חשבון וסימנו בכל יום) נגזרים מהמידע שלמעלה, ומוצגים לבעלי האפליקציה רק כסיכום, בלי שמות. |
-| `legal.privacy.sections.1.body.1.list.9` | נתונים טכניים של שירות האירוח: כתובת IP וכותרות בקשה, ביומני הפעלה זמניים. |
+| `legal.privacy.sections.1.body.1.list.6` | שעת התזכורת היומית שבחרתם (ברירת המחדל {reminderTime}), אחת להתראה ולוואטסאפ. אפשר לשנות בדף ״תזכורות״. |
+| `legal.privacy.sections.1.body.1.list.7` | אבטחה והגבלת קצב: ניסיונות כניסה כושלים ופעולות רגישות נרשמים כגיבוב של המזהה ושל כתובת ה־IP, בלי הערכים עצמם. |
+| `legal.privacy.sections.1.body.1.list.8` | תור עדכונים למערכת ההרשמה: מזהה איש הקשר, מספר היום, כמה ימים נספרו, האם האתגר הושלם והאם סומנה נוכחות בלייב. בלי שם, אימייל או טלפון. |
+| `legal.privacy.sections.1.body.1.list.9` | ספירות שימוש מצטברות, בלי קשר לאדם מסוים: כמה לחיצות נרשמו על כפתורי ההצעות (לפי הצעה ולפי יום). מספרים כלליים על האתגר (כמה נרשמו, הפעילו חשבון וסימנו בכל יום) נגזרים מהמידע שלמעלה, ומוצגים לבעלי האפליקציה רק כסיכום, בלי שמות. |
+| `legal.privacy.sections.1.body.1.list.10` | נתונים טכניים של שירות האירוח: כתובת IP וכותרות בקשה, ביומני הפעלה זמניים. |
 | `legal.privacy.sections.2.id` | p-not |
 | `legal.privacy.sections.2.heading` | מה האפליקציה לא עושה |
 | `legal.privacy.sections.2.body.0.list.0` | היא לא מבקשת ולא שומרת מידע רפואי או בריאותי. |
@@ -679,8 +805,8 @@
 | `legal.privacy.sections.3.id` | p-purpose |
 | `legal.privacy.sections.3.heading` | למה משתמשים במידע |
 | `legal.privacy.sections.3.body.0.list.0` | לפתוח חשבון, להתחבר ולהציג את התוכן והתקדמות באתגר. |
-| `legal.privacy.sections.3.body.0.list.1` | לשלוח קישור הפעלה או איפוס סיסמה בוואטסאפ או באימייל. |
-| `legal.privacy.sections.3.body.0.list.2` | לשלוח תזכורת בבוקר, למי שהפעילו התראות. |
+| `legal.privacy.sections.3.body.0.list.1` | לשלוח קישור הפעלה או איפוס סיסמה באימייל. |
+| `legal.privacy.sections.3.body.0.list.2` | לשלוח תזכורת יומית בשעה שבחרתם: התראה בטלפון למי שהפעילו אותה, ותזכורת בוואטסאפ למי שלא כיבו אותה. |
 | `legal.privacy.sections.3.body.0.list.3` | לעדכן את מערכת ההרשמה של YOGIT בהתקדמות, כדי שאפשר יהיה לשלוח הודעות ולהציע המשך. |
 | `legal.privacy.sections.3.body.0.list.4` | לשמור על אבטחת האפליקציה ולמנוע ניצול לרעה. |
 | `legal.privacy.sections.3.body.0.list.5` | לעמוד בחובות לפי דין. |
@@ -691,7 +817,7 @@
 | `legal.privacy.sections.4.body.1.list.0` | Vercel: אירוח האפליקציה ויומני הפעלה זמניים. |
 | `legal.privacy.sections.4.body.1.list.1` | Neon: מסד הנתונים שבו נשמר המידע. המסד ממוקם בפרנקפורט, גרמניה (אזור aws-eu-central-1). |
 | `legal.privacy.sections.4.body.1.list.2` | Bunny: הזרמת סרטוני התרגול. בזמן צפייה, השירות מקבל כתובת IP ונתונים טכניים של הצפייה. |
-| `legal.privacy.sections.4.body.1.list.3` | GoHighLevel: מערכת ההרשמה, הדיוור וניהול הקשרים של YOGIT. ממנה מגיעים פרטי ההרשמה, ודרכה נשלחות הודעות הפעלה, איפוס סיסמה ותזכורת בוקר בוואטסאפ ובאימייל. לשם כך האפליקציה כותבת באיש הקשר שלכם ב־GoHighLevel קישור אישי ותג, ואינה שולחת לשם נתוני שימוש. |
+| `legal.privacy.sections.4.body.1.list.3` | GoHighLevel: מערכת ההרשמה, הדיוור וניהול הקשרים של YOGIT. ממנה מגיעים פרטי ההרשמה, ודרכה נשלחים באימייל קישורי הפעלה ואיפוס סיסמה, ובוואטסאפ נשלחת תזכורת הבוקר. לשם כך האפליקציה כותבת באיש הקשר שלכם ב־GoHighLevel קישור אישי קצר־תוקף ותג, ואינה שולחת לשם נתוני שימוש. |
 | `legal.privacy.sections.4.body.1.list.4` | שירותי התראות של הדפדפן (לפי הדפדפן והמכשיר: Google, Apple, Mozilla או Microsoft): מקבלים את כתובת המנוי ואת תוכן ההתראה, רק למי שהפעילו התראות. |
 | `legal.privacy.sections.4.body.2` | התשלום מתבצע בדף תשלום חיצוני (Morning) ומפגשי הלייב מתקיימים בשירות שיחות וידאו חיצוני. השירותים האלה מטפלים במידע לפי המדיניות שלהם. |
 | `legal.privacy.sections.4.body.3` | איננו מוכרות מידע אישי ואיננו מעבירות אותו לצורך פרסום. |
@@ -718,7 +844,7 @@
 | `legal.privacy.sections.8.body.0` | לפי חוק הגנת הפרטיות אפשר לבקש לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי ולבקש למחוק אותו. |
 | `legal.privacy.sections.8.body.1.list.0` | מחיקה: בדף ״החשבון שלי״ באפליקציה אפשר למחוק את החשבון בעצמכם. הסיסמה נדרשת כדי לוודא שזו בקשה שלכם. |
 | `legal.privacy.sections.8.body.1.list.1` | עיון ותיקון: בפנייה אל [PRIVACY_CONTACT]. |
-| `legal.privacy.sections.8.body.1.list.2` | התראות: אפשר לכבות בכל זמן בדף ״תזכורות״ או בהגדרות הדפדפן והמכשיר. |
+| `legal.privacy.sections.8.body.1.list.2` | התראות: אפשר לכבות בכל זמן בדף ״תזכורות״ או בהגדרות הדפדפן והמכשיר. תזכורת בוואטסאפ: אפשר לכבות בכל זמן בדף ״תזכורות״. |
 | `legal.privacy.sections.8.body.2` | אם נראה לכם שנפגעה הפרטיות שלכם, אפשר גם לפנות אל הרשות להגנת הפרטיות. |
 | `legal.privacy.sections.9.id` | p-delete |
 | `legal.privacy.sections.9.heading` | מחיקת חשבון |
@@ -735,7 +861,7 @@
 | `legal.terms.lead` | התנאים האלה חלים על השימוש באפליקציה ״צעד קטן ביום״ של YOGIT, אביטל פלס. השימוש באפליקציה מהווה הסכמה להם. |
 | `legal.terms.sections.0.id` | t-service |
 | `legal.terms.sections.0.heading` | מה השירות |
-| `legal.terms.sections.0.body.0` | האפליקציה מלווה את האתגר ״צעד קטן ביום״: 14 ימים עם סרטוני תרגול, סימון פעולות, שני מפגשי לייב עם אביטל (ביום 7 וביום 14) ותזכורות לבחירה. |
+| `legal.terms.sections.0.body.0` | האפליקציה מלווה את האתגר ״צעד קטן ביום״: 14 ימים עם סרטוני תרגול, סימון פעולות, שלושה מפגשי לייב עם אביטל (מפגש פתיחה לפני היום הראשון, וביום 7 וביום 14) ותזכורות לבחירה. |
 | `legal.terms.sections.1.id` | t-signup |
 | `legal.terms.sections.1.heading` | הרשמה ותשלום |
 | `legal.terms.sections.1.body.0` | ההרשמה לאתגר עולה 79 ₪. זה תשלום חד־פעמי ואינו מנוי. ההרשמה והתשלום מתבצעים מחוץ לאפליקציה, ואחריהם מגיע קישור אישי להפעלת החשבון. |
@@ -790,17 +916,17 @@
 
 1. מקומות לפגישה: האם יש מגבלה אמיתית? אם לא, השורה לא מוצגת.
 2. האם הלייבים מוקלטים? אם כן, אוסיף “ההקלטה תעלה לכאן אחרי המפגש”.
-3. חשבון: כללי הסיסמה, [YESODOT_OFFER_EXPIRY] ו־[YESODOT_EMAIL_TIMING].
+3. חשבון: כללי הסיסמה ו־[YESODOT_EMAIL_TIMING].
 4. [ACCESSIBILITY_CONTACT] להצהרת הנגישות, ופרט אישי על אביטל לדף הנחיתה.
 5. שלב 10: [PRIVACY_CONTACT], [SUPPORT_CONTACT] ו־[MORNING_URL_BUNDLE_139] חדשים. מחיר הבאנדל: קישור ו־UTM מהקונפיג.
 6. שלב 10: הדפים המשפטיים הם טיוטה לבדיקת עורך דין (docs/LEGAL_REVIEW.md), כולל שאלות פתוחות על שמירת חשבונות ללא מחיקה.
 
 ## טענות טכניות לבדיקה בפועל (שלב 11)
 
-- שמירת סימונים בלי אינטרנט: לא נבנתה (states.offline אומר שסימון צריך חיבור; המחרוזת today.toastOffline הוסרה).
+- שמירת סימונים בלי אינטרנט: לא נבנתה (today.toastOffline לא בשימוש; states.offline אומר שסימון צריך חיבור).
 - תזכורת בוקר בהתראה, כולל באייפון אחרי הוספה למסך הבית (reminders, install.why, landing.faq).
-- שליחת קישור הפעלה ושחזור בוואטסאפ ובמייל (login.firstTime, forgot, messages).
+- שליחת קישור הפעלה ושחזור במייל בלבד (login.firstTime, forgot, messages).
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 652 מחרוזות.
+סך הכול 774 מחרוזות.

@@ -50,6 +50,8 @@ export async function toggleActionCore(
     desired?: boolean;
     now: Date;
     schedule: Schedule | null;
+    /** false: no tracker-sync row (an owner's day preview must never reach a real GHL contact). Default true. */
+    syncTracker?: boolean;
   },
 ): Promise<ToggleResult> {
   const { userId, now, schedule } = args;
@@ -87,7 +89,7 @@ export async function toggleActionCore(
         .returning({ id: actionCompletions.id });
       changed = deleted.length > 0;
     }
-    if (changed) await enqueueTrackerSync(tx, { userId, day });
+    if (changed && args.syncTracker !== false) await enqueueTrackerSync(tx, { userId, day });
     const now2 = await listDayCompletions(tx, userId, day);
     return {
       ok: true as const,

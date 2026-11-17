@@ -1,13 +1,48 @@
 import "server-only";
+import { readEnv } from "@/config";
 import { GHL } from "@/config/constants";
 
-export type GhlResult = { ok: true } | { ok: false; retryable: boolean; error: string };
+export type GhlResult =
+  | { ok: true }
+  | {
+      ok: false;
+      retryable: boolean;
+      error: string;
+      /** מ־Retry-After של תשובת 429/503 (שניות, עם תקרה): הניסיון הבא לא לפני כן. */
+      retryAfterSeconds?: number;
+    };
+
+/** שדה מותאם: לפי id כשהוגדר (מומלץ, ראו docs/GHL_SETUP.md), אחרת לפי key. */
+export type GhlFieldUpdate = { key: string; id?: string; value: string };
+
+/** תקרה ל־Retry-After (שעה): ערך גדול יותר לא ידחה את השורה מעבר לזה. */
+const MAX_RETRY_AFTER_SECONDS = 60 * 60;
+
+/** Retry-After בשניות או כתאריך HTTP; undefined אם חסר או לא תקין. */
+export function parseRetryAfter(value: string | null, nowMs: number = Date.now()): number | undefined {
+  if (!value) return undefined;
+  const v = value.trim();
+  let secs: number;
+  if (/^\d{1,10}$/.test(v)) secs = Number(v);
+  else {
+    const at = Date.parse(v);
+    if (Number.isNaN(at)) return undefined;
+    secs = Math.ceil((at - nowMs) / 1000);
+  }
+  return Math.min(MAX_RETRY_AFTER_SECONDS, Math.max(1, secs));
+}
+
+/** בבדיקות וב־e2e אין fetch אמיתי ל־GHL: רק fetchImpl מוזרק (מוק). */
+const inTestEnv = () => {
+  const env = readEnv();
+  return env.NODE_ENV === "test" || env.TSAAD_E2E === "1" || !!env.TSAAD_TEST_NOW || !!env.VITEST;
+};
 
 const CONTACT_ID = /^[A-Za-z0-9_-]{6,64}$/;
 
 export type GhlClient = {
-  /** מעדכן שדות מותאמים (לפי key) באיש קשר. */
-  updateCustomFields(contactId: string, fields: { key: string; value: string }[], locationId?: string): Promise<GhlResult>;
+  /** מעדכן שדות מותאמים באיש קשר (PUT, בלי tags: PUT עם tags דורס את כל התגים). */
+  updateCustomFields(contactId: string, fields: GhlFieldUpdate[], locationId?: string): Promise<GhlResult>;
   addTags(contactId: string, tags: string[]): Promise<GhlResult>;
   removeTags(contactId: string, tags: string[]): Promise<GhlResult>;
 };
@@ -18,6 +53,7 @@ export type GhlClient = {
  * `fetchImpl` מוזרק בבדיקות (אף בדיקה לא קוראת לרשת).
  */
 export function createGhlClient(opts: { token: string; fetchImpl?: typeof fetch; timeoutMs?: number }): GhlClient {
+  if (!opts.fetchImpl && inTestEnv()) throw new Error("ghl: a real GHL client is never created in tests or e2e");
   const doFetch = opts.fetchImpl ?? fetch;
   const timeoutMs = opts.timeoutMs ?? GHL.timeoutMs;
 
@@ -63,7 +99,12 @@ export function createGhlClient(opts: { token: string; fetchImpl?: typeof fetch;
       return { ok: true };
     }
     await res.body?.cancel().catch(() => undefined);
-    if (status === 429 || status === 408 || status >= 500) return { ok: false, retryable: true, error: `ghl http ${status}` };
+    if (status === 429 || status === 408 || status >= 500) {
+      const retryAfterSeconds = parseRetryAfter(res.headers.get("retry-after"));
+      return retryAfterSeconds
+        ? { ok: false, retryable: true, error: `ghl http ${status}`, retryAfterSeconds }
+        : { ok: false, retryable: true, error: `ghl http ${status}` };
+    }
     if (status === 401 || status === 403) return { ok: false, retryable: false, error: `ghl http ${status} (token or scopes)` };
     return { ok: false, retryable: false, error: `ghl http ${status}` };
   }
@@ -78,7 +119,8 @@ export function createGhlClient(opts: { token: string; fetchImpl?: typeof fetch;
       return call(
         "PUT",
         `/contacts/${encodeURIComponent(contactId)}`,
-        { customFields: fields.map((f) => ({ key: f.key, field_value: f.value })) },
+        // הסכמה של GHL: id (או key) ו־fieldValue (field_value מיושן). לעולם לא tags כאן.
+        { customFields: fields.map((f) => (f.id ? { id: f.id, fieldValue: f.value } : { key: f.key, fieldValue: f.value })) },
         locationId,
       );
     },
@@ -93,13 +135,23 @@ export function createGhlClient(opts: { token: string; fetchImpl?: typeof fetch;
   };
 }
 
-/** מעדכן שדה (עם הערך) ואז מוסיף תג שמפעיל Workflow. rearm: מסיר את התג קודם (כך שגם תג שכבר קיים יפעיל שוב). */
+/**
+ * מעדכן שדה (עם הערך) ואז מוסיף תג שמפעיל Workflow. rearm: מסיר את התג קודם (כך שגם תג שכבר קיים יפעיל שוב).
+ * כשל זמני בהסרה עוצר (אחרת ההוספה לא תפעיל את ה־Workflow, והקישור לא יישלח בלי שנדע); כשל קבוע בהסרה לא עוצר.
+ */
 export async function setFieldAndTag(
   client: GhlClient,
-  args: { contactId: string; fieldKey: string; value: string; tag: string; rearm: boolean; locationId?: string },
+  args: { contactId: string; fieldKey: string; fieldId?: string; value: string; tag: string; rearm: boolean; locationId?: string },
 ): Promise<GhlResult> {
-  const upd = await client.updateCustomFields(args.contactId, [{ key: args.fieldKey, value: args.value }], args.locationId);
+  const upd = await client.updateCustomFields(
+    args.contactId,
+    [{ key: args.fieldKey, id: args.fieldId, value: args.value }],
+    args.locationId,
+  );
   if (!upd.ok) return upd;
-  if (args.rearm) await client.removeTags(args.contactId, [args.tag]); // best effort
+  if (args.rearm) {
+    const rm = await client.removeTags(args.contactId, [args.tag]);
+    if (!rm.ok && rm.retryable) return rm;
+  }
   return client.addTags(args.contactId, [args.tag]);
 }

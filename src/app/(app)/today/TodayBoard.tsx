@@ -25,6 +25,7 @@ import { ActionButton } from "./ActionButton";
 import { toggleAction } from "./actions";
 import { Cup } from "./Cup";
 import { FinishTiles } from "./FinishTiles";
+import { HabitChecklist, habitKey, type HabitRow } from "./HabitChecklist";
 import { PathStrip } from "./PathStrip";
 import { Ring } from "./Ring";
 import { VideoTile } from "./VideoTile";
@@ -53,6 +54,9 @@ export type BoardProps = {
   offerOpen: boolean;
   /** תוכן שנקבע בשרת ומוצג בסוף המסך (אחרי יום 14: ההצעות). */
   children?: React.ReactNode;
+  /** "ההרגלים שלי": ההרגלים 1..day (כותרות של ימים שנפתחו בלבד), ומספרי ההרגלים הישנים שסומנו היום (habit_checks). */
+  habits: HabitRow[];
+  olderChecked: number[];
   /** כותרות הפעולות של היום ושל אתמול בלבד (לא של ימים נעולים). */
   titles: Record<number, DayTitles>;
   /** הרגע הקרוב שבו המסך משתנה (ISO), או null. */
@@ -61,7 +65,9 @@ export type BoardProps = {
 
 type Toast =
   | { kind: "saved" | "undone"; text: string; undo?: { day: number; action: Action; to: boolean } }
-  | { kind: "error"; text: string; retry: { day: number; action: Action; to: boolean } };
+  | { kind: "error"; text: string; retry: { day: number; action: Action; to: boolean } }
+  /** שגיאת שמירה של הרגל ישן (לא שלב בכוס): הניסיון החוזר והמיקוד לפי מפתח התיבה. */
+  | { kind: "error"; text: string; retryHabit: { run: () => void; focusKey: string } };
 
 const subscribeOnline = (cb: () => void) => {
   window.addEventListener("online", cb);
@@ -287,6 +293,19 @@ export function TodayBoard(p: BoardProps) {
         </div>
       ) : null}
 
+      {p.day ? (
+        <HabitChecklist
+          key={p.day}
+          day={p.day}
+          habits={p.habits}
+          initialOlder={p.olderChecked}
+          stepDone={optimistic.includes(actionKey(p.day, "habit"))}
+          onToggleStep={() => toggle(p.day!, "habit")}
+          onSaved={(to) => setToast(to ? { kind: "saved", text: copy.habits.saved } : { kind: "undone", text: copy.states.success.undone })}
+          onError={(run, h) => setToast({ kind: "error", text: copy.states.saveFailed, retryHabit: { run, focusKey: habitKey(p.day!, h) } })}
+        />
+      ) : null}
+
       {p.children}
 
       <ToastDock
@@ -302,6 +321,13 @@ export function TodayBoard(p: BoardProps) {
                   action: {
                     label: copy.common.retry,
                     run: () => {
+                      if ("retryHabit" in toast) {
+                        const rh = toast.retryHabit;
+                        setToast(null);
+                        document.querySelector<HTMLInputElement>(`[data-habit-key="${rh.focusKey}"]`)?.focus();
+                        rh.run();
+                        return;
+                      }
                       const r = toast.retry;
                       setToast(null);
                       focusAction(r.day, r.action);

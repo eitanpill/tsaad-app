@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { copy } from "@/content/copy.he";
 import { requireUser } from "@/lib/auth/dal";
 import { getOfferModel } from "@/lib/offer/config";
-import { serverNow } from "@/lib/today/clock";
-import { getSchedule } from "@/lib/today/schedule";
+import { getAppClock } from "@/lib/preview/context";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
 import { OfferTiles } from "./OfferTiles";
 import { YesodotTile } from "./YesodotTile";
@@ -17,8 +16,8 @@ export const metadata: Metadata = { title: `${copy.offer.day14.heading} | ${copy
  */
 export default async function OfferPage() {
   await requireUser();
-  const now = await serverNow();
-  const m = getOfferModel(now, getSchedule());
+  const { now, schedule } = await getAppClock();
+  const m = getOfferModel(now, schedule);
   const O = copy.offer;
   const { offer } = m;
 

@@ -23,10 +23,10 @@ const ALLOWED_PLACEHOLDERS = new Set([
   "[MORNING_URL_SESSION_271]",
   "[MORNING_URL_YESODOT_1265]",
   "[START_DATE]",
+  "[LIVE_DAY0_TIME]",
   "[LIVE_DAY7_TIME]",
   "[LIVE_DAY14_TIME]",
   "[ZOOM_LINK]",
-  "[YESODOT_OFFER_EXPIRY]",
   "[YESODOT_EMAIL_TIMING]",
   "[MEDIA_*]",
   "[MORNING_URL_BUNDLE_139]",
@@ -41,9 +41,13 @@ const ALLOWED_PLACEHOLDERS = new Set([
 // Variables the code fills in at render time.
 const ALLOWED_TOKENS = new Set([
   "done",
+  "page",
+  "pages",
+  "until",
   "total",
   "unlockTime",
   "reminderTime",
+  "liveTime",
   "n",
   "prev",
   "day",
@@ -126,10 +130,10 @@ describe("days", () => {
   it("matches Pit's content file for a few anchor days", () => {
     expect(DAYS[0].habit.title).toBe("כוס מים חמימים עם לימון כשקמים");
     expect(DAYS[0].movement.title).toBe("מתיחת בוקר עדינה בעמידה");
-    expect(DAYS[3].habit.title).toBe("7 דקות של אמבטיית שמש");
+    expect(DAYS[3].habit.title).toBe("7 דקות אמבטיית שמש");
     expect(DAYS[3].movement.title).toBe("חיזוק פלג גוף תחתון");
     expect(DAYS[3].meditation.title).toBe("להקשיב ל־3 צלילים סביבכם");
-    expect(DAYS[11].habit.title).toBe("חצי שעה בלי מסכים לפני השינה, ומי שיכול/ה, יותר");
+    expect(DAYS[11].habit.title).toBe("חצי שעה בלי מסכים לפני השינה");
     expect(DAYS[13].habit.title).toBe("לבחור את ההרגלים שממשיכים איתם");
   });
 
@@ -147,6 +151,7 @@ describe("days", () => {
       expect(d.opening.startsWith(`יום ${d.day}. ההרגל של היום: `), d.opening).toBe(true);
       expect(d.opening.endsWith("קחו נשימה אחת איתי, ומתחילים."), d.opening).toBe(true);
       expect(d.opening.includes('"'), d.opening).toBe(false);
+      expect(d.opening).toBe(`יום ${d.day}. ההרגל של היום: ${d.habit.title}. קחו נשימה אחת איתי, ומתחילים.`);
     }
     expect(DAYS[11].opening).toBe(
       "יום 12. ההרגל של היום: חצי שעה בלי מסכים לפני השינה. קחו נשימה אחת איתי, ומתחילים.",
@@ -234,11 +239,27 @@ describe("copy", () => {
 
   it("keeps passwords out of account messages and warns not to share the link", () => {
     const { activation, forgot } = copy.messages;
-    for (const s of [activation.whatsapp, activation.emailBody, forgot.whatsapp, forgot.emailBody]) {
+    // links go by email only: there is no WhatsApp activation or reset draft (Meta does not approve a password link)
+    expect(activation).not.toHaveProperty("whatsapp");
+    expect(forgot).not.toHaveProperty("whatsapp");
+    for (const s of [activation.emailBody, forgot.emailBody]) {
       expect(s).not.toMatch(/\{pass|סיסמה זמנית|הסיסמה שלכם:/);
       expect(s).toContain("{link}");
       expect(s).toContain("לא כדאי להעביר אותו");
     }
+  });
+
+  it("says the activation and reset link comes by email, never by WhatsApp, and promises no timing", () => {
+    const text = [
+      copy.forgot.confirmation.body,
+      copy.forgot.forgotUsername.body,
+      copy.activate.expired.body,
+      copy.login.firstTime.body,
+      copy.landing.how.access,
+    ].join(" ");
+    expect(text).not.toMatch(/וואטסאפ|ווטסאפ|WhatsApp/);
+    expect(text).toContain("למייל");
+    expect(text).not.toMatch(/תוך כמה|בדרך כלל מגיע|מיד|דקות/);
   });
 
   it("gives the two show-password buttons different names", () => {
@@ -249,9 +270,19 @@ describe("copy", () => {
     expect(copy.a11y.reminders.switchName).toBe(copy.reminders.toggleTitle);
   });
 
-  it("has a push text for each live day and a generic one", () => {
+  it("has a generic daily push text, and a separate live-reminder text", () => {
     expect(copy.push.generic).toContain("{day}");
-    expect(copy.push.liveDay).toContain("{time}");
+    expect(copy.push.perDay).toContain("{habit}");
+    expect(copy.push.liveTitle).toContain("שעה");
+    expect(copy.push.liveBody).not.toMatch(/\{/);
+  });
+
+  it("keeps live mentions out of the daily reminder texts (they live only in the separate live reminder)", () => {
+    for (const t of [copy.push.title, copy.push.generic, copy.push.perDay]) {
+      expect(t).not.toMatch(/לייב|מפגש|חי\b/);
+    }
+    expect(copy.reminders.liveNote).toMatch(/שעה/);
+    expect(copy.reminders.liveNote).toMatch(/רבים|תגיע|כשעה/);
   });
 });
 

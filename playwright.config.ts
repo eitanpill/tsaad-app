@@ -3,12 +3,16 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
+import { writePhotoFixtures } from "./e2e/photo-fixtures";
 
 /**
  * בדיקות דפדפן (Playwright + axe) מול build מקומי ומסד זמני.
  * הרצה: npm run test:e2e   (מרים מסד זמני דרך scripts/test-db.sh, ובונה ומריץ את האפליקציה).
  * דפדפן: משתמשים ב־Chromium שכבר מותקן (PLAYWRIGHT_BROWSERS_PATH); לא מריצים `playwright install`.
  */
+// Generated placeholder images for the Avital photo slots (git-ignored, removed in global-teardown). Server B turns the slots on.
+writePhotoFixtures();
+
 const PORT = 3100;
 const ORIGIN = `http://localhost:${PORT}`;
 // Per-run key for the test-clock header (src/lib/today/test-clock.ts). Set once in the runner process so the
@@ -55,6 +59,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: "list",
+  globalTeardown: "./e2e/global-teardown.ts",
   use: { baseURL: ORIGIN, trace: "off", locale: "he-IL" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // A: the default environment (day 14 live time, offer window, payment links and contacts all unset: placeholder states).
@@ -77,6 +82,9 @@ export default defineConfig({
         ...APP_ENV,
         APP_ORIGIN: ORIGIN_B,
         LIVE_TIME_DAY14: "20:00",
+        // Day 0 (opening live, 2026-11-30) is configured only on B; A leaves it unset (the "time to be announced" state).
+        LIVE_TIME_DAY0: "19:00",
+        LIVE_URL_DAY0: "https://live.example.test/e2e-room-day0",
         OFFER_WINDOW_HOURS: "48",
         SESSION_SPOTS: "5",
         MORNING_URL_CHALLENGE_79: "https://pay.example.test/challenge79",
@@ -85,11 +93,14 @@ export default defineConfig({
         // bundle link deliberately unset: one disabled button next to enabled ones
         OFFER_UTM_SESSION: "session271",
         OFFER_UTM_YESODOT: "yesodot1265",
-        YESODOT_OFFER_EXPIRY: "2026-12-20",
         ACCESSIBILITY_CONTACT: "access@example.test",
         PRIVACY_CONTACT: "privacy@example.test",
         SUPPORT_CONTACT: "050-123-4567",
         NEXT_COHORT_URL: "https://next.example.test/updates",
+        // dry: the WhatsApp switch shows on /reminders; nothing is ever sent (live is refused under TSAAD_E2E anyway).
+        GHL_REMINDER_MODE: "dry",
+        // Avital photo slots on, with the generated fixtures (A leaves them off: the no-photo design).
+        TSAAD_E2E_PHOTOS: "1",
       },
     },
   ],

@@ -7,15 +7,18 @@ import { copy } from "@/content/copy.he";
 import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { fill } from "@/lib/format";
-import { serverNow } from "@/lib/today/clock";
+import { getAppClock } from "@/lib/preview/context";
 import { dayOpening, dayTitles } from "@/lib/today/titles";
 import { listCompletions } from "@/lib/today/completions";
-import { getSchedule } from "@/lib/today/schedule";
+import { listDayHabitChecks } from "@/lib/habits/checks";
+import { getHabitList } from "@/lib/habits/list";
 import { getVideoConfig, hasVideo, posterUrl } from "@/lib/today/video";
 import { firstNameOf } from "@/lib/today/first-name";
 import { actionKey, greetingKey, nextBoundary, todayModel } from "@/lib/today/view";
 import { stepsFor, unlockInstant } from "@/lib/days";
 import { diffDays, localDate } from "@/lib/time/zone";
+import { getLiveInputs } from "@/lib/live/config";
+import { liveDate, liveSession, nextLiveChange } from "@/lib/live/model";
 import { getOfferModel } from "@/lib/offer/config";
 import { OfferEntry } from "./OfferEntry";
 import { OfferTiles } from "../offer/OfferTiles";
@@ -24,25 +27,41 @@ export const metadata: Metadata = { title: `${copy.nav.today} | ${copy.brand.nam
 
 export default async function TodayPage() {
   const user = await requireUser();
-  const now = await serverNow();
-  const schedule = getSchedule();
+  const { now, schedule } = await getAppClock();
   const cfg = getConfig();
   const model = todayModel(now, schedule);
 
   if (model.phase === "before_start" || !schedule) {
     const first = schedule ? unlockInstant(1, schedule) : null;
     const daysUntil = schedule ? diffDays(localDate(now, schedule.timeZone), schedule.startDate) : null;
+    // מפגש הפתיחה (יום 0, היום שלפני START_DATE). בלי START_DATE אין תאריך, ולכן גם שעה לא מוצגת (לא ממציאים).
+    const opening = liveSession(0, now, schedule, schedule ? getLiveInputs(cfg.env)[0] : {});
+    const openingIsToday = schedule !== null && localDate(now, schedule.timeZone) === liveDate(0, schedule);
+    const nextMs = [first && first.getTime() > now.getTime() ? first : null, nextLiveChange([opening])]
+      .filter((d): d is Date => d !== null)
+      .map((d) => d.getTime());
     return (
-      <BeforeStart startDate={cfg.startDate} daysUntil={daysUntil} nextChangeIso={first && first.getTime() > now.getTime() ? first.toISOString() : null} />
+      <BeforeStart
+        startDate={cfg.startDate}
+        daysUntil={daysUntil}
+        nextChangeIso={nextMs.length ? new Date(Math.min(...nextMs)).toISOString() : null}
+        opening={opening}
+        openingIsToday={openingIsToday}
+        timeZone={cfg.timeZone}
+      />
     );
   }
 
-  const rows = await listCompletions(getDb(), user.userId);
+  const db = getDb();
+  const rows = await listCompletions(db, user.userId);
   const completions = rows.map((r) => actionKey(r.day, r.action));
   const day = model.day;
   const yesterday = model.yesterday;
   const yesterdayDone = yesterday ? stepsFor(yesterday, rows.filter((r) => r.day === yesterday).map((r) => r.action)) : 0;
   const tz = schedule.timeZone;
+  // "ההרגלים שלי": ההרגלים 1..היום (כולם כבר נפתחו) והישנים שסומנו היום.
+  const habits = day !== null ? getHabitList(day).map(({ habitDay, title }) => ({ habitDay, title })) : [];
+  const olderChecked = day !== null ? await listDayHabitChecks(db, user.userId, day) : [];
 
   const greeting = copy.today.greeting[greetingKey(now, tz)];
   const first = firstNameOf(user.displayName, user.username);
@@ -85,6 +104,8 @@ export default async function TodayPage() {
         hero={hero}
         opening={day !== null ? dayOpening(day) : null}
         titles={titles}
+        habits={habits}
+        olderChecked={olderChecked}
         videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
         poster={day !== null ? posterUrl(day, getVideoConfig(cfg.env), cfg.env.BUNNY_CDN_HOST) : null}
         offerOpen={offerOpen}

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getConfig } from "@/config";
+import { copy } from "@/content/copy.he";
 import { verifySession } from "@/lib/auth/dal";
 import { isAdminUsername } from "@/lib/stats/admin";
+import { AdminNav } from "./AdminNav";
+import "./admin.css";
 
 /**
  * מעטפת דפי הבעלים. לא נסרקים ולא מאונדקסים. ההרשאה נבדקת כאן, ב־layout (ולא רק בדף): כך ה־404 נקבע לפני שהתגובה
@@ -14,5 +17,10 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await verifySession();
   if (!user || !isAdminUsername(user.username, getConfig().env.ADMIN_USERNAMES)) notFound();
-  return <>{children}</>;
+  return (
+    <>
+      <AdminNav label={copy.admin.nav.label} stats={copy.admin.nav.stats} participants={copy.admin.nav.participants} />
+      {children}
+    </>
+  );
 }

@@ -104,6 +104,11 @@ describe.skipIf(!runIntegration)("toggleActionCore (integration)", () => {
     expect(await toggle(u, 7, "move", d7)).toEqual({ ok: false, error: "invalid" });
     expect(await toggle(u, 7, "meditate", d7)).toEqual({ ok: false, error: "invalid" });
     expect(await toggle(u, 4, "live")).toEqual({ ok: false, error: "invalid" });
+    // the opening session (day 0, the day before START_DATE) is not a challenge day: no live attendance mark, nothing in the cup
+    for (const action of ["live", "habit", "move", "meditate"]) {
+      expect(await toggle(u, 0, action, at("2026-11-30T19:30:00+02:00"))).toEqual({ ok: false, error: "invalid" });
+    }
+    expect(await listCompletions(db, u)).toEqual([{ day: 7, action: "live" }, { day: 7, action: "habit" }].map((x) => expect.objectContaining(x)));
   });
 
   it("rejects malformed input", async () => {
@@ -175,5 +180,11 @@ describe.skipIf(!runIntegration)("toggleActionCore (integration)", () => {
     )[0].n;
     expect(kept).toBe(4); // 3 for u (the 2 blocked ones were removed) + 1 for v
     await db.execute(sql`delete from login_attempts where kind = 'toggle'`);
+  });
+  it("syncTracker: false (owner day preview) saves the mark but queues nothing for GHL", async () => {
+    const u = await mkUser();
+    const r = await toggleActionCore(db, { userId: u, day: 4, action: "habit", now: NOON4, schedule, desired: true, syncTracker: false });
+    expect(r).toMatchObject({ ok: true, done: true, changed: true });
+    expect(rowsOf<{ n: number }>(await db.execute(sql`select count(*)::int as n from sync_outbox where user_id = ${u}`))[0].n).toBe(0);
   });
 });

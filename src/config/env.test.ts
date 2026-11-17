@@ -42,6 +42,9 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ START_DATE: "2026-02-30" })).toThrow(/START_DATE/);
     expect(() => parseEnv({ START_DATE: "01/12/2026" })).toThrow();
     expect(() => parseEnv({ LIVE_TIME_DAY7: "25:00" })).toThrow(/LIVE_TIME_DAY7/);
+    expect(() => parseEnv({ LIVE_TIME_DAY0: "25:00" })).toThrow(/LIVE_TIME_DAY0/);
+    expect(parseEnv({ LIVE_TIME_DAY0: "19:00" }).LIVE_TIME_DAY0).toBe("19:00");
+    expect(parseEnv({ LIVE_TIME_DAY0: "", LIVE_URL_DAY0: "" }).LIVE_TIME_DAY0).toBeUndefined();
     expect(parseEnv({ LIVE_TIME_DAY14: "20:30" }).LIVE_TIME_DAY14).toBe("20:30");
     expect(() => parseEnv({ TZ_NAME: "Mars/Base" })).toThrow(/TZ_NAME/);
   });
@@ -51,6 +54,9 @@ describe("parseEnv", () => {
     expect(parseEnv({ APP_ORIGIN: "https://x.example" }).APP_ORIGIN).toBe("https://x.example");
     expect(() => parseEnv({ LIVE_URL_DAY7: "javascript:alert(1)" })).toThrow();
     expect(() => parseEnv({ LIVE_URL_DAY7: "http://zoom.example/j/1" })).toThrow(/LIVE_URL_DAY7/);
+    expect(() => parseEnv({ LIVE_URL_DAY0: "http://zoom.example/j/0" })).toThrow(/LIVE_URL_DAY0/);
+    expect(() => parseEnv({ LIVE_URL_DAY0: "javascript:alert(1)" })).toThrow();
+    expect(parseEnv({ LIVE_URL_DAY0: "https://zoom.example/j/0" }).LIVE_URL_DAY0).toBe("https://zoom.example/j/0");
     expect(() => parseEnv({ GHL_WEBHOOK_URL: "http://hooks.example/x" })).toThrow(/GHL_WEBHOOK_URL/);
     expect(parseEnv({ GHL_WEBHOOK_URL: "https://hooks.example/x" }).GHL_WEBHOOK_URL).toBe("https://hooks.example/x");
     expect(() => parseEnv({ APP_ORIGIN: "http://x.example" })).toThrow(/APP_ORIGIN/);
@@ -87,20 +93,17 @@ describe("buildConfig", () => {
 });
 
 describe("stage 10 env", () => {
-  it("accepts offer links only as https, UTM values as safe tokens, and expiry as a date or an ISO instant", () => {
+  it("accepts offer links only as https, UTM values as safe tokens", () => {
     const e = parseEnv({
       MORNING_URL_SESSION_271: "https://pay.example.test/s",
       OFFER_UTM_SESSION: "session_271",
-      YESODOT_OFFER_EXPIRY: "2026-12-31",
       PRIVACY_CONTACT: "privacy@example.test",
     });
     expect(e.MORNING_URL_SESSION_271).toBe("https://pay.example.test/s");
-    expect(e.YESODOT_OFFER_EXPIRY).toBe("2026-12-31");
-    expect(parseEnv({ YESODOT_OFFER_EXPIRY: "2026-12-31T20:00:00+02:00" }).YESODOT_OFFER_EXPIRY).toBeDefined();
+    // a leftover YESODOT_OFFER_EXPIRY from an old env is ignored, not an error (the window is the day-14 offer window now)
+    expect(() => parseEnv({ YESODOT_OFFER_EXPIRY: "31/12/2026" })).not.toThrow();
     expect(() => parseEnv({ MORNING_URL_BUNDLE_139: "http://pay.example.test" })).toThrow(/MORNING_URL_BUNDLE_139/);
     expect(() => parseEnv({ MORNING_URL_BUNDLE_139: "[MORNING_URL_BUNDLE_139]" })).toThrow();
     expect(() => parseEnv({ OFFER_UTM_YESODOT: "a b&c" })).toThrow(/OFFER_UTM_YESODOT/);
-    expect(() => parseEnv({ YESODOT_OFFER_EXPIRY: "31/12/2026" })).toThrow(/YESODOT_OFFER_EXPIRY/);
-    expect(() => parseEnv({ YESODOT_OFFER_EXPIRY: "2026-02-30" })).toThrow();
   });
 });

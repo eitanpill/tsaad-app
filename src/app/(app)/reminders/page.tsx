@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
 import { getConfig } from "@/config";
+import { REMINDERS } from "@/config/constants";
 import { copy } from "@/content/copy.he";
+import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
+import { getGhl } from "@/lib/ghl/link-delivery";
+import { getReminderTime, getWhatsappReminderPref } from "@/lib/ghl/preferences";
 import { fill } from "@/lib/format";
 import { timeTokens } from "@/lib/times";
+import { ReminderTimeForm } from "./ReminderTimeForm";
 import { RemindersControls } from "./RemindersControls";
 import { paint } from "@/components/paint";
+import { WhatsappToggle } from "./WhatsappToggle";
 
 export const metadata: Metadata = { title: `${copy.nav.reminders} | ${copy.brand.name}` };
 
@@ -14,7 +20,11 @@ export const metadata: Metadata = { title: `${copy.nav.reminders} | ${copy.brand
  * המפתח הפרטי לא נוגע בדף הזה.
  */
 export default async function RemindersPage() {
-  await requireUser();
+  const user = await requireUser();
+  // מתג הוואטסאפ: רק כשתזכורת ה־GHL אינה כבויה, ורק למי שיש לו איש קשר ב־GHL (אחרים לא מקבלים וואטסאפ בכלל).
+  const whatsapp =
+    getGhl().cfg.reminderMode === "off" ? null : await getWhatsappReminderPref(getDb(), user.userId);
+  const reminderMinutes = (await getReminderTime(getDb(), user.userId)) ?? REMINDERS.timeDefaultMinutes;
   const vapidKey = getConfig().env.VAPID_PUBLIC_KEY ?? null;
   const times = timeTokens();
   const previewText = fill(copy.push.generic, { day: copy.push.previewDay });
@@ -24,6 +34,7 @@ export default async function RemindersPage() {
       <section className="t t-rem-hero" aria-labelledby="rem-h">
         <h1 id="rem-h">{copy.reminders.title}</h1>
         <p>{fill(copy.reminders.intro, times)}</p>
+        <div className="rm-live-note">{copy.reminders.liveNote}</div>
       </section>
 
       <section className="t t-rem-preview" aria-label={fill(copy.a11y.reminders.preview, { text: previewText })}>
@@ -45,7 +56,11 @@ export default async function RemindersPage() {
         </div>
       </section>
 
-      <RemindersControls vapidKey={vapidKey} unlockTime={times.unlockTime} reminderTime={times.reminderTime} />
+      <RemindersControls
+        vapidKey={vapidKey}
+        timeSlot={<ReminderTimeForm initialMinutes={reminderMinutes} unlockTime={times.unlockTime} reminderTime={times.reminderTime} />}
+      />
+      {whatsapp?.hasContact ? <WhatsappToggle initial={whatsapp.on} /> : null}
     </>
   );
 }

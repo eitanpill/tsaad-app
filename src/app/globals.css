@@ -106,3 +106,10 @@ strong {
   font-weight: 700;
   text-decoration: none;
 }
+
+/* Avital photo slots (src/components/AvitalPhoto.tsx). Only rendered when a photo exists. */
+.av-photo { position: relative; display: block; overflow: hidden; background: var(--sand); flex-shrink: 0; }
+.av-photo--tile { width: min(100%, 320px); border-radius: var(--radius-tile); }
+.av-photo--round { width: 72px; border-radius: 50%; border: 3px solid #fff; }
+.av-img { object-fit: cover; }
+.av-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

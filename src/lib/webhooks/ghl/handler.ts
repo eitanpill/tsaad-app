@@ -185,6 +185,14 @@ export async function handleGhlSignup(req: Request, deps: HandlerDeps): Promise<
 
   if (outcome.issued) {
     const issued = outcome.issued;
+    // קישורי הפעלה יוצאים במייל בלבד (Meta לא מאשרת תבנית וואטסאפ עם קישור לבחירת סיסמה). איש קשר בלי מייל: החשבון נוצר,
+    // אבל אין לאן לשלוח. רק אזהרה (מזהים בלבד); בעל האתר רואה "אין מייל" ב־/admin/participants ושולח קישור ידנית.
+    if (!issued.hasEmail) {
+      log.warn("ghl signup: contact has no email, activation link will not be sent; send it manually from /admin/participants", {
+        userId: issued.userId,
+        ghlContactId: parsed.data.ghlContactId,
+      });
+    }
     deps.after(() => deliver(deps, issued, parsed.data.ghlContactId, origin));
   }
   return json({ ok: true, status: outcome.status }, 200);

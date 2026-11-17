@@ -39,7 +39,7 @@ export type ForgotResult = { status: "ok" } | { status: "rate_limited"; retryAft
  * "שכחתי סיסמה". התוצאה החיצונית זהה בין אם יש חשבון ובין אם אין ("ok"); רק חריגה
  * ממגבלת הקצב (שתלויה בקלט בלבד, לא בקיום החשבון) מחזירה תשובה אחרת.
  * חשבון שעוד לא הופעל מקבל קישור הפעלה, חשבון מופעל מקבל קישור איפוס.
- * הקישור נשלח לפרטי הקשר שבחשבון, לא לכתובת שהוקלדה.
+ * הקישור נשלח לפרטי הקשר שבחשבון, לא לכתובת שהוקלדה. חשבון מושבת לא מקבל קישור (ואין שינוי בתשובה החיצונית).
  */
 export async function requestPasswordReset(
   db: Db,
@@ -73,7 +73,8 @@ export async function requestPasswordReset(
     : sql``;
   const res = await db.execute(
     sql`select id, username, display_name, email, phone, password_hash, ghl_contact_id from users
-        where username = ${identifier} or lower(email) = ${identifier}${phoneClause}
+        where (username = ${identifier} or lower(email) = ${identifier}${phoneClause})
+          and disabled_at is null
         order by created_at
         limit ${MAX_MATCHES}`,
   );
@@ -95,6 +96,12 @@ export async function requestPasswordReset(
           },
         );
         if (!perAccount.allowed) continue;
+        // קישורים יוצאים במייל בלבד. לחשבון בלי מייל לא נשלח כלום (ולא מונפק אסימון), והתשובה החיצונית לא משתנה:
+        // בעל האתר שולח קישור ידנית דרך /admin/participants.
+        if (!u.email) {
+          logger.info("password reset: account has no email, nothing sent", { userId: u.id });
+          continue;
+        }
         const purpose: TokenPurpose = u.password_hash ? "reset" : "activate";
         const { token } = await issueToken(db, { userId: u.id, purpose, ttlMinutes: args.ttlMinutes });
         const link = `${args.origin}/activate?token=${token}`;
@@ -103,8 +110,7 @@ export async function requestPasswordReset(
           continue;
         }
         const base = { kind: purpose === "reset" ? ("reset" as const) : ("activation" as const), userId: u.id, name: u.display_name, username: u.username, link };
-        if (u.email) await args.sender.send({ ...base, channel: "email" });
-        if (u.phone) await args.sender.send({ ...base, channel: "whatsapp" });
+        await args.sender.send({ ...base, channel: "email" });
       } catch (e) {
         // כשל פנימי לא משנה את התשובה החיצונית (אחרת היא תגלה אם יש חשבון).
         logger.error("password reset delivery failed", { error: e });

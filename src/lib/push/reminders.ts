@@ -4,8 +4,8 @@ import type { Db } from "@/db";
 import { REMINDERS } from "@/config/constants";
 import type { AppConfig } from "@/config";
 import { rowsOf } from "@/lib/auth/sql";
-import { dayDate, dayStatusAt, isDayUnlocked, makeSchedule, reminderDue } from "@/lib/days";
-import { localDate } from "@/lib/time/zone";
+import { dayDate, dayStatusAt, isDayUnlocked, makeSchedule } from "@/lib/days";
+import { localDate, localMinutes } from "@/lib/time/zone";
 import { logger, type Logger } from "@/lib/logger";
 import { getGhlConfig, type GhlConfig } from "@/lib/ghl/config";
 import { queueGhlReminders, type GhlReminderResult } from "@/lib/ghl/reminders";
@@ -17,7 +17,6 @@ export type ReminderSkip =
   | "no_active_day"
   | "day_not_opened_today"
   | "too_early"
-  | "past_cutoff"
   | "no_vapid";
 
 export type ReminderRunResult = {
@@ -36,7 +35,67 @@ export type ReminderRunResult = {
 const idList = (ids: string[]) => sql.join(ids.map((i) => sql`${i}`), sql`, `);
 
 /**
- * תזכורת אחת למשתמש לתאריך מקומי, בריצה הראשונה ב־reminderTime או אחריה ולפני ה־cutoff.
+ * שולח את ה־payload לכל המנויים (עד maxSubscriptionsPerUser, החדשים ביותר) של המשתמשים שנתפסו, ומעדכן את שורת
+ * ה־reminder_log שלהם (channel) מ־pending ל־sent/failed. משותף לתזכורת היומית ולתזכורת הלייב.
+ */
+export async function sendPushBatch(args: {
+  db: Db;
+  sender: PushSender;
+  claimed: string[];
+  payload: string;
+  date: string;
+  channel: "push" | "live_push";
+}): Promise<{ sent: number; failed: number; removedSubscriptions: number }> {
+  const { db, sender, claimed, payload, date, channel } = args;
+  const out = { sent: 0, failed: 0, removedSubscriptions: 0 };
+  // המנויים החדשים ביותר בלבד, עד maxSubscriptionsPerUser לכל משתמש.
+  const subs = rowsOf<{ user_id: string; endpoint: string; p256dh: string; auth: string }>(
+    await db.execute(
+      sql`select user_id, endpoint, p256dh, auth from (
+            select user_id, endpoint, p256dh, auth,
+                   row_number() over (partition by user_id order by created_at desc, id) as rn
+              from push_subscriptions
+             where user_id in (${idList(claimed)})
+          ) s where rn <= ${REMINDERS.maxSubscriptionsPerUser}`,
+    ),
+  );
+  const byUser = new Map<string, typeof subs>();
+  for (const s of subs) byUser.set(s.user_id, [...(byUser.get(s.user_id) ?? []), s]);
+
+  const sendForUser = async (userId: string) => {
+    let anyOk = false;
+    for (const sub of byUser.get(userId) ?? []) {
+      let r;
+      try {
+        r = await sender.send({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload);
+      } catch {
+        r = { ok: false as const, gone: false };
+      }
+      if (r.ok) anyOk = true;
+      else if (r.gone) {
+        await db.execute(sql`delete from push_subscriptions where endpoint = ${sub.endpoint} and user_id = ${userId}`);
+        out.removedSubscriptions++;
+      }
+    }
+    await db.execute(
+      sql`update reminder_log set status = ${anyOk ? "sent" : "failed"}
+          where user_id = ${userId} and date = ${date}::date and channel = ${channel} and status = 'pending'`,
+    );
+    if (anyOk) out.sent++;
+    else out.failed++;
+  };
+
+  for (let i = 0; i < claimed.length; i += REMINDERS.sendConcurrency) {
+    await Promise.all(claimed.slice(i, i + REMINDERS.sendConcurrency).map(sendForUser));
+  }
+  return out;
+}
+
+/**
+ * תזכורת אחת למשתמש לתאריך מקומי, בריצה הראשונה בשעה שהוא בחר (users.reminder_time) או אחריה, ולפני ה־cutoff שלו
+ * (שעת הבחירה + REMINDERS.retryWindowMinutes, עד 23:59). השעה אחת לשני הערוצים (התראה וווטסאפ).
+ * ה־cron רץ כל 15 דקות; כל ריצה תופסת רק את מי שהשעה שלו הגיעה ועוד אין לו שורה ל־reminder_log של היום.
+ * מי ששינה שעה אחרי שהתזכורת של היום כבר נרשמה לא מקבל עוד אחת באותו יום (השורה היא המנעול).
  *
  * הגנה מכפילות: קודם נכנסת שורה ל־reminder_log (ON CONFLICT DO NOTHING על (user, date, channel)),
  * ורק מי ש"זכה" בשורה שולח. ריצות מקבילות לא יכולות לשלוח פעמיים. אם התהליך קורס אחרי
@@ -85,15 +144,10 @@ export async function runReminders(args: {
   // ההודעה אומרת "יום N נפתח": רק אם היום הזה נפתח בתאריך המקומי של היום.
   if (dayDate(day, schedule) !== localDate(now, config.timeZone)) return skip("day_not_opened_today", day);
 
-  const due = reminderDue({
-    now,
-    timeZone: config.timeZone,
-    reminderTime: config.reminderTime,
-    alreadyHandledDates: [],
-    cutoffTime: REMINDERS.cutoffTime,
-  });
-  if (!due.due) return skip(due.reason === "past_cutoff" ? "past_cutoff" : "too_early", day);
-  const date = due.date;
+  // לפני הבחירה המוקדמת ביותר (05:30) אף משתמש לא יכול להיות "בזמן": לא נוגעים ב־DB.
+  const nowMinutes = localMinutes(now, config.timeZone);
+  if (nowMinutes < REMINDERS.timeMinMinutes) return skip("too_early", day);
+  const date = localDate(now, config.timeZone);
 
   // ערוץ ה־GHL (ווטסאפ) בלתי תלוי בהתראות הדפדפן (VAPID, מנויים): רץ קודם, ואחריו הלוגיקה הקיימת.
   const ghl = await queueGhlReminders({
@@ -101,6 +155,7 @@ export async function runReminders(args: {
     cfg: args.ghlConfig ?? getGhlConfig(config.env),
     day,
     date,
+    nowMinutes,
     log,
     claimBatchSize: args.claimBatchSize,
     runBudgetMs: args.runBudgetMs,
@@ -117,17 +172,15 @@ export async function runReminders(args: {
   const initial = live ? "pending" : "dry_run";
 
   const result: ReminderRunResult = { ...base, mode: live ? "live" : "dry", day };
-  const message = buildReminderMessage(day, {
-    7: config.env.LIVE_TIME_DAY7,
-    14: config.env.LIVE_TIME_DAY14,
-  });
+  const message = buildReminderMessage(day);
   const payload = JSON.stringify(message);
   const batchSize = args.claimBatchSize ?? REMINDERS.claimBatchSize;
   const budgetMs = args.runBudgetMs ?? REMINDERS.runBudgetMs;
   const startedAt = Date.now();
 
   /**
-   * תופס עד batchSize משתמשים שעוד אין להם שורה לתאריך הזה. not exists לפני ה־limit,
+   * תופס עד batchSize משתמשים שהגיעה שעתם ועוד אין להם שורה לתאריך הזה: reminder_time <= עכשיו
+   * ועכשיו < min(reminder_time + חלון, 23:59) (אותו כלל כמו reminderDueForUser). not exists לפני ה־limit,
    * כדי שמשתמשים שכבר טופלו לא "יבזבזו" מקום בסבב; on conflict נשאר המנעול האמיתי מול
    * ריצה מקבילה.
    */
@@ -137,7 +190,9 @@ export async function runReminders(args: {
         sql`insert into reminder_log (user_id, date, channel, status)
             select u.id, ${date}::date, 'push', ${initial}
               from users u
-             where u.password_hash is not null and u.activated_at is not null
+             where u.password_hash is not null and u.activated_at is not null and u.disabled_at is null
+               and u.reminder_time <= ${nowMinutes}::int
+               and ${nowMinutes}::int < least(u.reminder_time + ${REMINDERS.retryWindowMinutes}::int, ${REMINDERS.latestCutoffMinutes}::int)
                and exists (select 1 from push_subscriptions p where p.user_id = u.id)
                and not exists (select 1 from reminder_log r where r.user_id = u.id and r.date = ${date}::date and r.channel = 'push')
              order by u.id
@@ -148,48 +203,10 @@ export async function runReminders(args: {
     ).map((r) => r.user_id);
 
   const sendBatch = async (claimed: string[]) => {
-    // המנויים החדשים ביותר בלבד, עד maxSubscriptionsPerUser לכל משתמש.
-    const subs = rowsOf<{ user_id: string; endpoint: string; p256dh: string; auth: string }>(
-      await db.execute(
-        sql`select user_id, endpoint, p256dh, auth from (
-              select user_id, endpoint, p256dh, auth,
-                     row_number() over (partition by user_id order by created_at desc, id) as rn
-                from push_subscriptions
-               where user_id in (${idList(claimed)})
-            ) s where rn <= ${REMINDERS.maxSubscriptionsPerUser}`,
-      ),
-    );
-    const byUser = new Map<string, typeof subs>();
-    for (const s of subs) byUser.set(s.user_id, [...(byUser.get(s.user_id) ?? []), s]);
-
-    const sendForUser = async (userId: string) => {
-      let anyOk = false;
-      for (const sub of byUser.get(userId) ?? []) {
-        let r;
-        try {
-          r = await sender.send({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload);
-        } catch {
-          r = { ok: false as const, gone: false };
-        }
-        if (r.ok) anyOk = true;
-        else if (r.gone) {
-          await db.execute(
-            sql`delete from push_subscriptions where endpoint = ${sub.endpoint} and user_id = ${userId}`,
-          );
-          result.removedSubscriptions++;
-        }
-      }
-      await db.execute(
-        sql`update reminder_log set status = ${anyOk ? "sent" : "failed"}
-            where user_id = ${userId} and date = ${date}::date and channel = 'push' and status = 'pending'`,
-      );
-      if (anyOk) result.sent++;
-      else result.failed++;
-    };
-
-    for (let i = 0; i < claimed.length; i += REMINDERS.sendConcurrency) {
-      await Promise.all(claimed.slice(i, i + REMINDERS.sendConcurrency).map(sendForUser));
-    }
+    const r = await sendPushBatch({ db, sender, claimed, payload, date, channel: "push" });
+    result.sent += r.sent;
+    result.failed += r.failed;
+    result.removedSubscriptions += r.removedSubscriptions;
   };
 
   // סבבים עד שאין עוד משתמשים או שנגמר התקציב; השאר ייתפסו בריצה הבאה (לפני ה־cutoff).

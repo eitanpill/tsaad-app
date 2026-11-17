@@ -1,10 +1,17 @@
-import { CHALLENGE, LIVE } from "@/config/constants";
+import { LIVE } from "@/config/constants";
 import { dayDate, dayStatusAt, type Schedule } from "@/lib/days";
 import { addDays, zonedTimeToInstant } from "@/lib/time/zone";
 
 /** ללא server-only: מודל טהור שנבדק עם שעון מדומה. הקישור והשעה מגיעים מהתצורה (lib/live/config.ts); אין ערכי ברירת מחדל. */
-export type LiveDay = 7 | 14;
-export const LIVE_DAYS = CHALLENGE.liveDays as readonly LiveDay[];
+export type LiveDay = 0 | 7 | 14;
+/** שלושת המפגשים לפי הסדר: 0 (פתיחה, היום שלפני START_DATE), 7, 14. ימי הלייב שנספרים בכוס הם רק CHALLENGE.liveDays. */
+export const LIVE_DAYS = LIVE.sessionDays as readonly LiveDay[];
+export const OPENING_DAY = 0 satisfies LiveDay;
+
+/** התאריך המקומי של המפגש: ליום 0 זה היום שלפני START_DATE, אחרת תאריך הפתיחה של יום N. */
+export function liveDate(day: LiveDay, schedule: Schedule): string {
+  return day === OPENING_DAY ? addDays(schedule.startDate, -1) : dayDate(day, schedule);
+}
 
 export type LiveInput = { time?: string; url?: string };
 
@@ -37,7 +44,7 @@ export type LiveSession = {
 
 export function sessionStart(day: LiveDay, schedule: Schedule | null, time: string | undefined): Date | null {
   if (!schedule || !time) return null;
-  return zonedTimeToInstant(dayDate(day, schedule), time, schedule.timeZone);
+  return zonedTimeToInstant(liveDate(day, schedule), time, schedule.timeZone);
 }
 
 const MIN = 60_000;
@@ -79,8 +86,9 @@ export function liveSession(
 
   if (!schedule) return { ...base, state: "before", opensAt: null, closesAt: null, nextChange: null };
   // בלי שעה: המפגש "עבר" כשהיום שלו נגמר.
-  const dayEnds = zonedTimeToInstant(addDays(dayDate(day, schedule), 1), schedule.unlockTime, schedule.timeZone);
+  const dayEnds = zonedTimeToInstant(addDays(liveDate(day, schedule), 1), schedule.unlockTime, schedule.timeZone);
   const st = dayStatusAt(now, schedule);
+  // יום 0 נגמר כשיום 1 נפתח (שם הוא "היום שלפני"): כל יום פעיל (>= 1) גדול ממנו.
   const over = st.phase === "ended" || (st.phase === "active" && st.day > day);
   return {
     ...base,
@@ -99,7 +107,7 @@ export function liveSessions(
   return LIVE_DAYS.map((d) => liveSession(d, now, schedule, inputs[d]));
 }
 
-/** המפגש שמוצג בגדול: הראשון שלא הסתיים, ואם שניהם הסתיימו, האחרון. */
+/** המפגש שמוצג בגדול: הראשון שלא הסתיים, ואם כולם הסתיימו, האחרון. */
 export function focusSession(sessions: LiveSession[]): LiveSession {
   return sessions.find((s) => s.state !== "passed") ?? sessions[sessions.length - 1];
 }

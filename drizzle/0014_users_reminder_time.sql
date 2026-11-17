@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "reminder_time" smallint DEFAULT 450 NOT NULL;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_reminder_time_range" CHECK ("users"."reminder_time" between 330 and 1260 and "users"."reminder_time" % 30 = 0);

@@ -85,6 +85,41 @@
       "when": 1794363587182,
       "tag": "0011_reminder_log_channel",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794370323990,
+      "tag": "0012_users_whatsapp_reminders",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794383058697,
+      "tag": "0013_users_disabled_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794556327080,
+      "tag": "0014_users_reminder_time",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794642727080,
+      "tag": "0015_reminder_log_live_channels",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794729127080,
+      "tag": "0016_habit_checks",
+      "breakpoints": true
     }
   ]
 }

@@ -95,7 +95,7 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     const d = captured[0];
     expect(d.username).toBe("whtest.dana");
     expect(d.link.startsWith(`${ORIGIN}/activate?token=`)).toBe(true);
-    expect(d.messages.map((m) => m.channel)).toEqual(["whatsapp", "email"]);
+    expect(d.messages.map((m) => m.channel)).toEqual(["email"]);
     expect(d.messages[0].body).toContain(d.link);
 
     const u = rowsOf<Record<string, unknown>>(await db.execute(sql`select * from users where ghl_contact_id = ${c.contact_id}`))[0];
@@ -129,16 +129,34 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     expect(logs.join("\n")).not.toContain("registration is closed");
   });
 
-  it("phone-only signup works (no email stored, whatsapp only, username from phone digits)", async () => {
+  it("phone-only signup works (no email stored, no message composed, a warning with ids only, username from phone digits)", async () => {
     const r = await call({ contact_id: "ghl-wh-phone", full_name: "דנה", phone: "+972 52-777-8899" });
     expect(r.json.status).toBe("created");
     await runAfter();
     expect(captured[0].username).toBe("0527778899");
-    expect(captured[0].messages.map((m) => m.channel)).toEqual(["whatsapp"]);
+    expect(captured[0].messages).toEqual([]);
+    const warn = logs.join("\n");
+    expect(warn).toContain("contact has no email");
+    expect(warn).not.toMatch(/0527778899|ghl-wh-phone@|דנה/);
     const u = rowsOf<{ email: string | null; display_name: string }>(
       await db.execute(sql`select email, display_name from users where ghl_contact_id = 'ghl-wh-phone'`),
     )[0];
     expect(u).toEqual({ email: null, display_name: "דנה" });
+  });
+
+  it("a phone-only signup that later arrives with an email: the email is filled in and the reissued link is sent; an existing email is never overwritten", async () => {
+    const id = "ghl-wh-later-mail";
+    expect((await call({ contact_id: id, full_name: "דנה", phone: "+972 52-777-8800" }, { [WEBHOOK_EVENT_ID_HEADER]: "m1" })).json.status).toBe("created");
+    const again = { contact_id: id, full_name: "דנה", phone: "+972 52-777-8800", email: "Whtest.Later@x.test" };
+    expect((await call(again, { [WEBHOOK_EVENT_ID_HEADER]: "m2" })).json.status).toBe("reissued");
+    await runAfter();
+    expect(captured.map((r) => r.messages.map((m) => m.channel))).toEqual([[], ["email"]]);
+    const emailOf = async () =>
+      rowsOf<{ email: string | null }>(await db.execute(sql`select email from users where ghl_contact_id = ${id}`))[0].email;
+    expect(await emailOf()).toBe("whtest.later@x.test");
+    expect(logs.join("\n")).not.toMatch(/whtest\.later/i);
+    expect((await call({ ...again, email: "other@x.test" }, { [WEBHOOK_EVENT_ID_HEADER]: "m3" })).json.status).toBe("reissued");
+    expect(await emailOf()).toBe("whtest.later@x.test");
   });
 
   it("username collisions get numeric suffixes", async () => {

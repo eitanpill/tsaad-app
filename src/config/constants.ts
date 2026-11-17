@@ -24,8 +24,15 @@ export const DEFAULT_TZ_NAME = CHALLENGE.timeZone;
  * ברירות מחדל טכניות לשכבת הרקע (שלב 6). אלה לא ערכים עסקיים, וניתן לשנות אותם בקוד בלבד.
  */
 export const REMINDERS = Object.freeze({
-  /** אחרי השעה הזאת (שעון מקומי) כבר לא שולחים תזכורת של אותו יום. */
-  cutoffTime: "12:00",
+  /** בחירת שעת התזכורת של המשתתף/ת: דקות מחצות, בצעדים של 30, מ־05:30 עד 21:00 (שעון מקומי). */
+  timeMinMinutes: 330,
+  timeMaxMinutes: 1260,
+  timeStepMinutes: 30,
+  /** ברירת המחדל לכולם (07:30); זהה ל־DEFAULT של users.reminder_time ב־DB. */
+  timeDefaultMinutes: 450,
+  /** תזכורת שלא יצאה בזמן ננסה שוב עד שעת הבחירה + 4.5 שעות, ולא אחרי 23:59 של אותו יום. */
+  retryWindowMinutes: 270,
+  latestCutoffMinutes: 23 * 60 + 59,
   /** כמה שליחות במקביל בריצה אחת. */
   sendConcurrency: 10,
   /** כמה משתמשים נתפסים (נרשמים ב־reminder_log) בכל סבב; משתמשים שלא נתפסו יטופלו בריצה הבאה. */
@@ -46,12 +53,28 @@ export const REMINDERS = Object.freeze({
  * משמש רק לסוף האירוע בקובץ היומן. אלה קבועים טכניים, לא התחייבות לציבור.
  */
 export const LIVE = Object.freeze({
+  /**
+   * ימי המפגשים לפי הסדר. יום 0 הוא מפגש הפתיחה: היום הקלנדרי שלפני START_DATE (לפני שיום 1 נפתח).
+   * הוא אינו יום של האתגר: אין לו כוס, אין סימון נוכחות והוא לא חלק מ־12 מתוך 14. ימי הלייב שנספרים בכוס הם CHALLENGE.liveDays.
+   */
+  sessionDays: Object.freeze([0, 7, 14] as const),
   /** הקישור נפתח שעה לפני המפגש (כמו ב־copy.live.linkOpensLater). */
   linkOpensBeforeMinutes: 60,
   /** הקישור נשאר גלוי עד 120 דקות אחרי תחילת המפגש (מפגש של כ־60 דקות לפי פית, 2026-11-10, + גרייס 60). */
   linkOpenAfterStartMinutes: 120,
   /** משך האירוע בקובץ היומן. */
   calendarDurationMinutes: 60,
+});
+
+/**
+ * תזכורת הלייב (נפרדת מהתזכורת היומית): נשלחת פעם אחת לכל משתתף מופעל, ביום לייב בלבד, בריצת ה־cron הראשונה
+ * החל מ־leadMinutes לפני תחילת המפגש (הרגע שבו הקישור נפתח באפליקציה) ועד התחלתו. אחרי ההתחלה לא שולחים לעולם.
+ * ה־cron רץ כל 15 דקות, ולכן ההודעה מגיעה בפועל 45 עד 60 דקות לפני.
+ */
+export const LIVE_REMINDER = Object.freeze({
+  leadMinutes: LIVE.linkOpensBeforeMinutes,
+  /** כתובת שההתראה פותחת (יחסית, באותו origin). */
+  openPath: "/live",
 });
 
 /**
@@ -129,6 +152,13 @@ export const GHL = Object.freeze({
   timeoutMs: 10_000,
   /** כמה שורות outbox של GHL בריצה אחת. */
   batchSize: 50,
+  /**
+   * כמה שורות נתפסות בכל סבב. קטן בכוונה: שורה היא עד 3 קריאות של timeoutMs, וסבב חייב להסתיים לפני שה־lease
+   * (SYNC.leaseSeconds) פג, אחרת ריצה אחרת עלולה לתפוס את אותה שורה ולשלוח פעמיים.
+   */
+  claimChunk: 5,
+  /** אחרי כמה זמן (מ"ש) ריצה מפסיקה לתפוס סבבים חדשים. */
+  runBudgetMs: 60_000,
   /** מקסימום תגובה שנקרא (בתים). */
   maxResponseBytes: 64 * 1024,
 });

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { LIVE_URL, T, axe, clock, createUser, expectReflowAndTargets, open, pool, shot, type Session } from "./helpers";
 
 /**
- * /live: מצבי המפגשים לפי שעון השרת (שעון הבדיקות). בסביבת ה־e2e יום 7 מוגדר במלואו (20:00 וקישור) ויום 14 לא מוגדר.
+ * /live: מצבי המפגשים לפי שעון השרת (שעון הבדיקות). בסביבת ה־e2e (שרת A) יום 7 מוגדר במלואו (20:00 וקישור), ויום 0 ויום 14 לא מוגדרים.
  * חלון הקישור: מ־19:00 (שעה לפני) עד 22:00 (120 דקות אחרי ההתחלה). מחוץ לחלון הקישור לא נמצא ב־HTML, ב־JS ובתגובות.
  */
 let s: Session;
@@ -60,19 +60,37 @@ test.describe("live: before the window", () => {
     await ctx.close();
   });
 
-  test("day 14 unset: time to be announced, no calendar in the compact tile", async ({ browser }) => {
-    // focus is day 7 here; look at the compact day 14 tile
+  test("day 14 unset: time to be announced in the list, no calendar tile for it", async ({ browser }) => {
+    // focus is day 7 here; the ordered list carries every session
     const { ctx, page } = await open(browser, s, T.day7Morning, "/live");
-    const tile = page.locator(".t-live-other");
-    await expect(tile.getByRole("heading", { level: 2 })).toHaveText("מפגש הסיום");
+    const item = page.locator('.lv-all li[data-day="14"]');
+    await expect(item).toContainText("מפגש הסיום");
     // Neutral copy instead of the raw placeholder (the placeholder stays in config/docs only).
-    await expect(tile.locator(".lv-tba")).toHaveText("השעה תפורסם בקרוב.");
+    await expect(item.locator(".lv-tba")).toHaveText("השעה תפורסם בקרוב.");
     expect(await page.content()).not.toContain("[LIVE_DAY");
-    // the compact tile shows no disabled calendar button or repeated note (the time line already says it)
-    await expect(tile.getByRole("button", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveCount(0);
-    await expect(tile.getByRole("link", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveCount(0);
-    await expect(tile).not.toContainText("אפשר יהיה להוסיף ליומן");
+    // no compact tile for a session that has nothing to act on (no time means no calendar file)
+    await expect(page.locator('.t-live-other[data-day="14"]')).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveCount(0);
     await expect(page.getByText("לא מצליחים להגיע?")).toBeVisible();
+    await axe(page);
+    await ctx.close();
+  });
+
+  test("all three sessions are listed in order: opening, day 7, day 14, each with its state", async ({ browser }) => {
+    const { ctx, page } = await open(browser, s, T.day7Morning, "/live");
+    const items = page.locator(".lv-all li");
+    await expect(items).toHaveCount(3);
+    await expect(items.nth(0)).toContainText("מפגש פתיחה");
+    await expect(items.nth(1)).toContainText("חצי הדרך, יחד עם אביטל");
+    await expect(items.nth(2)).toContainText("מפגש הסיום");
+    // on this server day 0 has no time (to be announced); it is over because day 1 has opened
+    await expect(items.nth(0).locator(".lv-all-state")).toHaveText("הסתיים");
+    await expect(items.nth(0).locator(".lv-tba")).toHaveText("השעה תפורסם בקרוב.");
+    await expect(items.nth(1).locator(".lv-all-state")).toHaveText("בקרוב");
+    await expect(items.nth(1).locator("time")).toContainText("20:00");
+    await expect(items.nth(1)).toHaveAttribute("aria-current", "step");
+    await expect(items.nth(2).locator(".lv-all-state")).toHaveText("בקרוב");
     await axe(page);
     await ctx.close();
   });
@@ -132,17 +150,17 @@ test.describe("live: passed", () => {
     await expect(page.locator(".t-live-act").getByRole("button", { name: "הוספה ליומן: המפגש ביום 14" })).toHaveAttribute("aria-disabled", "true");
     await expect(page.locator(".t-live-act")).toContainText("אפשר יהיה להוסיף ליומן כשהתאריך והשעה יתפרסמו.");
     expect(await page.content()).not.toContain("[LIVE_DAY");
-    await expect(page.locator(".t-live-other")).toContainText("המפגש הסתיים.");
+    await expect(page.locator('.lv-all li[data-day="7"] .lv-all-state')).toHaveText("הסתיים");
     await expect(page.getByRole("link", { name: /הצטרפות למפגש/ })).toHaveCount(0);
     await axe(page);
     await shot(page, "live-passed-day7");
     await ctx.close();
   });
 
-  test("after day 14 both sessions ended", async ({ browser }) => {
+  test("after day 14 all sessions ended", async ({ browser }) => {
     const { ctx, page } = await open(browser, s, T.afterEnd, "/live");
     await expect(page.locator(".lv-join--off")).toHaveText("המפגש הסתיים.");
-    await expect(page.locator(".t-live-other")).toContainText("המפגש הסתיים.");
+    await expect(page.locator(".lv-all-state")).toHaveText(["הסתיים", "הסתיים", "הסתיים"]);
     await axe(page);
     await ctx.close();
   });
@@ -227,8 +245,9 @@ test.describe("live: calendar file (.ics)", () => {
     await ctx.close();
   });
 
-  test("day 14 (no time) and other days are 404, and without a session it is 401", async ({ browser, request }) => {
+  test("day 0 without a time (this server) is 404 too; day 14 (no time) and other days are 404, and without a session it is 401", async ({ browser, request }) => {
     const { ctx } = await open(browser, s, T.day7Morning, "/live");
+    expect((await ctx.request.get("/api/live/0/ics", { headers: clock(T.day7Morning) })).status()).toBe(404);
     expect((await ctx.request.get("/api/live/14/ics", { headers: clock(T.day7Morning) })).status()).toBe(404);
     expect((await ctx.request.get("/api/live/5/ics", { headers: clock(T.day7Morning) })).status()).toBe(404);
     expect((await ctx.request.get("/api/live/abc/ics", { headers: clock(T.day7Morning) })).status()).toBe(404);

@@ -61,16 +61,6 @@ const origin = z
     message: "expected an origin without path or trailing slash",
   });
 
-/** תאריך (YYYY-MM-DD, עד סוף אותו יום בשעון ישראל) או רגע מלא עם אזור (ISO 8601). */
-const dateOrInstant = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2}))?$/, "expected YYYY-MM-DD or ISO 8601 with offset")
-  .refine((s) => {
-    const d = new Date(s.length === 10 ? `${s}T00:00:00Z` : s);
-    // round trip on the date part: catches 02-30 (which Date would roll over to March)
-    return !Number.isNaN(d.getTime()) && (s.length > 10 || d.toISOString().startsWith(s));
-  }, "not a real date");
-
 const utmValue = z.string().regex(/^[A-Za-z0-9_.-]{1,64}$/, "letters, digits, _ . - only (max 64)");
 
 /** פרט קשר להצגה (מייל, טלפון או טקסט קצר). */
@@ -105,9 +95,20 @@ export const envSchema = z.object({
   /** שמות (מפתחות) של שדות מותאמים ותגים ב־GHL. אלה שמות, לא מזהים: יוצרים אותם ב־GHL לפי docs/GHL_SETUP.md. */
   GHL_FIELD_TODAY_URL: withDefault(ghlName, "tsaad_today_url"),
   GHL_FIELD_ACTIVATION_URL: withDefault(ghlName, "tsaad_activation_url"),
+  /** תזכורת הלייב: שדה עם שעת המפגש ("HH:MM"), נכתב לפני התג. */
+  GHL_FIELD_LIVE_TIME: withDefault(ghlName, "tsaad_live_time"),
+  /**
+   * אופציונלי, מומלץ: מזהי השדות המותאמים ב־GHL (Settings, Custom Fields). כשמוגדר, הקריאה שולחת {id, fieldValue}
+   * (הצורה שהסכמה של GHL מסמנת כחובה); בלעדיו {key, fieldValue}.
+   */
+  GHL_FIELD_TODAY_URL_ID: optional(z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "a GHL custom field id")),
+  GHL_FIELD_ACTIVATION_URL_ID: optional(z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "a GHL custom field id")),
+  GHL_FIELD_LIVE_TIME_ID: optional(z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "a GHL custom field id")),
   GHL_TAG_REMINDER_PREFIX: withDefault(ghlName, "tsaad_reminder_day"),
   GHL_TAG_ACCOUNT_READY: withDefault(ghlName, "tsaad_account_ready"),
   GHL_TAG_RESET_READY: withDefault(ghlName, "tsaad_reset_ready"),
+  /** תג תזכורת הלייב (נפרד מתגי התזכורת היומית), נוסף כשעה לפני המפגש. */
+  GHL_TAG_LIVE_REMINDER: withDefault(ghlName, "tsaad_live_reminder"),
 
   TRACKER_SYNC_ENABLED: literalBoolean.default(false),
   REMINDERS_ENABLED: literalBoolean.default(false),
@@ -136,6 +137,9 @@ export const envSchema = z.object({
   REMINDER_TIME: withDefault(hhmm, DEFAULT_REMINDER_TIME),
   TZ_NAME: withDefault(timeZone, DEFAULT_TZ_NAME),
 
+  /** מפגש הפתיחה: היום הקלנדרי שלפני START_DATE ("יום 0"). אותו פורמט ואותה בדיקה כמו ימים 7 ו־14. */
+  LIVE_URL_DAY0: optional(httpsUrl),
+  LIVE_TIME_DAY0: optional(hhmm),
   LIVE_URL_DAY7: optional(httpsUrl),
   LIVE_URL_DAY14: optional(httpsUrl),
   LIVE_TIME_DAY7: optional(hhmm),
@@ -158,8 +162,6 @@ export const envSchema = z.object({
   OFFER_UTM_SESSION: optional(utmValue),
   OFFER_UTM_BUNDLE: optional(utmValue),
   OFFER_UTM_YESODOT: optional(utmValue),
-  /** סוף התוקף של "יסודות היוגה" ([YESODOT_OFFER_EXPIRY]). לא הוגדר = שורה ניטרלית בלי תאריך. */
-  YESODOT_OFFER_EXPIRY: optional(dateOrInstant),
 
   /** פרטי קשר בדפים המשפטיים ([ACCESSIBILITY_CONTACT], [PRIVACY_CONTACT]). לא הוגדר = שורה ניטרלית. */
   ACCESSIBILITY_CONTACT: optional(contactText),

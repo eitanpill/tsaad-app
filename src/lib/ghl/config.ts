@@ -7,8 +7,15 @@ export type GhlConfig = {
   deliveryMode: GhlMode;
   token: string | undefined;
   locationId: string | undefined;
-  fields: { todayUrl: string; activationUrl: string };
-  tags: { reminderPrefix: string; accountReady: string; resetReady: string };
+  fields: {
+    todayUrl: string;
+    activationUrl: string;
+    liveTime: string;
+    todayUrlId: string | undefined;
+    activationUrlId: string | undefined;
+    liveTimeId: string | undefined;
+  };
+  tags: { reminderPrefix: string; accountReady: string; resetReady: string; liveReminder: string };
   /** סיבה לכך ש־live הורד ל־off (חסר טוקן או מיקום, או סביבת בדיקות); null אם אין. */
   liveRefused: string | null;
 };
@@ -16,7 +23,8 @@ export type GhlConfig = {
 type EnvLike = Pick<
   Env,
   | "GHL_REMINDER_MODE" | "GHL_DELIVERY_MODE" | "GHL_API_TOKEN" | "GHL_LOCATION_ID"
-  | "GHL_FIELD_TODAY_URL" | "GHL_FIELD_ACTIVATION_URL"
+  | "GHL_FIELD_TODAY_URL" | "GHL_FIELD_ACTIVATION_URL" | "GHL_FIELD_TODAY_URL_ID" | "GHL_FIELD_ACTIVATION_URL_ID"
+  | "GHL_FIELD_LIVE_TIME" | "GHL_FIELD_LIVE_TIME_ID" | "GHL_TAG_LIVE_REMINDER"
   | "GHL_TAG_REMINDER_PREFIX" | "GHL_TAG_ACCOUNT_READY" | "GHL_TAG_RESET_READY"
 >;
 
@@ -41,11 +49,19 @@ export function getGhlConfig(env: EnvLike, raw: Record<string, string | undefine
     deliveryMode: eff(env.GHL_DELIVERY_MODE),
     token: env.GHL_API_TOKEN,
     locationId: env.GHL_LOCATION_ID,
-    fields: { todayUrl: env.GHL_FIELD_TODAY_URL, activationUrl: env.GHL_FIELD_ACTIVATION_URL },
+    fields: {
+      todayUrl: env.GHL_FIELD_TODAY_URL,
+      activationUrl: env.GHL_FIELD_ACTIVATION_URL,
+      liveTime: env.GHL_FIELD_LIVE_TIME,
+      liveTimeId: env.GHL_FIELD_LIVE_TIME_ID,
+      todayUrlId: env.GHL_FIELD_TODAY_URL_ID,
+      activationUrlId: env.GHL_FIELD_ACTIVATION_URL_ID,
+    },
     tags: {
       reminderPrefix: env.GHL_TAG_REMINDER_PREFIX,
       accountReady: env.GHL_TAG_ACCOUNT_READY,
       resetReady: env.GHL_TAG_RESET_READY,
+      liveReminder: env.GHL_TAG_LIVE_REMINDER,
     },
     liveRefused,
   };

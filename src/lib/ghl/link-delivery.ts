@@ -6,7 +6,7 @@ import { issueToken } from "@/lib/auth/tokens";
 import { logger, type Logger } from "@/lib/logger";
 import { createGhlClient, setFieldAndTag, type GhlClient } from "./client";
 import { getGhlConfig, type GhlConfig } from "./config";
-import { enqueueLink, runGhlOutbox, type GhlRunResult, type LinkKind } from "./outbox";
+import { cancelQueuedLink, enqueueLink, runGhlOutbox, type GhlRunResult, type LinkKind } from "./outbox";
 
 export type LinkDeliveryRequest = { userId: string; ghlContactId: string; kind: LinkKind; link: string };
 export type LinkDeliveryOutcome = "sent" | "dry" | "queued" | "dropped";
@@ -16,7 +16,10 @@ export interface LinkDelivery {
 }
 
 /**
- * מסירת קישור חד־פעמי דרך GHL: כותב את הקישור לשדה מותאם ומוסיף תג, ו־Workflow ב־GHL שולח ווטסאפ ומייל.
+ * מסירת קישור חד־פעמי דרך GHL: כותב את הקישור לשדה מותאם ומוסיף תג, ו־Workflow ב־GHL שולח אותו במייל בלבד
+ * (Meta לא מאשרת תבנית וואטסאפ עם קישור לבחירת סיסמה; וואטסאפ משמש רק לתזכורת הבוקר).
+ * GHL לא מאפשר לרוקן שדה: אחרי השליחה ה־Workflow משאיר בשדה רווח בודד. האפליקציה אף פעם לא קוראת את השדה,
+ * היא רק דורסת אותו בכל מסירה, ולכן רווח בשדה (או ריק) לא משנה כלום. אם תתווסף קריאה או השוואה של השדה, יש להתייחס לערך של רווחים בלבד כאל ריק.
  * dry: רושם מה היה נשלח (בלי הקישור) ולא קורא ל־GHL. live: ניסיון מיידי; כשל זמני נכנס ל־outbox לניסיון חוזר
  * (האסימון לא נשמר, ובשליחה החוזרת מונפק אסימון חדש). הקישור לעולם לא נרשם ביומן.
  */
@@ -33,12 +36,14 @@ export function createLinkDelivery(deps: { cfg: GhlConfig; client: GhlClient | n
       const r = await setFieldAndTag(deps.client, {
         contactId: req.ghlContactId,
         fieldKey: cfg.fields.activationUrl,
+        fieldId: cfg.fields.activationUrlId,
         value: req.link,
         tag,
         rearm: true,
         locationId: cfg.locationId,
       });
       if (r.ok) {
+        await cancelQueuedLink(deps.db(), req.userId, req.kind);
         log.info("ghl link delivered", { kind: req.kind, userId: req.userId });
         return "sent";
       }
@@ -46,7 +51,7 @@ export function createLinkDelivery(deps: { cfg: GhlConfig; client: GhlClient | n
         log.error("ghl link delivery failed, not retrying", { kind: req.kind, userId: req.userId, error: r.error });
         return "dropped";
       }
-      await enqueueLink(deps.db(), req.userId, req.kind);
+      await enqueueLink(deps.db(), req.userId, req.kind, r.retryAfterSeconds);
       log.warn("ghl link delivery failed, queued for retry", { kind: req.kind, userId: req.userId, error: r.error });
       return "queued";
     },

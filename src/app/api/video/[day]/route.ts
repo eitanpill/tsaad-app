@@ -1,6 +1,5 @@
 import { verifySession } from "@/lib/auth/dal";
-import { serverNow } from "@/lib/today/clock";
-import { getSchedule } from "@/lib/today/schedule";
+import { getAppClock } from "@/lib/preview/context";
 import { getVideoConfig, videoFor } from "@/lib/today/video";
 
 const NO_STORE = { "Cache-Control": "private, no-store" };
@@ -11,7 +10,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ day: string }>
   if (!(await verifySession())) return json({ error: "unauthenticated" }, 401);
   const { day } = await ctx.params;
   const n = /^\d{1,2}$/.test(day) ? Number(day) : NaN;
-  const r = videoFor(n, await serverNow(), getSchedule(), getVideoConfig());
+  const clock = await getAppClock();
+  const r = videoFor(n, clock.now, clock.schedule, getVideoConfig());
   switch (r.status) {
     case "ok":
       return json({ url: r.url }, 200);

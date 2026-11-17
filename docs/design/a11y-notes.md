@@ -35,9 +35,9 @@ On press: set `aria-pressed="true"`, swap to the play icon, keep the label stabl
 
 ## AppToday
 - Landmarks: header, main, nav.
-- Headings: h1 "הבוקר: 7 דקות של אמבטיית שמש"; the video tile title "התרגול של היום עם אביטל" is h2.
+- Headings: h1 "הבוקר: 7 דקות אמבטיית שמש"; the video tile title "התרגול של היום עם אביטל" is h2.
 - Names: motion button "עצירת אנימציה"; play button "ניגון סרטון יום 4"; the ring is `role="img" aria-label="4 מתוך 14 ימים"`; the cup tile needs `role="img"` on its SVG (currently only the section has the label) with "הכוס של היום, חצי מלאה".
-- Actions: three `<button aria-pressed>`; the accessible name is the visible text ("הרגל, 7 דקות של אמבטיית שמש"). On toggle, a polite `role="status"` says "נשמר. הכוס עלתה." (see AppStates). The cup's level change is also put into words in that message.
+- Actions: three `<button aria-pressed>`; the accessible name is the visible text ("הרגל, 7 דקות אמבטיית שמש"). On toggle, a polite `role="status"` says "נשמר. הכוס עלתה." (see AppStates). The cup's level change is also put into words in that message.
 - Video player: an embedded iframe gets `title="סרטון התרגול של יום 4"`. Captions or subtitles must be available (1.2.2). If the player has autoplay, it must be muted or off.
 - Focus order: motion → play → actions (הרגל → תנועה → מדיטציה) → tab bar.
 - Note: the caption chip on the video still uses an internal vendor name; replace it in the stage-3 copy pass.
@@ -66,7 +66,7 @@ On press: set `aria-pressed="true"`, swap to the play icon, keep the label stabl
 
 ## AppReminders
 - Landmarks: header, main, nav.
-- Headings: h1 "תזכורת של בוקר".
+- Headings: h1 "תזכורת יומית".
 - Switch: `<button role="switch" aria-checked="true">` with the accessible name "התראה בטלפון" (via `aria-labelledby` to the row title, and `aria-describedby` to its subtitle). The hit area is 60×44. The OFF state is drawn as an outlined track with a #6B4B45 knob; ON is a forest track with a white knob and a check.
 - Reminder time: a native `<input type="time">` (or `<select>`) with a visible label "שעת התזכורת", 44px+.
 - The notification preview is `aria-hidden` or `role="img" aria-label="דוגמה להתראה: יום 5 נפתח…"`.

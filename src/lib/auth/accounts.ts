@@ -7,7 +7,7 @@ import { rowsOf } from "./sql";
 /**
  * מנצל אסימון ומגדיר סיסמה בטרנזקציה אחת: אם אחד השלבים נכשל, האסימון לא נשרף.
  * מוחק את כל ההתחברויות הקיימות של המשתמש (איפוס סיסמה מנתק מכל מכשיר)
- * ואת שאר הקישורים שלא נוצלו. מחזיר null אם האסימון לא תקף (נוצל, פג או לא קיים).
+ * ואת שאר הקישורים שלא נוצלו. מחזיר null אם האסימון לא תקף (נוצל, פג או לא קיים) או אם החשבון מושבת.
  */
 export async function completePasswordSetup(
   db: Db,
@@ -19,7 +19,7 @@ export async function completePasswordSetup(
     const res = await tx.execute(
       sql`update users
           set password_hash = ${args.passwordHash}, activated_at = coalesce(activated_at, now())
-          where id = ${consumed.userId}
+          where id = ${consumed.userId} and disabled_at is null
           returning id as "userId", username`,
     );
     const user = rowsOf<{ userId: string; username: string }>(res)[0];

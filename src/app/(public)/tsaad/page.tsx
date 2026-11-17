@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { MotionToggle } from "@/app/(app)/_components/MotionToggle";
 import { CheckIcon } from "@/app/(app)/_components/icons";
+import { AvitalPhoto } from "@/components/AvitalPhoto";
 import { Logo } from "@/components/Logo";
 import { getConfig } from "@/config";
 import { copy } from "@/content/copy.he";
@@ -187,14 +188,16 @@ export default async function LandingPage() {
 
       <section className="pt pt--sage pt-stack" aria-labelledby="land-av-h">
         <h2 id="land-av-h">{L.avital.heading}</h2>
+        <AvitalPhoto slot="about" variant="tile" />
         <p>{L.avital.body}</p>
       </section>
 
       <section className="pt pt--sand pt-lives" aria-labelledby="land-live-h">
         <h2 id="land-live-h">{L.lives.heading}</h2>
         <ul>
-          <li>{slot(L.lives.day7, "[LIVE_DAY7_TIME]", whenNode(sessions[0], cfg.timeZone))}</li>
-          <li>{slot(L.lives.day14, "[LIVE_DAY14_TIME]", whenNode(sessions[1], cfg.timeZone))}</li>
+          <li>{slot(L.lives.day0, "[LIVE_DAY0_TIME]", whenNode(sessions[0], cfg.timeZone))}</li>
+          <li>{slot(L.lives.day7, "[LIVE_DAY7_TIME]", whenNode(sessions[1], cfg.timeZone))}</li>
+          <li>{slot(L.lives.day14, "[LIVE_DAY14_TIME]", whenNode(sessions[2], cfg.timeZone))}</li>
         </ul>
         <p className="n">{L.lives.note}</p>
       </section>
