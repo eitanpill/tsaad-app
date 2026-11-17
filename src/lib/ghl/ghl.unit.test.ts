@@ -175,3 +175,12 @@ describe("logger redaction of GHL secrets", () => {
     expect(out).not.toContain("123-4567");
   });
 });
+
+describe("live reminder payload", () => {
+  it("accepts only the session days (0, 7, 14)", async () => {
+    const { liveReminderPayloadSchema } = await import("./outbox");
+    const p = (day: unknown) => liveReminderPayloadSchema.safeParse({ date: "2026-11-30", day, time: "20:00", startsAt: "2026-11-30T18:00:00.000Z" }).success;
+    for (const d of [0, 7, 14]) expect(p(d)).toBe(true);
+    for (const d of [-1, 1, 6, 8, 13, 15, 0.5, "0", null]) expect(p(d)).toBe(false);
+  });
+});

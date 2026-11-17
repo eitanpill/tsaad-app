@@ -2,7 +2,7 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db";
-import { GHL, REMINDERS } from "@/config/constants";
+import { GHL, LIVE, REMINDERS } from "@/config/constants";
 import { rowsOf } from "@/lib/auth/sql";
 import { logger, type Logger } from "@/lib/logger";
 import { reminderCutoffMinutes } from "@/lib/days/reminder";
@@ -21,7 +21,8 @@ export const reminderPayloadSchema = z.strictObject({ date: z.string().regex(/^\
 /** תזכורת לייב: התאריך (של יום הלייב), היום, שעת המפגש ("HH:MM") ורגע ההתחלה (ISO); אחרי ההתחלה לא שולחים. */
 export const liveReminderPayloadSchema = z.strictObject({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  day: z.number().int().min(0).max(14),
+  // רק ימי המפגשים (0 = מפגש הפתיחה, 7, 14); כל יום אחר נדחה.
+  day: z.number().int().refine((d) => (LIVE.sessionDays as readonly number[]).includes(d)),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   startsAt: z.iso.datetime(),
 });

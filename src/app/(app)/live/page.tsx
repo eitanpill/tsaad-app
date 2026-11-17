@@ -111,7 +111,7 @@ export default async function LivePage() {
         </p>
       </section>
 
-      <section className="t t-live-act" aria-label={fill(copy.common.dayLabel, { n: focus.day })}>
+      <section className="t t-live-act" aria-label={focus.day === 0 ? copy.live.day0.tag : fill(copy.common.dayLabel, { n: focus.day })}>
         {focus.state === "open" && focus.joinUrl ? (
           <a
             className="lv-join lv-join--on"
