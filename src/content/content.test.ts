@@ -46,6 +46,8 @@ const ALLOWED_TOKENS = new Set([
   "until",
   "total",
   "unlockTime",
+  "closeDate",
+  "day0Date",
   "reminderTime",
   "liveTime",
   "n",

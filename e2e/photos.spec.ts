@@ -28,7 +28,7 @@ test.describe("slots off (server A)", () => {
     await expect(page.getByRole("img", { name: ALT_ABOUT })).toHaveCount(0);
     const tile = page.locator("section[aria-labelledby=land-av-h]");
     await expect(tile.getByRole("heading", { level: 2 })).toHaveText("אביטל פלס");
-    await expect(tile.locator("> *")).toHaveCount(2); // heading + paragraph only
+    await expect(tile.locator("> *")).toHaveCount(3); // heading + two paragraphs only
     expect(await page.locator("img").count()).toBe(0);
     await axe(page);
   });
