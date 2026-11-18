@@ -54,6 +54,7 @@ const ALLOWED_TOKENS = new Set([
   "prev",
   "day",
   "habit",
+  "practice",
   "type",
   "title",
   "state",

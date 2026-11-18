@@ -143,12 +143,24 @@ export async function setFieldAndTag(
   client: GhlClient,
   args: { contactId: string; fieldKey: string; fieldId?: string; value: string; tag: string; rearm: boolean; locationId?: string },
 ): Promise<GhlResult> {
-  const upd = await client.updateCustomFields(
-    args.contactId,
-    [{ key: args.fieldKey, id: args.fieldId, value: args.value }],
-    args.locationId,
-  );
-  if (!upd.ok) return upd;
+  return setFieldsAndTag(client, {
+    contactId: args.contactId,
+    fields: [{ key: args.fieldKey, id: args.fieldId, value: args.value }],
+    tag: args.tag,
+    rearm: args.rearm,
+    locationId: args.locationId,
+  });
+}
+
+/** כמו setFieldAndTag לכמה שדות בקריאה אחת: קודם השדות, ואז (rearm: הסרה ו)הוספת התג. בלי שדות: רק התג. */
+export async function setFieldsAndTag(
+  client: GhlClient,
+  args: { contactId: string; fields: GhlFieldUpdate[]; tag: string; rearm: boolean; locationId?: string },
+): Promise<GhlResult> {
+  if (args.fields.length > 0) {
+    const upd = await client.updateCustomFields(args.contactId, args.fields, args.locationId);
+    if (!upd.ok) return upd;
+  }
   if (args.rearm) {
     const rm = await client.removeTags(args.contactId, [args.tag]);
     if (!rm.ok && rm.retryable) return rm;

@@ -2,17 +2,19 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "@/db";
-import { GHL, LIVE, REMINDERS } from "@/config/constants";
+import { EVENING, GHL, LIVE, REMINDERS } from "@/config/constants";
 import { rowsOf } from "@/lib/auth/sql";
 import { logger, type Logger } from "@/lib/logger";
 import { reminderCutoffMinutes } from "@/lib/days/reminder";
+import { eveningContent } from "@/lib/evening/content";
 import { localDate, localMinutes } from "@/lib/time/zone";
 import { claimDue, markFailed, markSent, sanitizeError, type ClaimedRow } from "@/lib/sync/outbox";
-import { setFieldAndTag, type GhlClient, type GhlResult } from "./client";
+import { setFieldAndTag, setFieldsAndTag, type GhlClient, type GhlResult } from "./client";
 import type { GhlConfig } from "./config";
 
 export const GHL_REMINDER_KIND = "ghl_reminder";
 export const GHL_LIVE_REMINDER_KIND = "ghl_live_reminder";
+export const GHL_EVENING_REMINDER_KIND = "ghl_evening_reminder";
 export const GHL_LINK_KIND = "ghl_link";
 export type LinkKind = "activate" | "reset";
 
@@ -26,12 +28,18 @@ export const liveReminderPayloadSchema = z.strictObject({
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   startsAt: z.iso.datetime(),
 });
+/** תזכורת ערב: התאריך המקומי ויום הערב (0 = הערב שלפני ההתחלה, עד 14). הגרסה והתוכן נקבעים בשליחה. */
+export const eveningPayloadSchema = z.strictObject({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  day: z.number().int().min(EVENING.firstDay).max(EVENING.lastDay),
+});
 export const linkPayloadSchema = z.strictObject({ purpose: z.enum(["activate", "reset"]) });
 
 type Exec = Pick<Db, "execute">;
 
 export const reminderDedupeKey = (userId: string, date: string) => `${GHL_REMINDER_KIND}:${userId}:${date}`;
 export const liveReminderDedupeKey = (userId: string, date: string) => `${GHL_LIVE_REMINDER_KIND}:${userId}:${date}`;
+export const eveningDedupeKey = (userId: string, date: string) => `${GHL_EVENING_REMINDER_KIND}:${userId}:${date}`;
 export const linkDedupeKey = (userId: string, purpose: LinkKind) => `${GHL_LINK_KIND}:${userId}:${purpose}`;
 
 /**
@@ -92,6 +100,7 @@ export async function runGhlOutbox(deps: GhlWorkerDeps): Promise<GhlRunResult> {
   const result: GhlRunResult = { claimed: 0, sent: 0, failed: 0, dead: 0 };
   const kinds: string[] = [];
   if (deps.cfg.reminderMode === "live") kinds.push(GHL_REMINDER_KIND, GHL_LIVE_REMINDER_KIND);
+  if (deps.cfg.eveningMode === "live") kinds.push(GHL_EVENING_REMINDER_KIND);
   if (deps.cfg.deliveryMode === "live") kinds.push(GHL_LINK_KIND);
   if (!deps.client || kinds.length === 0) return result;
   const now = deps.now ?? new Date();
@@ -141,7 +150,7 @@ async function processRows(deps: GhlWorkerDeps, rows: ClaimedRow[], now: Date, r
 }
 
 async function setReminderStatus(db: Exec, row: ClaimedRow, status: "sent" | "failed") {
-  let channel: "ghl" | "live_ghl";
+  let channel: "ghl" | "live_ghl" | "evening_ghl";
   let date: string;
   if (row.kind === GHL_REMINDER_KIND) {
     const p = reminderPayloadSchema.safeParse(row.payload);
@@ -152,6 +161,11 @@ async function setReminderStatus(db: Exec, row: ClaimedRow, status: "sent" | "fa
     const p = liveReminderPayloadSchema.safeParse(row.payload);
     if (!p.success) return;
     channel = "live_ghl";
+    date = p.data.date;
+  } else if (row.kind === GHL_EVENING_REMINDER_KIND) {
+    const p = eveningPayloadSchema.safeParse(row.payload);
+    if (!p.success) return;
+    channel = "evening_ghl";
     date = p.data.date;
   } else return;
   await db.execute(
@@ -214,6 +228,39 @@ async function processRow(deps: GhlWorkerDeps, row: ClaimedRow, now: Date): Prom
       value: p.data.time,
       tag: cfg.tags.liveReminder,
       // אותו תג לשני הלייבים: מסירים לפני ההוספה, כדי שגם ביום 14 (כשהתג כבר קיים מיום 7) ה־Workflow יופעל שוב.
+      rearm: true,
+      locationId: cfg.locationId,
+    });
+    return { outcome, userId };
+  }
+
+  if (row.kind === GHL_EVENING_REMINDER_KIND) {
+    const p = eveningPayloadSchema.safeParse(row.payload);
+    if (!p.success) return dead("invalid payload");
+    if (!user.whatsapp_reminders) return dead("opted out");
+    // רק באותו ערב, ולפני ה־cutoff.
+    if (localDate(now, deps.timeZone) !== p.data.date || localMinutes(now, deps.timeZone) >= EVENING.cutoffMinutes) {
+      return dead("stale evening reminder");
+    }
+    // הגרסה נקבעת עכשיו, לפי השלמת היום ברגע השליחה (לא ברגע התפיסה בתור).
+    const done = rowsOf<{ c: boolean }>(
+      await db.execute(sql`select exists (select 1 from action_completions where user_id = ${userId} and day = ${p.data.day}) as c`),
+    )[0]?.c === true;
+    const content = eveningContent(p.data.day, done);
+    // יום 14 שהושלם: אין מה לשלוח. השורה נסגרת כ"נשלחה" (גם ביומן), בלי קריאה ל־GHL.
+    if (!content) return { outcome: { ok: true }, userId };
+    const tag = { open: cfg.tags.eveningOpen, done: cfg.tags.eveningDone, last: cfg.tags.eveningLast }[content.variant];
+    const outcome = await setFieldsAndTag(client, {
+      contactId,
+      fields:
+        content.variant === "last"
+          ? []
+          : [
+              { key: cfg.fields.tomorrowHabit, id: cfg.fields.tomorrowHabitId, value: content.habit ?? "" },
+              { key: cfg.fields.tomorrowPractice, id: cfg.fields.tomorrowPracticeId, value: content.practice ?? "" },
+            ],
+      tag,
+      // אותו תג בכל ערב: מסירים לפני ההוספה, כדי שה־Workflow יופעל שוב.
       rearm: true,
       locationId: cfg.locationId,
     });

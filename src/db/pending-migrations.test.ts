@@ -15,11 +15,12 @@ describe("pendingMigrations", () => {
 
   it("names the migrations that were not applied, in order", () => {
     // הבאג של 2026-11-16: הקוד של "ההרגלים שלי" עלה בלי 0016, ו־/path נפל ("משהו לא עבד").
-    expect(pendingMigrations(journal, all.slice(0, -1))).toEqual(["0016_habit_checks"]);
+    expect(pendingMigrations(journal, all.slice(0, -1))).toEqual(["0017_reminder_log_evening_channels"]);
     expect(pendingMigrations(journal, all.slice(0, 14))).toEqual([
       "0014_users_reminder_time",
       "0015_reminder_log_live_channels",
       "0016_habit_checks",
+      "0017_reminder_log_evening_channels",
     ]);
   });
 

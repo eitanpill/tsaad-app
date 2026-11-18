@@ -1,6 +1,7 @@
 import { copy } from "@/content/copy.he";
 import { DAYS } from "@/content/days";
-import { LIVE_REMINDER, REMINDERS } from "@/config/constants";
+import { EVENING, LIVE_REMINDER, REMINDERS } from "@/config/constants";
+import type { EveningContent } from "@/lib/evening/content";
 import { fill } from "@/lib/format";
 
 export type PushMessage = { title: string; body: string; url: string; tag: string };
@@ -20,4 +21,16 @@ export function buildReminderMessage(day: number): PushMessage {
 /** נוסח תזכורת הלייב (נפרדת מהיומית): בלשון רבים, מפנה למסך הלייב באפליקציה. */
 export function buildLiveReminderMessage(day: number): PushMessage {
   return { title: copy.push.liveTitle, body: copy.push.liveBody, url: LIVE_REMINDER.openPath, tag: `live-${day}` };
+}
+
+/** כותרת תזכורת הערב: "ערב טוב" + ירח (האמוג'י בקוד, כי הקופי נבדק שלא יכיל אמוג'י). */
+const EVENING_MOON = "\u{1F319}";
+
+/** נוסח תזכורת הערב לפי הגרסה (open / done / last), בלשון רבים. ההרגל של מחר רק ב־open ו־done. */
+export function buildEveningReminderMessage(content: EveningContent, day: number): PushMessage {
+  const body =
+    content.variant === "last"
+      ? copy.evening.pushLast
+      : fill(content.variant === "open" ? copy.evening.pushOpen : copy.evening.pushDone, { habit: content.habit ?? "" });
+  return { title: `${copy.evening.pushTitle} ${EVENING_MOON}`, body, url: EVENING.openPath, tag: `evening-${day}` };
 }

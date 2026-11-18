@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import {
   DEFAULT_REMINDER_TIME,
+  EVENING,
   DEFAULT_TZ_NAME,
   DEFAULT_UNLOCK_TIME,
 } from "./constants";
@@ -109,6 +110,23 @@ export const envSchema = z.object({
   GHL_TAG_RESET_READY: withDefault(ghlName, "tsaad_reset_ready"),
   /** תג תזכורת הלייב (נפרד מתגי התזכורת היומית), נוסף כשעה לפני המפגש. */
   GHL_TAG_LIVE_REMINDER: withDefault(ghlName, "tsaad_live_reminder"),
+
+  /** שמות השדות המותאמים של תזכורת הערב (ההרגל והתרגול של מחר), נכתבים לפני התג. מזהים אופציונליים כמו ב־GHL_FIELD_LIVE_TIME_ID. */
+  GHL_FIELD_TOMORROW_HABIT: withDefault(ghlName, "tsaad_tomorrow_habit"),
+  GHL_FIELD_TOMORROW_PRACTICE: withDefault(ghlName, "tsaad_tomorrow_practice"),
+  GHL_FIELD_TOMORROW_HABIT_ID: optional(z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "a GHL custom field id")),
+  GHL_FIELD_TOMORROW_PRACTICE_ID: optional(z.string().regex(/^[A-Za-z0-9_-]{6,64}$/, "a GHL custom field id")),
+  /** תגי תזכורת הערב לפי הגרסה (פתוח / הושלם / יום אחרון). אותו תג נשתמש בו שוב בכל ערב (rearm). */
+  GHL_TAG_EVENING_OPEN: withDefault(ghlName, "tsaad_evening_open"),
+  GHL_TAG_EVENING_DONE: withDefault(ghlName, "tsaad_evening_done"),
+  GHL_TAG_EVENING_LAST: withDefault(ghlName, "tsaad_evening_last"),
+  /**
+   * תזכורת הערב: off (ברירת מחדל) | dry | live. גם ההתראה וגם ה־GHL; ב־GHL היא live רק אם גם GHL_REMINDER_MODE הוא live
+   * (dry אם אחד מהם dry, off אם אחד מהם off). ההתראה בטלפון רצה כשהמצב אינו off ופועלת לפי REMINDERS_ENABLED.
+   */
+  EVENING_REMINDERS_MODE: ghlMode,
+  /** שעת תזכורת הערב (שעון מקומי). */
+  EVENING_REMINDER_TIME: withDefault(hhmm, EVENING.defaultTime),
 
   TRACKER_SYNC_ENABLED: literalBoolean.default(false),
   REMINDERS_ENABLED: literalBoolean.default(false),

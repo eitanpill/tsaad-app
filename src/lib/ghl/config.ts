@@ -5,6 +5,8 @@ export type GhlMode = "off" | "dry" | "live";
 export type GhlConfig = {
   reminderMode: GhlMode;
   deliveryMode: GhlMode;
+  /** תזכורת הערב ב־GHL: live רק אם גם EVENING_REMINDERS_MODE וגם reminderMode הם live (ראו combineEveningMode). */
+  eveningMode: GhlMode;
   token: string | undefined;
   locationId: string | undefined;
   fields: {
@@ -14,8 +16,20 @@ export type GhlConfig = {
     todayUrlId: string | undefined;
     activationUrlId: string | undefined;
     liveTimeId: string | undefined;
+    tomorrowHabit: string;
+    tomorrowPractice: string;
+    tomorrowHabitId: string | undefined;
+    tomorrowPracticeId: string | undefined;
   };
-  tags: { reminderPrefix: string; accountReady: string; resetReady: string; liveReminder: string };
+  tags: {
+    reminderPrefix: string;
+    accountReady: string;
+    resetReady: string;
+    liveReminder: string;
+    eveningOpen: string;
+    eveningDone: string;
+    eveningLast: string;
+  };
   /** סיבה לכך ש־live הורד ל־off (חסר טוקן או מיקום, או סביבת בדיקות); null אם אין. */
   liveRefused: string | null;
 };
@@ -26,7 +40,17 @@ type EnvLike = Pick<
   | "GHL_FIELD_TODAY_URL" | "GHL_FIELD_ACTIVATION_URL" | "GHL_FIELD_TODAY_URL_ID" | "GHL_FIELD_ACTIVATION_URL_ID"
   | "GHL_FIELD_LIVE_TIME" | "GHL_FIELD_LIVE_TIME_ID" | "GHL_TAG_LIVE_REMINDER"
   | "GHL_TAG_REMINDER_PREFIX" | "GHL_TAG_ACCOUNT_READY" | "GHL_TAG_RESET_READY"
+  | "EVENING_REMINDERS_MODE" | "GHL_FIELD_TOMORROW_HABIT" | "GHL_FIELD_TOMORROW_PRACTICE"
+  | "GHL_FIELD_TOMORROW_HABIT_ID" | "GHL_FIELD_TOMORROW_PRACTICE_ID"
+  | "GHL_TAG_EVENING_OPEN" | "GHL_TAG_EVENING_DONE" | "GHL_TAG_EVENING_LAST"
 >;
+
+/** מצב תזכורת הערב בפועל: live רק אם שניהם live; אחרת off אם אחד off; אחרת dry. */
+export function combineEveningMode(evening: GhlMode, ghl: GhlMode): GhlMode {
+  if (evening === "off" || ghl === "off") return "off";
+  if (evening === "live" && ghl === "live") return "live";
+  return "dry";
+}
 
 /** סביבת בדיקות או e2e: live אף פעם לא מופעל שם, גם אם הוגדר. */
 const isTestEnv = (raw: Record<string, string | undefined>) =>
@@ -47,6 +71,7 @@ export function getGhlConfig(env: EnvLike, raw: Record<string, string | undefine
   return {
     reminderMode: eff(env.GHL_REMINDER_MODE),
     deliveryMode: eff(env.GHL_DELIVERY_MODE),
+    eveningMode: combineEveningMode(env.EVENING_REMINDERS_MODE, eff(env.GHL_REMINDER_MODE)),
     token: env.GHL_API_TOKEN,
     locationId: env.GHL_LOCATION_ID,
     fields: {
@@ -56,12 +81,19 @@ export function getGhlConfig(env: EnvLike, raw: Record<string, string | undefine
       liveTimeId: env.GHL_FIELD_LIVE_TIME_ID,
       todayUrlId: env.GHL_FIELD_TODAY_URL_ID,
       activationUrlId: env.GHL_FIELD_ACTIVATION_URL_ID,
+      tomorrowHabit: env.GHL_FIELD_TOMORROW_HABIT,
+      tomorrowPractice: env.GHL_FIELD_TOMORROW_PRACTICE,
+      tomorrowHabitId: env.GHL_FIELD_TOMORROW_HABIT_ID,
+      tomorrowPracticeId: env.GHL_FIELD_TOMORROW_PRACTICE_ID,
     },
     tags: {
       reminderPrefix: env.GHL_TAG_REMINDER_PREFIX,
       accountReady: env.GHL_TAG_ACCOUNT_READY,
       resetReady: env.GHL_TAG_RESET_READY,
       liveReminder: env.GHL_TAG_LIVE_REMINDER,
+      eveningOpen: env.GHL_TAG_EVENING_OPEN,
+      eveningDone: env.GHL_TAG_EVENING_DONE,
+      eveningLast: env.GHL_TAG_EVENING_LAST,
     },
     liveRefused,
   };
