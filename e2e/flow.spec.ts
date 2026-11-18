@@ -13,7 +13,10 @@ async function full(page: Page, name: string) {
   mkdirSync(SHOTS, { recursive: true });
   await page.waitForTimeout(1400);
   // a full-page shot would print the fixed nav over the middle of the page: put it at the end for the picture only
-  await page.addStyleTag({ content: ".bnav{position:static;margin-top:16px}" });
+  await page.evaluate(() => {
+    const nav = document.querySelector<HTMLElement>(".bnav");
+    if (nav) Object.assign(nav.style, { position: "static", marginTop: "16px" });
+  });
   await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true });
 }
 
@@ -29,8 +32,8 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test("today: long/short choice, the water cup, soft marks", async ({ browser }) => {
-  await seed([[1, "habit"], [1, "move"], [1, "meditate"], [2, "habit"], [2, "move"], [3, "habit"], [4, "habit"]]);
   for (const width of [390, 320]) {
+    await seed([[1, "habit"], [1, "move"], [1, "meditate"], [2, "habit"], [2, "move"], [3, "habit"], [4, "habit"]]);
     const { ctx, page } = await open(browser, s, T.day4Noon, "/today", { width });
     const choice = page.getByRole("group", { name: "אורך התרגול" });
     await expect(choice).toBeVisible();

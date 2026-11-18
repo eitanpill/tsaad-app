@@ -42,7 +42,8 @@ export function posterUrl(day: number, cfg: VideoConfig | null = getVideoConfig(
 
 /** האם יש סרטון מוגדר ליום (בלי לחשוף את המזהה). */
 export function hasVideo(day: number, cfg: VideoConfig | null = getVideoConfig(), length: VideoLength = "long"): boolean {
-  return !!(length === "short" ? cfg?.shortIds : cfg?.ids)?.[day - 1];
+  const id = (length === "short" ? cfg?.shortIds : cfg?.ids)?.[day - 1];
+  return !!id && ID_RE.test(id);
 }
 
 export type VideoResult =

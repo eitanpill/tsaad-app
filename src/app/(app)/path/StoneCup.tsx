@@ -12,8 +12,8 @@ const BODY = "M14 18 C15 60 18 96 26 106 C34 115 66 115 74 106 C82 96 85 60 86 1
 export function StoneCup({
   fill,
   dashed = false,
-  width = 32,
-  height = 38,
+  width = 30,
+  height = 36,
   thick = false,
 }: {
   fill: Fill;

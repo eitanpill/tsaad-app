@@ -285,7 +285,7 @@ test.describe("path: accessibility", () => {
     await seed(habits([1, 2]));
     const { ctx, page } = await open(browser, T.day4Noon, "/path", { reducedMotion: true });
     const names = await page.evaluate(() => [
-      getComputedStyle(document.querySelector(".stone .wave")!).animationName,
+      getComputedStyle(document.querySelector(".map-current")!).animationName,
       getComputedStyle(document.querySelector(".stone-rock--today")!).animationName,
     ]);
     expect(names).toEqual(["none", "none"]);
