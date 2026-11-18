@@ -26,8 +26,8 @@ export default async function RemindersPage() {
     getGhl().cfg.reminderMode === "off" ? null : await getWhatsappReminderPref(getDb(), user.userId);
   const reminderMinutes = (await getReminderTime(getDb(), user.userId)) ?? REMINDERS.timeDefaultMinutes;
   const vapidKey = getConfig().env.VAPID_PUBLIC_KEY ?? null;
-  // הערת הערב רק כשתזכורת הערב פעילה (לא off).
-  const eveningOn = getConfig().env.EVENING_REMINDERS_MODE !== "off";
+  // הערת הערב רק כשתזכורת הערב באמת נשלחת (live), לא בבדיקה (dry).
+  const eveningOn = getConfig().env.EVENING_REMINDERS_MODE === "live";
   const times = timeTokens();
   const previewText = fill(copy.push.generic, { day: copy.push.previewDay });
 
