@@ -16,11 +16,14 @@ export function LockedDay({
   reason,
   previousDay,
   startDate,
+  opensOn = null,
 }: {
   day: number;
   reason: LockedReason;
   previousDay: number | null;
   startDate: string | undefined;
+  /** "far": התאריך שבו היום נפתח ("יום שבת, 12 בדצמבר"), מחושב מ־START_DATE בשרת; null = בלי תאריך. */
+  opensOn?: string | null;
 }) {
   const times = timeTokens();
   const title =
@@ -28,7 +31,9 @@ export function LockedDay({
       ? withStartDate(copy.locked.beforeStartTitle, startDate)
       : reason === "tomorrow"
         ? fill(copy.locked.title, { n: day })
-        : fill(copy.locked.farTitle, { n: day });
+        : opensOn
+          ? fill(copy.locked.farTitleDate, { n: day, date: opensOn })
+          : fill(copy.locked.farTitle, { n: day });
   const body =
     reason === "before_start"
       ? fill(withStartDate(copy.locked.beforeStartBody, startDate), times)

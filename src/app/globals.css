@@ -113,3 +113,5 @@ strong {
 .av-photo--round { width: 72px; border-radius: 50%; border: 3px solid #fff; }
 .av-img { object-fit: cover; }
 .av-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* No photo yet: a small cream circle with a sprig (decorative), so the tile does not look like a missing image. */
+.av-fallback { display: inline-flex; align-items: center; justify-content: center; width: 76px; height: 76px; border-radius: 50%; background: var(--cream); flex-shrink: 0; }
