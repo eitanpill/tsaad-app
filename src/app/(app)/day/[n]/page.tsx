@@ -9,7 +9,7 @@ import { actionsForDay, stepsFor, type Action } from "@/lib/days";
 import { fill } from "@/lib/format";
 import { dayScreen, parseDayParam } from "@/lib/path/view";
 import { getAppClock } from "@/lib/preview/context";
-import { dayOpening, dayTitles } from "@/lib/today/titles";
+import { dayOpeningLead, dayTitles, formatUnlockDate } from "@/lib/today/titles";
 import { listDayCompletions } from "@/lib/today/completions";
 import { buildChecklist } from "@/lib/habits/model";
 import { listDayHabitChecks } from "@/lib/habits/checks";
@@ -65,6 +65,7 @@ export default async function DayPage({ params }: Props) {
           reason={screen.reason}
           previousDay={screen.reason === "tomorrow" ? todayModel(now, schedule).yesterday : null}
           startDate={cfg.startDate}
+          opensOn={screen.reason === "far" && schedule ? formatUnlockDate(n, schedule) : null}
         />
       </>
     );
@@ -83,7 +84,7 @@ export default async function DayPage({ params }: Props) {
       <section className="t t-hero" aria-labelledby="day-h">
         <span className="eyebrow-s">{stateText}</span>
         <h1 id="day-h">{fill(copy.common.dayLabel, { n })}</h1>
-        <p className="opening">{dayOpening(n)}</p>
+        <p className="opening">{dayOpeningLead(n)}</p>
       </section>
 
       <VideoTile day={n} available={available} title={fill(copy.day.videoTitle, { n })} />

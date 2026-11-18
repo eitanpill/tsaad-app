@@ -39,6 +39,29 @@ function useOlderHabits(day: number, initial: number[], cb: { onSaved: (to: bool
 
 export const habitKey = (day: number, habitDay: number) => `h${day}:${habitDay}`;
 
+/** כמה הרגלים מוצגים כשהרשימה מקוצרת (ההרגל של היום ושני הקודמים). מקצרים רק כשנשארים לפחות שניים מוסתרים. */
+export const HABITS_VISIBLE = 3;
+
+/**
+ * הרשימה מהחדש לישן, ומקוצרת לשלושת האחרונים עם כפתור "להצגת כל N ההרגלים" (aria-expanded, aria-controls).
+ * ההרגלים המוסתרים לא מרונדרים בכלל (לא רק מוסתרים בעין), והמיקוד נשאר על הכפתור.
+ */
+function useCompact<T>(items: T[]) {
+  const [expanded, setExpanded] = useState(false);
+  const newestFirst = [...items].reverse();
+  const collapsible = items.length > HABITS_VISIBLE + 1;
+  const shown = collapsible && !expanded ? newestFirst.slice(0, HABITS_VISIBLE) : newestFirst;
+  return { shown, collapsible, expanded, toggle: () => setExpanded((e) => !e) };
+}
+
+function MoreButton({ total, expanded, controls, onClick }: { total: number; expanded: boolean; controls: string; onClick: () => void }) {
+  return (
+    <button type="button" className="habits-more" aria-expanded={expanded} aria-controls={controls} onClick={onClick}>
+      {expanded ? copy.habits.showLess : fill(copy.habits.showAll, { total })}
+    </button>
+  );
+}
+
 /**
  * "ההרגלים שלי": רשימת תיבות סימון מצטברת. ההרגל החדש הוא שלב ה"הרגל" (stepDone / onToggleStep מההורה, כך שהכוס זזה בדיוק כמו בכפתור);
  * שאר ההרגלים נשמרים ב־habit_checks. מקבלים key={day} כדי שמצב ישן לא יישאר אחרי מעבר יום.
@@ -71,6 +94,7 @@ export function HabitChecklist({
   const items = buildChecklist(day, habits, stepDone, older.checked);
   const Heading = headingLevel === 2 ? "h2" : "h3";
   const done = items.filter((i) => i.checked).length;
+  const compact = useCompact(items);
 
   return (
     <section className="t t-habits ar-habits" aria-labelledby={`${uid}-h`}>
@@ -81,8 +105,8 @@ export function HabitChecklist({
         <span className="habits-count">{fill(items.length === 1 ? copy.habits.countOne : copy.habits.count, { done, total: items.length })}</span>
       </div>
       {markNew ? <p className="act-hint">{copy.habits.intro}</p> : null}
-      <ul className="habit-list" aria-label={fill(copy.a11y.habits.group, { n: day })}>
-        {items.map((it) => (
+      <ul id={`${uid}-list`} className="habit-list" aria-label={fill(copy.a11y.habits.group, { n: day })}>
+        {compact.shown.map((it) => (
           <HabitRowView
             key={it.habitDay}
             day={day}
@@ -92,6 +116,7 @@ export function HabitChecklist({
           />
         ))}
       </ul>
+      {compact.collapsible ? <MoreButton total={items.length} expanded={compact.expanded} controls={`${uid}-list`} onClick={compact.toggle} /> : null}
       {markNew && day > 1 ? <p className="act-hint">{copy.habits.note}</p> : null}
     </section>
   );
@@ -123,6 +148,7 @@ function HabitRowView({ day, item, markNew, onChange }: { day: number; item: Che
 /** תצוגה לקריאה בלבד (ימים שנסגרו): אותה רשימה, בלי תיבות סימון. המצב בטקסט, לא רק בצבע. */
 export function HabitChecklistReadOnly({ day, items }: { day: number; items: ChecklistItem[] }) {
   const done = items.filter((i) => i.checked).length;
+  const compact = useCompact(items);
   return (
     <section className="t t-habits" aria-labelledby="habits-ro-h">
       <div className="habits-head">
@@ -131,8 +157,8 @@ export function HabitChecklistReadOnly({ day, items }: { day: number; items: Che
         </h2>
         <span className="habits-count">{fill(items.length === 1 ? copy.habits.countOne : copy.habits.count, { done, total: items.length })}</span>
       </div>
-      <ul className="ro-list" aria-label={fill(copy.a11y.habits.list, { n: day })}>
-        {items.map((it) => (
+      <ul id="habits-ro-list" className="ro-list" aria-label={fill(copy.a11y.habits.list, { n: day })}>
+        {compact.shown.map((it) => (
           <li key={it.habitDay} className="ro-item" data-marked={it.checked}>
             <span className="habit-text">
               {it.title}
@@ -144,6 +170,7 @@ export function HabitChecklistReadOnly({ day, items }: { day: number; items: Che
           </li>
         ))}
       </ul>
+      {compact.collapsible ? <MoreButton total={items.length} expanded={compact.expanded} controls="habits-ro-list" onClick={compact.toggle} /> : null}
       <p className="act-hint">{fill(copy.habits.closed, { n: day })}</p>
     </section>
   );

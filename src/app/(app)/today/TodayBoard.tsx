@@ -45,8 +45,8 @@ export type BoardProps = {
   eyebrow: string | null;
   /** הכותרת (h1): הברכה, עם השם הפרטי כשיש; ביום לייב: ההודעה על המפגש. */
   hero: string;
-  /** משפט הפתיחה בצילום של היום (רק כשיש יום פתוח), או null. */
-  opening: string | null;
+  /** משפט הפתיחה בצילום של היום (רק כשיש יום פתוח), או null. invite: "קחו נשימה... ומתחילים", רק כשמתאים לשעה (נקבע בשרת). */
+  opening: { lead: string; invite: string | null } | null;
   videoAvailable: boolean;
   /** תמונה ממוזערת של סרטון היום (רק כשהוגדרו מארח ומזהה), או null. */
   poster: string | null;
@@ -180,7 +180,9 @@ export function TodayBoard(p: BoardProps) {
       : progress.remaining === 1
         ? copy.today.remaining.one
         : fill(copy.today.remaining.many, { remaining: progress.remaining });
-  const longNote = ended
+  // ביום האחרון אין "אפשר להמשיך עד יום 14": זה כבר יום 14.
+  const lastDay = p.day === p.schedule.totalDays;
+  const longNote = ended || lastDay
     ? null
     : progress.completed
       ? copy.today.afterCompletion
@@ -207,7 +209,12 @@ export function TodayBoard(p: BoardProps) {
         <SunDoodle className="hero-sun" size={64} />
         {p.eyebrow ? <span className="eyebrow-s">{p.eyebrow}</span> : null}
         <h1 id="hero-h">{p.hero}</h1>
-        {p.opening ? <p className="opening">{p.opening}</p> : null}
+        {p.opening ? (
+          <p className="opening">
+            {p.opening.lead}
+            {p.opening.invite && todaySteps === 0 && !finished && !ended ? ` ${p.opening.invite}` : null}
+          </p>
+        ) : null}
       </section>
 
       {finished || ended ? (
@@ -283,14 +290,20 @@ export function TodayBoard(p: BoardProps) {
       ) : null}
 
       {p.day ? (
-        <div className="t t-actions ar-acts">
+        <section className="t t-actions ar-acts" aria-labelledby={`${yestId}-marks`}>
+          <div className="marks-head">
+            <h2 id={`${yestId}-marks`} className="act-title">
+              {copy.today.marksTitle}
+            </h2>
+            <p className="act-hint">{p.live ? copy.today.marksLeadLive : copy.today.marksLead}</p>
+          </div>
           <div className="act-grid">
             {actions.map((a, i) => (
               <ActionButton key={a} day={p.day!} action={a} title={actionTitle(p.titles[p.day!], a)} detail={actionDetail(p.titles[p.day!], a)} pressed={optimistic.includes(actionKey(p.day!, a))} onToggle={toggle} wide={i === 0 || a === "live"} />
             ))}
           </div>
           <p className="act-hint">{p.live ? copy.today.cupExplainLive : copy.today.cupExplain}</p>
-        </div>
+        </section>
       ) : null}
 
       {p.day ? (

@@ -342,7 +342,7 @@ test.describe("day screen", () => {
     await expect(page.getByText("הסימון של יום 2 נסגר, ולכן הוא לא נספר. אפשר לצפות בסרטון.")).toBeVisible();
     // the day's own content is shown, but nothing can be marked
     await expect(page.getByText(DAYS[1].habit.title).first()).toBeVisible();
-    await expect(page.locator("p.opening")).toHaveText(DAYS[1].opening);
+    await expect(page.locator("p.opening")).toHaveText(DAYS[1].opening.replace(" קחו נשימה אחת איתי, ומתחילים.", ""));
     await expect(page.getByRole("button", { name: /^(הרגל|תנועה|מדיטציה)/ })).toHaveCount(0);
     await expect(page.locator(".t-actions .ro-item")).toHaveCount(3);
     await expect(page.locator(".t-actions").getByText("לא סומן")).toHaveCount(3);
@@ -438,8 +438,8 @@ test.describe("day screen", () => {
   test("far future: its own copy, no previous-day line, axe", async ({ browser }) => {
     await seed([]);
     const { ctx, page } = await open(browser, T.day4Noon, "/day/9");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("יום 9 עוד לא נפתח");
-    await expect(page.getByText("כל בוקר ב־05:00 נפתח יום אחד. אפשר לחזור מחר.")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("יום 9 נפתח ביום רביעי, 9 בדצמבר");
+    await expect(page.getByText("כל בוקר ב־05:00 נפתח יום אחד, לפי הסדר.")).toBeVisible();
     await expect(page.getByText(/אפשר לסמן עד חצות/)).toHaveCount(0);
     await axe(page);
     await shot(page, "day-locked-far");
@@ -487,7 +487,7 @@ test.describe("day screen", () => {
     // a percent-encoded digit is the same day as the plain one (Next decodes the param)
     const enc = await ctx.newPage();
     expect((await enc.goto("/day/%37"))!.status()).toBe(200);
-    await expect(enc.getByRole("heading", { level: 1 })).toHaveText("יום 7 עוד לא נפתח");
+    await expect(enc.getByRole("heading", { level: 1 })).toHaveText("יום 7 נפתח ביום שני, 7 בדצמבר");
     await enc.close();
     // signed out: the same 404 (the check needs no session and reveals nothing about the user)
     const anon = await browser.newContext({ locale: "he-IL" });

@@ -228,7 +228,7 @@ test.describe("offer and Yesodot with nothing configured (server A)", () => {
   test("offer: not yet, no prices or links, axe", async ({ browser }) => {
     const s = await createUser(browser, "ofa");
     const { ctx, page } = await open(browser, s, T.day14Noon, "/offer");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההצעה תופיע כאן ביום 14");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההצעה תופיע כאן אחרי מפגש הסיום");
     const html = await page.content();
     for (const x of ["271 ₪", "139 ₪", "1,265", "pay.example.test"]) expect(html).not.toContain(x);
     await shot(page, "offer-not-yet");
@@ -259,7 +259,7 @@ test.describe("offer and Yesodot with nothing configured (server A)", () => {
     await o.ctx.close();
     o = await open(browser, s, T.day14Noon, "/today");
     const tile = o.page.locator(".t-entry");
-    await expect(tile.getByRole("heading", { level: 2 })).toHaveText("ההצעה תופיע כאן ביום 14");
+    await expect(tile.getByRole("heading", { level: 2 })).toHaveText("ההצעה תופיע כאן אחרי מפגש הסיום");
     await shot(o.page, "today-offer-entry");
     await axe(o.page);
     await tile.getByRole("link", { name: "לצפייה בהצעות" }).click();
