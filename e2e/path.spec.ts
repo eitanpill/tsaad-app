@@ -111,7 +111,7 @@ test.describe("path: states", () => {
   test("before start: 14 locked stones, none a link, counter 0, axe", async ({ browser }) => {
     await seed([]);
     const { ctx, page } = await open(browser, T.beforeStart, "/path");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("השביל שלך");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("השביל שלכם");
     await expect(stones(page)).toHaveCount(14);
     const names = await stoneNames(page);
     expect(names[0]).toBe("יום 1, עוד לא נפתח");

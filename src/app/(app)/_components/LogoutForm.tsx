@@ -30,7 +30,7 @@ export function LogoutForm() {
     <form ref={form} action={logoutAction} onSubmit={onSubmit} className="acc-logout">
       <input ref={endpoint} type="hidden" name="push_endpoint" defaultValue="" />
       <button type="submit" className="btn-s" aria-busy={busy}>
-        {copy.common.logout}
+        {busy ? copy.common.loggingOut : copy.common.logout}
       </button>
     </form>
   );

@@ -12,8 +12,18 @@
   --muted: #6B4B45;
   --stone-done: #D9C7B8;
   --line: #E8DDD3;
+  --white: #FFFFFF;
+  --glass: #F2F4F1; /* empty cup glass on the path (contrast.md) */
+  --skeleton: #EDEDE0; /* loading blocks, decorative */
+  --dash: #8E7B6F; /* dashed outline of an inactive button */
   --radius-tile: 26px;
   --radius-btn: 16px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-pill: 999px;
+  /* Elevation: floating bars (bottom nav) and pop-ups (toast, preview card). */
+  --shadow-float: 0 10px 30px -12px rgba(46, 8, 8, 0.35);
+  --shadow-pop: 0 12px 24px -12px rgba(46, 8, 8, 0.45);
   --gap: 10px;
 }
 
@@ -43,9 +53,9 @@ strong {
 
 /* Focus ring (a11y-notes): visible on cream, sky, sand, sage and forest. */
 :focus-visible {
-  outline: 3px solid #123021;
+  outline: 3px solid var(--forest);
   outline-offset: 2px;
-  box-shadow: 0 0 0 2px #FAF8F4;
+  box-shadow: 0 0 0 2px var(--cream);
 }
 
 .visually-hidden {
@@ -70,7 +80,7 @@ strong {
   display: inline-flex;
   align-items: center;
   background: var(--forest);
-  color: #fff;
+  color: var(--white);
   border-radius: var(--radius-btn);
   font-weight: 700;
 }
@@ -90,8 +100,8 @@ strong {
   min-height: 44px;
   padding: 0 20px;
   border: 2px solid var(--forest);
-  border-radius: 24px;
-  background: #fff;
+  border-radius: var(--radius-pill);
+  background: var(--white);
   color: var(--forest);
   font-weight: 700;
   text-decoration: none;

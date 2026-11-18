@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { copy } from "@/content/copy.he";
 import { hasInstallPrompt, isStandalone, promptInstall, subscribeInstallPrompt } from "@/lib/pwa/install-prompt";
+import { paint } from "@/components/paint";
 
 const noopSubscribe = () => () => undefined;
 
@@ -33,10 +34,10 @@ export function InstallGuide() {
             </clipPath>
             <g clipPath="url(#in-glass)">
               <g transform="translate(0 22)">
-                <path className="in-wave" d="M-40 0 Q-30 -4 -20 0 T0 0 T20 0 T40 0 T60 0 V60 H-40 Z" fill="#FFFFFF" />
+                <path className="in-wave" d="M-40 0 Q-30 -4 -20 0 T0 0 T20 0 T40 0 T60 0 V60 H-40 Z" style={paint("white")} />
               </g>
             </g>
-            <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="none" stroke="#FFFFFF" strokeWidth="3.2" strokeLinejoin="round" />
+            <path d="M5 4 L35 4 L31 44 L9 44 Z" fill="none" strokeWidth="3.2" strokeLinejoin="round" style={paint(null, "white")} />
           </svg>
         </div>
         <div>

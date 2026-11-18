@@ -178,7 +178,7 @@ test("new link, disable (login refused, signed out at once), enable, and delete 
   await tpage.getByLabel("שם משתמש, טלפון או מייל").fill(target.username);
   await tpage.getByLabel("סיסמה", { exact: true }).fill("today-pass-12");
   await tpage.getByRole("button", { name: "כניסה", exact: true }).click();
-  await expect(tpage.locator("#login-form-err")).toHaveText("הפרטים או הסיסמה לא נכונים");
+  await expect(tpage.locator("#login-form-err")).toHaveText("הפרטים או הסיסמה לא נכונים.");
 
   await disabledRow.getByRole("button", { name: /הפעלה מחדש/ }).click();
   await expect(disabledRow.getByRole("status").filter({ hasText: "הופעל" })).toBeVisible();

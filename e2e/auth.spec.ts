@@ -57,7 +57,7 @@ test.describe("axe: zero violations", () => {
     await page.getByLabel("שם משתמש, טלפון או מייל").fill("nobody");
     await page.getByLabel("סיסמה", { exact: true }).fill("wrong-pass-1");
     await page.getByRole("button", { name: "כניסה", exact: true }).click();
-    await expect(page.locator("#login-form-err")).toHaveText("הפרטים או הסיסמה לא נכונים");
+    await expect(page.locator("#login-form-err")).toHaveText("הפרטים או הסיסמה לא נכונים.");
     await expect(page.getByLabel("שם משתמש, טלפון או מייל")).toBeFocused();
     await expect(page.getByLabel("שם משתמש, טלפון או מייל")).toHaveValue("nobody");
     await axe(page);
@@ -78,7 +78,7 @@ test.describe("axe: zero violations", () => {
     const token = await mkToken(await mkUser(uname("axe")));
     await page.goto(`/activate?token=${token}`);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("בוחרים סיסמה ומתחילים");
-    await expect(page.getByLabel("שם המשתמש")).toHaveAttribute("readonly", "");
+    await expect(page.getByLabel("שם משתמש")).toHaveAttribute("readonly", "");
     await axe(page);
 
     await page.getByLabel("בחירת סיסמה", { exact: true }).fill("abcdefg1");
@@ -103,7 +103,7 @@ test.describe("flows", () => {
     const username = uname("flow");
     const token = await mkToken(await mkUser(username));
     await page.goto(`/activate?token=${token}`);
-    await expect(page.getByLabel("שם המשתמש")).toHaveValue(username);
+    await expect(page.getByLabel("שם משתמש")).toHaveValue(username);
 
     await page.getByLabel("בחירת סיסמה", { exact: true }).fill("short1");
     await page.getByRole("button", { name: "שמירה וכניסה" }).click();

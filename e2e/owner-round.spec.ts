@@ -60,7 +60,7 @@ test("login with the email at 195px; a wrong password gives the generic error; a
   await id.fill(`${s.username.toUpperCase()}@EXAMPLE.TEST`);
   await page.getByLabel("סיסמה", { exact: true }).fill("not-the-pass-1");
   await page.keyboard.press("Enter");
-  await expect(page.locator("#login-form-err")).toHaveText("הפרטים או הסיסמה לא נכונים");
+  await expect(page.locator("#login-form-err")).toHaveText("הפרטים או הסיסמה לא נכונים.");
   await expect(id).toBeFocused();
   expect(await overflowingElements(page)).toEqual([]);
   await axe(page);
