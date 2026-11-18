@@ -30,7 +30,7 @@ test.describe("path strip", () => {
   test("one link to /path whose name summarises progress; today highlighted; axe", async ({ browser }) => {
     await seed(habits([1, 2, 3]));
     const { ctx, page } = await open(browser, s, T.day4, "/today");
-    const link = page.getByRole("link", { name: "לשביל, יום 4 מתוך 14, 3 ימים נספרו" });
+    const link = page.getByRole("link", { name: "לשביל, יום 4, 3 ימים של תרגול" });
     await expect(link).toHaveAttribute("href", "/path");
     await expect(page.locator(".sstone--today")).toHaveCount(1);
     await expect(page.locator(".sstone--counted")).toHaveCount(3);
@@ -86,11 +86,11 @@ test.describe("cup and celebration", () => {
   test("reaching 12 counted days shows the completion state in place, announced, without moving focus", async ({ browser }) => {
     await seed(habits([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]));
     const { ctx, page } = await open(browser, s, T.day12, "/today");
-    await expect(page.getByRole("heading", { name: "האתגר הושלם" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "תודה שאתם כאן" })).toHaveCount(0);
     await page.locator('[data-action-key="12:habit"]').click();
-    await expect(page.getByRole("heading", { level: 2, name: "האתגר הושלם" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "תודה שאתם כאן" })).toBeVisible();
     await expect(page.locator(".t-map")).toBeVisible();
-    await expect(page.locator(".toast-region")).toContainText("האתגר הושלם. תודה שהייתם איתנו.");
+    await expect(page.locator(".toast-region")).toContainText("תודה שהייתם איתנו.");
     expect(await page.evaluate(() => document.activeElement?.getAttribute("data-action-key"))).toBe("12:habit");
     await expect(page.getByRole("link", { name: "לצפייה בהצעות" })).toHaveCount(0); // the offer is not open on day 12
     await axe(page);
@@ -124,7 +124,7 @@ test.describe("share card", () => {
       },
     });
     await page.getByRole("button", { name: "שתפו" }).click();
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __shared: unknown }).__shared)).toMatchObject({ n: 1, type: "image/png", text: "השלמתי את צעד קטן ביום" });
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __shared: unknown }).__shared)).toMatchObject({ n: 1, type: "image/png", text: "תרגלתי בצעד קטן ביום" });
     await expect(page.getByRole("link", { name: "להורדת התמונה" })).toHaveAttribute("href", "/api/share-card?m=4095");
     await ctx.close();
   });

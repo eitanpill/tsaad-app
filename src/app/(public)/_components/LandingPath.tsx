@@ -85,7 +85,7 @@ export function LandingRing() {
       <circle cx="50" cy="50" r="42" fill="none" strokeWidth="10" style={paint(null, "sand")} />
       <circle className="pub-ring" cx="50" cy="50" r="42" fill="none" strokeWidth="10" strokeLinecap="round" strokeDasharray="264" strokeDashoffset="188.6" transform="rotate(-90 50 50)" style={paint(null, "terracotta")} />
       <text x="50" y="52" textAnchor="middle" fontWeight="900" fontSize="30" fontFamily="inherit" style={paint("maroon")}>{COUNTED}</text>
-      <text x="50" y="68" textAnchor="middle" fontWeight="500" fontSize="10" fontFamily="inherit" style={paint("muted")}>{copy.common.countOfTotal.replace("{n}", "").trim()}</text>
+      <text x="50" y="68" textAnchor="middle" fontWeight="500" fontSize="10" fontFamily="inherit" style={paint("muted")}>{copy.common.days}</text>
     </svg>
   );
 }

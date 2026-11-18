@@ -57,9 +57,9 @@ describe("isAllowedPushEndpoint", () => {
 });
 
 describe("buildReminderMessage", () => {
-  it("uses perDay with the day's habit on normal days", () => {
+  it("uses perDay (no habit) with the yoga emoji appended in code", () => {
     const m = buildReminderMessage(3);
-    expect(m.body).toBe(copy.push.perDay.replace("{day}", "3").replace("{habit}", DAYS[2].habit.title));
+    expect(m.body).toBe("יום 3 לאתגר מתחיל. עוד צעד קטן ביום \u{1F9D8}\u200D\u2640\uFE0F");
     expect(m.title).toBe(copy.push.title);
     expect(m.url).toBe("/today");
   });
@@ -72,14 +72,14 @@ describe("buildReminderMessage", () => {
   it("never mentions the live session, on any day (live days 7 and 14 use the practice text)", () => {
     for (const day of [7, 14]) {
       const m = buildReminderMessage(day);
-      expect(m.body).toBe(copy.push.perDay.replace("{day}", String(day)).replace("{habit}", DAYS[day - 1].habit.title));
+      expect(m.body).toBe(`${copy.push.perDay.replace("{day}", String(day))} \u{1F9D8}\u200D\u2640\uFE0F`);
       expect(m.body).not.toMatch(/לייב|מפגש|\d\d:\d\d/);
       expect(m.url).toBe("/today");
     }
     for (const d of DAYS) expect(buildReminderMessage(d.day).body).not.toMatch(/לייב|מפגש/);
   });
   it("falls back to generic for a day without content", () => {
-    expect(buildReminderMessage(99).body).toBe(copy.push.generic.replace("{day}", "99"));
+    expect(buildReminderMessage(99).body).toBe(`${copy.push.generic.replace("{day}", "99")} \u{1F9D8}\u200D\u2640\uFE0F`);
   });
 });
 

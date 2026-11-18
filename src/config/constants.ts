@@ -78,6 +78,22 @@ export const LIVE_REMINDER = Object.freeze({
 });
 
 /**
+ * תזכורת הערב (נפרדת מהיומית ומהלייב): הודעה אחת בערב לכל משתתף, בריצת ה־cron הראשונה מ־EVENING_REMINDER_TIME ועד ה־cutoff.
+ * אחרי ה־cutoff לא נתפסת תזכורת, ושורת outbox שנשארה בתור נזרקת כ"stale". אלה קבועים טכניים.
+ */
+export const EVENING = Object.freeze({
+  /** שעת ברירת המחדל (שעון מקומי); EVENING_REMINDER_TIME בסביבה. */
+  defaultTime: "20:30",
+  /** אחרי השעה הזאת (דקות מחצות מקומיות, 23:00) לא שולחים. */
+  cutoffMinutes: 23 * 60,
+  /** כתובת שההתראה פותחת (יחסית, באותו origin). */
+  openPath: "/today",
+  /** תזכורת הערב קיימת מיום 0 (הערב שלפני START_DATE) עד יום 14. */
+  firstDay: 0,
+  lastDay: 14,
+});
+
+/**
  * הצעת יום 14 (שלב 10). סוף הלייב של יום 14 = תחילתו + calendarDurationMinutes (מפגש של כ־60 דקות לפי פית, 2026-11-10).
  * אורך חלון ההצעה (OFFER_WINDOW_HOURS) ותחילת הלייב (LIVE_TIME_DAY14) מגיעים מהתצורה; בלי אחד מהם ההצעה לא נפתחת.
  */

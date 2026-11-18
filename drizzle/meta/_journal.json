@@ -120,6 +120,13 @@
       "when": 1794729127080,
       "tag": "0016_habit_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795015520272,
+      "tag": "0017_reminder_log_evening_channels",
+      "breakpoints": true
     }
   ]
 }

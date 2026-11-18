@@ -49,7 +49,7 @@ test("day 3 shows three habits, only the last is new; toggles persist after relo
   await expect(fresh).toBeChecked();
   await expect(page.getByRole("button", { pressed: true, name: /הרגל/ })).toBeVisible();
   await expect(page.locator(".t-cup")).toContainText("חצי כוס");
-  await expect(page.getByRole("status").filter({ hasText: "היום נחשב" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "צעד אחד, וזה יפה." })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("checkbox", { name: /כוס מים חמימים עם לימון/ })).toBeChecked();
