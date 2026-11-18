@@ -2,35 +2,27 @@ import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
 import { paint } from "@/components/paint";
 
-const C = 264; // 2π·42
-
-/** טבעת "N מתוך 14". המספר והטקסט שלידה נושאים את הערך; ה־SVG עם תווית נגישה. */
-export function Ring({ counted, total = 14, size = 50 }: { counted: number; total?: number; size?: number }) {
-  const offset = C * (1 - Math.min(counted, total) / total);
+/**
+ * מספר ימי התרגול, בתוך טיפת מים (בלי קשת "מתוך 14": אין כאן מדד שצריך להשלים).
+ * המספר והטקסט שלידה נושאים את הערך; ה־SVG עם תווית נגישה. השם נשאר Ring בשביל הקוראים הקיימים.
+ */
+export function Ring({ counted, size = 50 }: { counted: number; total?: number; size?: number }) {
   return (
     <svg
       width={size}
-      height={size}
-      viewBox="0 0 100 100"
+      height={(size * 56) / 50}
+      viewBox="0 0 100 112"
       className="ring-svg"
       role="img"
       aria-label={fill(copy.a11y.ring, { n: counted })}
     >
-      <circle cx="50" cy="50" r="42" fill="none" strokeWidth="11" style={paint(null, "white")} />
-      <circle
+      <path
         className="ring-arc"
-        cx="50"
-        cy="50"
-        r="42"
-        fill="none"
-        strokeWidth="11"
-        strokeLinecap="round"
-        strokeDasharray={C}
-        strokeDashoffset={offset}
-        transform="rotate(-90 50 50)"
-        style={paint(null, "terracotta")}
+        d="M50 4 C62 26 90 50 90 72 C90 94 72 108 50 108 C28 108 10 94 10 72 C10 50 38 26 50 4 Z"
+        style={paint("water-light")}
       />
-      <text x="50" y="62" textAnchor="middle" fontFamily="var(--font-heading), Noto Sans Hebrew, sans-serif" fontWeight="900" fontSize="34" style={paint("maroon")}>
+      <path d="M30 70 C30 82 36 90 46 94" fill="none" strokeWidth="5" strokeLinecap="round" strokeOpacity="0.8" style={paint(null, "white")} />
+      <text x="50" y="86" textAnchor="middle" fontFamily="var(--font-heading), Noto Sans Hebrew, sans-serif" fontWeight="800" fontSize="40" style={paint("forest")}>
         {counted}
       </text>
     </svg>

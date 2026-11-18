@@ -2,7 +2,8 @@ import { useId } from "react";
 import type { Fill } from "@/lib/path/view";
 import { paint } from "@/components/paint";
 
-const GLASS = "M5 4 L35 4 L31 44 L9 44 Z";
+/** אותה כוס קרמיקה של מסך היום, בקטן (מערכת קואורדינטות 100 על 120). */
+const BODY = "M14 18 C15 60 18 96 26 106 C34 115 66 115 74 106 C82 96 85 60 86 18";
 
 /**
  * כוסית האבן. גובה המים (0, חצי, שלושה רבעים, מלאה) וקו המתאר (מקווקו = עוד לא נפתח) נושאים את המצב,
@@ -11,8 +12,8 @@ const GLASS = "M5 4 L35 4 L31 44 L9 44 Z";
 export function StoneCup({
   fill,
   dashed = false,
-  width = 30,
-  height = 36,
+  width = 32,
+  height = 38,
   thick = false,
 }: {
   fill: Fill;
@@ -22,26 +23,39 @@ export function StoneCup({
   thick?: boolean;
 }) {
   const id = useId();
+  // fill 1 = פני המים ב־26, 0 = מתחת לתחתית (112).
+  const top = 112 - fill * 86;
+  const stroke = thick ? 9 : 6;
   return (
-    <svg className="stone-cup" width={width} height={height} viewBox="0 0 40 48" aria-hidden="true" focusable="false">
+    <svg className="stone-cup" width={width} height={height} viewBox="0 0 100 120" aria-hidden="true" focusable="false">
       <clipPath id={`${id}-c`}>
-        <path d={GLASS} />
+        <path d={`${BODY} Z`} />
       </clipPath>
-      <path d={GLASS} fill="rgba(255,255,255,0.7)" style={thick ? paint("glass") : undefined} />
+      <path d={`${BODY} Z`} fill={dashed ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.9)"} />
       {fill > 0 ? (
         <g clipPath={`url(#${id}-c)`}>
-          <g transform={`translate(0 ${(44 - fill * 40).toFixed(1)})`}>
-            <path className="wave" d="M-40 0 Q-30 -4 -20 0 T0 0 T20 0 T40 0 T60 0 V60 H-40 Z" style={paint("water")} />
-          </g>
+          <rect x="0" y={top.toFixed(1)} width="100" height="120" style={paint("water-light")} />
+          <rect x="0" y={(top + 8).toFixed(1)} width="100" height="120" style={paint("water")} />
         </g>
       ) : null}
       <path
-        d={GLASS}
+        d={BODY}
         fill="none"
-        strokeWidth={thick ? 3.5 : 2.6}
+        strokeWidth={stroke}
+        strokeLinecap="round"
         strokeLinejoin="round"
-        strokeDasharray={dashed ? (thick ? "5 4" : "3.5 3") : undefined}
-        style={paint(null, "forest")}
+        strokeDasharray={dashed ? "11 10" : undefined}
+        style={paint(null, dashed ? "muted" : "maroon")}
+      />
+      <ellipse
+        cx="50"
+        cy="18"
+        rx="36"
+        ry="5.5"
+        fill="none"
+        strokeWidth={stroke}
+        strokeDasharray={dashed ? "11 10" : undefined}
+        style={paint(null, dashed ? "muted" : "maroon")}
       />
     </svg>
   );

@@ -144,6 +144,13 @@ export const envSchema = z.object({
       .regex(/^([A-Za-z0-9_-]*,){0,13}[A-Za-z0-9_-]*$/, "up to 14 comma-separated ids"),
   ),
 
+  /** מזהי גרסאות התרגול הקצרות של ימים 1..14: אותו פורמט ואותו כלל דריסה כמו BUNNY_VIDEO_IDS. */
+  BUNNY_SHORT_VIDEO_IDS: optional(
+    z
+      .string()
+      .regex(/^([A-Za-z0-9_-]*,){0,13}[A-Za-z0-9_-]*$/, "up to 14 comma-separated ids"),
+  ),
+
   VAPID_PUBLIC_KEY: optional(z.string().min(1)),
   VAPID_PRIVATE_KEY: optional(z.string().min(1)),
   VAPID_SUBJECT: optional(

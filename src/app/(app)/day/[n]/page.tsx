@@ -74,7 +74,8 @@ export default async function DayPage({ params }: Props) {
   // יום פתוח (לא הנוכחי): התוכן שלו.
   const titles = dayTitles(n);
   const stateText = screen.markable ? copy.path.stone.yesterday : screen.counted ? copy.path.stone.counted : copy.path.stone.missed;
-  const available = hasVideo(n, getVideoConfig(cfg.env));
+  const availableLong = hasVideo(n, getVideoConfig(cfg.env));
+  const availableShort = hasVideo(n, getVideoConfig(cfg.env), "short");
   // "ההרגלים שלי" של היום הזה (1..n; כולם כבר נפתחו). אתמול ניתן לעריכה עד חצות; ישן יותר לקריאה בלבד.
   const habitRows = getHabitList(n).map(({ habitDay, title }) => ({ habitDay, title }));
   const olderChecked = await listDayHabitChecks(getDb(), user.userId, n);
@@ -87,7 +88,7 @@ export default async function DayPage({ params }: Props) {
         <p className="opening">{dayOpeningLead(n)}</p>
       </section>
 
-      <VideoTile day={n} available={available} title={fill(copy.day.videoTitle, { n })} />
+      <VideoTile day={n} availableLong={availableLong} availableShort={availableShort} title={fill(copy.day.videoTitle, { n })} />
 
       {screen.markable ? (
         <DayActions

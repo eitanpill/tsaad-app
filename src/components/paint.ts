@@ -11,6 +11,7 @@ export type Tone =
   | "terracotta-text"
   | "forest"
   | "water"
+  | "water-light"
   | "maroon"
   | "muted"
   | "stone-done"

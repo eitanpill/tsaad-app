@@ -8,6 +8,7 @@
   --terracotta-text: #8A4A33;
   --forest: #123021;
   --water: #6F8A6E;
+  --water-light: #A9C2AF; /* surface of the water in the cups, decorative */
   --maroon: #2E0808;
   --muted: #6B4B45;
   --stone-done: #D9C7B8;
@@ -58,7 +59,8 @@ strong {
   box-shadow: 0 0 0 2px var(--cream);
 }
 
-.visually-hidden {
+.visually-hidden,
+.sr-only {
   position: absolute;
   width: 1px;
   height: 1px;

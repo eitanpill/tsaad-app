@@ -1,0 +1,260 @@
+/* ---- "רך וזורם" (soft flow) layer, loaded after app.css ----
+   Same markup and behaviour; a softer look: no outlines on tiles, pebble shapes with uneven corners,
+   heroes that bleed to the screen edges with a wavy bottom, water in the cups, a stream for the path.
+   Contrast pairs used here: maroon/forest text on cream, sky, sand, sage, white (all AA); white text on
+   terracotta only at 19px bold or larger; cream on forest. */
+
+:root {
+  --peb-1: 44px 30px 52px 34px / 36px 46px 30px 50px;
+  --peb-2: 34px 52px 30px 46px / 50px 30px 46px 36px;
+  --peb-3: 52px 34px 44px 30px / 30px 50px 36px 46px;
+  --peb-4: 30px 46px 34px 52px / 46px 36px 50px 30px;
+  --peb-btn: 34px 24px 30px 26px / 26px 32px 24px 34px;
+  --peb-btn-2: 24px 34px 26px 30px / 32px 26px 34px 24px;
+  --shadow-soft: 0 16px 34px -24px rgba(46, 8, 8, 0.38);
+  --shadow-lift: 0 12px 24px -16px rgba(46, 8, 8, 0.4);
+  --ease-flow: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+body { overflow-x: clip; }
+.app { position: relative; isolation: isolate; padding-inline: 14px; }
+.app-main { gap: 14px; }
+
+/* Header floats over the morning sky of the hero. */
+.app-header { position: relative; z-index: 2; }
+.chip { background: rgba(255, 255, 255, 0.78); box-shadow: 0 6px 16px -12px rgba(46, 8, 8, 0.5); }
+.motion-btn { border: 0; background: rgba(255, 255, 255, 0.78); box-shadow: 0 6px 16px -12px rgba(46, 8, 8, 0.5); }
+
+/* Tiles: pebbles, no outlines. */
+.t { border-radius: var(--peb-1); }
+.t:nth-of-type(2n) { border-radius: var(--peb-2); }
+.t:nth-of-type(3n) { border-radius: var(--peb-3); }
+h1 { letter-spacing: -0.01em; }
+.t h1 { font-weight: 800; }
+
+/* Heroes: the coloured wash runs under the header and off both edges, with a wavy lower edge. */
+.t-hero, .t-path-hero, .t-rem-hero, .t-ofr-hero, .t-in-hero, .t-live-hero, .t-lockhero {
+  margin-top: -64px;
+  margin-inline: -14px;
+  padding: 90px 26px 46px;
+  border-radius: 0 0 46% 54% / 0 0 40px 70px;
+}
+.t-hero { background: var(--sky); }
+.t-hero h1 { font-size: 40px; line-height: 1.05; }
+.t-hero p, .t-hero .opening { font-size: 16px; line-height: 1.6; color: var(--maroon); font-weight: 400; max-width: 30ch; }
+.t-hero .eyebrow-s { color: var(--maroon); }
+.hero-sun { margin-block: -18px 0; animation: flowbreathe 6s ease-in-out infinite; transform-origin: center; }
+@keyframes flowbreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+
+/* Strip of the path on Today: stones on a thread of water, no white box. */
+.t-strip { background: transparent; }
+.strip-link { padding: 4px 4px 0; }
+.strip-stones { position: relative; align-items: center; min-height: 46px; }
+.strip-thread { position: absolute; inset-inline: 0; top: 4px; width: 100%; height: 22px; stroke: var(--sage); }
+.sstone { position: relative; }
+.sstone-dot { border: 0; width: 18px; height: 14px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--muted); }
+.sstone--counted .sstone-dot { width: 22px; height: 18px; border-radius: 52% 48% 46% 54% / 56% 50% 50% 44%; background: var(--water); color: #fff; box-shadow: none; }
+.sstone--today .sstone-dot { box-shadow: 0 0 0 6px rgba(187, 111, 81, 0.2); border: 0; }
+.sstone--yesterday .sstone-dot { background: #fff; box-shadow: inset 0 0 0 2px var(--terracotta-text); }
+.sstone--missed .sstone-dot { background: var(--sand); box-shadow: inset 0 0 0 1.5px var(--muted); }
+.sstone--locked .sstone-dot { background: rgba(255, 255, 255, 0.7); box-shadow: none; border: 1.5px dashed var(--muted); }
+.sstone-n { color: var(--maroon); font-size: 12px; }
+.strip-more { border-top: 0; margin-top: 2px; padding-top: 0; min-height: 44px; font-size: 15px; font-weight: 500; }
+
+/* Video: an organic frame, a soft halo round the play button, the length choice as two stones. */
+.t-video { background: transparent; border: 0; padding: 0; }
+.video-box { aspect-ratio: 16 / 10; border-radius: 58px 34px 52px 30px / 40px 52px 34px 58px; box-shadow: var(--shadow-soft); }
+.play { width: 76px; height: 76px; margin: -38px 0 0 -38px; border: 0; box-shadow: 0 0 0 12px rgba(187, 111, 81, 0.2), 0 16px 30px -12px rgba(46, 8, 8, 0.45); }
+.play svg { width: 26px; height: 26px; color: #fff; }
+.video-cap { padding: 14px 8px 2px; }
+.video-cap h2 { font-size: 21px; }
+.video-cap span { background: transparent; padding: 0; font-weight: 500; }
+.video-len { grid-column: span 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 12px; padding: 0; border: 0; min-width: 0; }
+.video-len__opt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 60px;
+  padding: 8px 16px;
+  border-radius: var(--peb-btn);
+  background: #fff;
+  color: var(--maroon);
+  box-shadow: var(--shadow-lift);
+  cursor: pointer;
+  transition: background-color 0.3s var(--ease-flow), color 0.3s var(--ease-flow);
+}
+.video-len__opt:nth-child(odd) { border-radius: var(--peb-btn-2); }
+.video-len__opt input { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.video-len__opt label { display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+.video-len__label { font-family: var(--font-heading), 'Noto Sans Hebrew', sans-serif; font-size: 16px; font-weight: 800; }
+.video-len__time { font-size: 14px; }
+.video-len__opt:has(input:checked) { background: var(--forest); color: var(--cream); }
+.video-len__opt:has(input:focus-visible) { outline: 3px solid var(--forest); outline-offset: 3px; box-shadow: 0 0 0 2px var(--cream); }
+.video-len__opt:has(input:checked)::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: 14px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--water-light);
+}
+
+/* The cup: a sand stone with a big handmade cup. */
+.t-cup { grid-column: span 2; background: var(--sand); padding: 20px 22px; gap: 18px; }
+.t-cup .cup-svg { width: 112px; height: auto; }
+.t-cup > span { font-size: 16px; line-height: 1.5; font-weight: 400; }
+.t-cup > span b { display: inline-block; margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--forest); }
+.t-cup > span { display: block; }
+.t-cup > span::first-line { font-family: var(--font-heading), 'Noto Sans Hebrew', sans-serif; font-size: 24px; font-weight: 800; line-height: 1.3; }
+.cup-svg .wave { animation: flowdrift 6s linear infinite; }
+@keyframes flowdrift { to { transform: translateX(-50px); } }
+.cup-water { transition: transform 1.2s var(--ease-flow); }
+.cup-steam { animation: flowsteam 3.2s ease-in-out infinite; }
+@keyframes flowsteam { 0%, 100% { opacity: 0.35; transform: translateY(2px); } 50% { opacity: 1; transform: translateY(-2px); } }
+[data-motion='off'] .cup-steam, [data-motion='off'] .hero-sun { animation-play-state: paused; }
+
+/* Days of practice: a drop with the number, on a soft white pebble. */
+.t-ring { grid-column: span 2; background: rgba(255, 255, 255, 0.75); padding: 10px 18px; gap: 12px; box-shadow: var(--shadow-soft); }
+.t-ring span { font-size: 15px; font-weight: 400; }
+.t-ring b { font-weight: 700; }
+.ring-arc { animation: none; }
+
+/* Marks: white stones, forest once marked; the circle is a soft ring, not a terracotta outline. */
+.t-actions { background: transparent; padding: 4px 0 0; gap: 10px; }
+.act {
+  border: 0;
+  border-radius: var(--peb-btn);
+  background: #fff;
+  box-shadow: var(--shadow-lift);
+  min-height: 72px;
+  transition: background-color 0.35s var(--ease-flow), color 0.35s var(--ease-flow), transform 0.2s var(--ease-flow);
+}
+.act:nth-child(even) { border-radius: var(--peb-btn-2); }
+.act:active { transform: scale(0.98); }
+.act b { font-size: 16px; }
+.act .dot { border: 2px solid var(--forest); }
+.act[aria-pressed='true'] { box-shadow: 0 14px 26px -16px rgba(18, 48, 33, 0.85); }
+.act[aria-pressed='true'] .dot { background: var(--water-light); border-color: var(--water-light); color: var(--forest); }
+.act-title { font-size: 20px; }
+.act-hint { font-size: 14px; line-height: 1.55; color: var(--maroon); }
+.marks-head { padding: 0 4px; }
+.t-actions > .act-hint { padding: 0 4px; }
+
+/* Yesterday, notes, offline: quiet stones. */
+.t-yest, .t-note { border: 0; }
+.btn-s { border: 0; background: #fff; box-shadow: var(--shadow-lift); border-radius: var(--peb-btn); }
+.btn-p { border-radius: var(--peb-btn); }
+.offline { border: 0; border-radius: var(--peb-btn); box-shadow: var(--shadow-lift); }
+
+/* My habits: white rows on cream, sage when marked. */
+.t-habits { background: transparent; padding: 6px 0 0; gap: 10px; }
+.t-habits h2 { font-size: 20px; }
+.habits-count { border: 0; background: var(--sage); color: var(--forest); }
+.habit-label { border: 0; border-radius: 30px 22px 28px 24px / 24px 30px 22px 28px; background: #fff; box-shadow: 0 8px 20px -16px rgba(46, 8, 8, 0.45); min-height: 54px; font-size: 15px; }
+.habit:nth-child(even) .habit-label { border-radius: 22px 30px 24px 28px / 30px 24px 28px 22px; }
+.habit-tick { border: 2px solid var(--muted); width: 26px; height: 26px; }
+.habit[data-checked='true'] .habit-label { background: var(--sage); color: var(--forest); }
+.habit[data-checked='true'] .habit-tick { background: var(--forest); border-color: var(--forest); color: var(--cream); }
+.habit[data-checked='true'] .habit-new { color: var(--forest); }
+.habit-new { color: var(--terracotta-text); }
+
+/* Toast: a floating white pebble. */
+.toast { border: 0; border-radius: var(--peb-btn); box-shadow: 0 18px 40px -16px rgba(46, 8, 8, 0.5); }
+.toast--err { border: 0; box-shadow: inset 0 0 0 2px var(--terracotta-text), 0 18px 40px -16px rgba(46, 8, 8, 0.5); }
+
+/* Bottom nav: a floating pebble; the current tab sits on a small sage stone behind its icon. */
+.bnav {
+  border-radius: 36px 28px 36px 28px / 28px 36px 28px 36px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 40px -18px rgba(46, 8, 8, 0.4);
+}
+@supports (backdrop-filter: blur(8px)) { .bnav { background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(12px); } }
+.bnav a { position: relative; font-size: 13px; }
+.bnav a svg { position: relative; z-index: 1; }
+.bnav a[aria-current='page'] { background: transparent; box-shadow: none; color: var(--forest); font-weight: 800; }
+.bnav a[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 50px;
+  height: 32px;
+  margin-left: -25px;
+  border-radius: 58% 42% 52% 48% / 52% 58% 42% 48%;
+  background: var(--sage);
+}
+
+/* ---- Path: a stream through a sage meadow ---- */
+.t-path-hero { background: var(--sky); }
+.t-path-hero h1 { font-size: 38px; font-weight: 800; }
+.t-path-hero p { font-size: 16px; line-height: 1.6; max-width: 32ch; }
+.chip--count { background: rgba(255, 255, 255, 0.78); }
+.t-map { background: var(--sage); border-radius: var(--peb-3); }
+.map-current { animation: flowcurrent 5s linear infinite; }
+@keyframes flowcurrent { to { stroke-dashoffset: -76; } }
+[data-motion='off'] .map-current { animation-play-state: paused; }
+.stone-rock { border: 0; height: 14px; box-shadow: 0 5px 8px -4px rgba(18, 48, 33, 0.45); }
+.stone-rock--counted { background: var(--sand); }
+.stone-rock--today { background: var(--terracotta); }
+.stone-rock--yesterday { background: #fff; box-shadow: inset 0 0 0 2px var(--terracotta-text), 0 5px 8px -4px rgba(18, 48, 33, 0.45); }
+.stone-rock--missed { background: var(--sand); }
+.stone-rock--locked, .stone-rock--opening { background: rgba(250, 248, 244, 0.7); border: 1.5px dashed var(--muted); box-shadow: none; }
+.stone-tag { background: #fff; color: var(--terracotta-text); box-shadow: 0 6px 12px -8px rgba(46, 8, 8, 0.6); }
+.stone-num { color: var(--maroon); font-size: 13px; text-shadow: 0 0 3px var(--sage), 0 0 3px var(--sage); }
+.stone-num--hi { color: var(--terracotta-text); }
+.swatch-rock { border: 0; box-shadow: inset 0 0 0 1.5px var(--muted); }
+.t-legend, .t-habit-counts { box-shadow: var(--shadow-soft); }
+.ro-item { border: 0; box-shadow: var(--shadow-lift); border-radius: var(--peb-btn); }
+
+/* ---- Live: an evening scene ---- */
+.t-live-hero { background: var(--terracotta); padding-bottom: 104px; border-radius: 0; overflow: hidden; }
+.t-live-hero h1 { font-size: 40px; font-weight: 800; position: relative; }
+.lv-hills { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: 96px; pointer-events: none; }
+.lv-tag, .lv-when { position: relative; }
+.lv-join--on { border: 0; background: var(--forest); color: var(--cream); min-height: 62px; font-size: 18px; border-radius: 40px 30px 44px 32px / 32px 42px 30px 40px; box-shadow: 0 16px 30px -18px rgba(18, 48, 33, 0.9); }
+.lv-join--off { border-radius: 40px 30px 44px 32px / 32px 42px 30px 40px; }
+.lv-cal { border: 0; background: #fff; color: var(--maroon); font-weight: 500; border-radius: 30px 40px 32px 44px / 42px 30px 40px 32px; box-shadow: var(--shadow-lift); }
+.lv-cal--off { border: 2px dashed var(--dash); box-shadow: none; background: var(--cream); color: var(--muted); }
+.t-live-act { background: transparent; padding: 0; gap: 12px; }
+.lv-note { color: var(--maroon); font-size: 14px; }
+.t-live-act .act { background: var(--sage); box-shadow: none; }
+.t-live-act .act[aria-pressed='true'] { background: var(--forest); }
+.t-live-all { background: #fff; color: var(--maroon); padding: 22px 22px 14px; box-shadow: var(--shadow-soft); }
+.t-live-all h2 { font-size: 21px; margin-bottom: 14px; }
+.lv-all { gap: 0; }
+.lv-all li { position: relative; border-top: 0; padding: 0 38px 20px 0; flex-direction: column; align-items: flex-start; }
+.lv-all li::before { content: ''; position: absolute; right: 0; top: 2px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 2.5px var(--muted); }
+.lv-all li::after { content: ''; position: absolute; right: 10px; top: 28px; bottom: 2px; width: 3px; border-radius: 2px; background: var(--sage); }
+.lv-all li:last-child::after { display: none; }
+.lv-all li[aria-current]::before { background: var(--terracotta); box-shadow: 0 0 0 6px rgba(187, 111, 81, 0.2); }
+.lv-all [aria-current] b::after { content: none; }
+.lv-all-state { margin-inline-start: 0; font-weight: 700; color: var(--forest); }
+.lv-all-tag { font-size: 14px; color: var(--muted); }
+.t-live-other { background: var(--sage); grid-column: span 2; min-height: 0; }
+.t-live-cant { background: var(--sky); grid-column: span 2; min-height: 0; }
+
+/* Smaller screens keep the same rhythm. */
+@media (max-width: 340px) {
+  .t-hero h1 { font-size: 32px; }
+  .t-cup .cup-svg { width: 88px; }
+  .t-hero, .t-path-hero, .t-rem-hero, .t-ofr-hero, .t-in-hero, .t-live-hero, .t-lockhero { padding-inline: 20px; }
+}
+@media (max-width: 260px) {
+  .video-len { grid-template-columns: minmax(0, 1fr); }
+  .t-cup { flex-direction: column; align-items: flex-start; }
+}
+@media (min-width: 900px) {
+  .t-hero, .t-path-hero, .t-rem-hero, .t-ofr-hero, .t-in-hero, .t-live-hero, .t-lockhero { margin-inline: -24px; padding-inline: 40px; }
+  .ar-cup, .ar-ring { grid-column: 2; }
+  .today .t-cup { flex-direction: column; text-align: center; }
+  .today .t-cup .cup-svg { width: 140px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-sun, .cup-svg .wave, .cup-steam, .map-current { animation: none; }
+}

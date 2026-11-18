@@ -55,6 +55,11 @@
 | `today.heroDay` | היום: {habit} |  |
 | `today.heroLive` | היום יש מפגש לייב עם אביטל | בימים 7 ו־14. |
 | `today.videoTitle` | התרגול של היום עם אביטל |  |
+| `today.videoLength.legend` | אורך התרגול |  |
+| `today.videoLength.long` | התרגול המלא |  |
+| `today.videoLength.longTime` | כ־15 דקות |  |
+| `today.videoLength.short` | התרגול הקצר |  |
+| `today.videoLength.shortTime` | כ־4 דקות |  |
 | `today.dayChip` | יום {n} |  |
 | `today.counted` | ימים של תרגול |  |
 | `today.remaining.many` | צעד קטן אחרי צעד קטן | שורה קצרה בטבעת, בלי ספירה ובלי השוואה. done מוצג כשהכלל בקוד מתקיים. |
@@ -746,6 +751,7 @@
 | `a11y.habits.list` | ההרגלים של יום {n} |  |
 | `a11y.video.play` | הפעלת סרטון יום {n} |  |
 | `a11y.video.frameTitle` | סרטון התרגול של יום {n} |  |
+| `a11y.video.frameTitleShort` | סרטון התרגול הקצר של יום {n} |  |
 | `a11y.path.summary` | 14 ימים, {counted} ימים של תרגול. מפגשי לייב ביום 7 וביום 14 |  |
 | `a11y.path.stone` | יום {n}, {state} |  |
 | `a11y.path.stoneLive` | יום {n}, לייב, {state} |  |
@@ -993,4 +999,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 833 מחרוזות.
+סך הכול 839 מחרוזות.

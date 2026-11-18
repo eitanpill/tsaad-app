@@ -47,7 +47,8 @@ export type BoardProps = {
   hero: string;
   /** משפט הפתיחה בצילום של היום (רק כשיש יום פתוח), או null. invite: "קחו נשימה... ומתחילים", רק כשמתאים לשעה (נקבע בשרת). */
   opening: { lead: string; invite: string | null } | null;
-  videoAvailable: boolean;
+  videoAvailableLong: boolean;
+  videoAvailableShort: boolean;
   /** תמונה ממוזערת של סרטון היום (רק כשהוגדרו מארח ומזהה), או null. */
   poster: string | null;
   /** חלון ההצעה של יום 14 פתוח (נקבע בשרת): מוסיף קישור להצעות באריח הסיום. */
@@ -253,7 +254,7 @@ export function TodayBoard(p: BoardProps) {
 
       {p.day ? (
         <div className="ar-video">
-          <VideoTile day={p.day} available={p.videoAvailable} poster={p.poster} />
+          <VideoTile day={p.day} availableLong={p.videoAvailableLong} availableShort={p.videoAvailableShort} poster={p.poster} />
         </div>
       ) : null}
 

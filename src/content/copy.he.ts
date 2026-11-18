@@ -55,6 +55,13 @@ export const copy = {
     heroDay: "היום: {habit}",
     heroLive: "היום יש מפגש לייב עם אביטל",
     videoTitle: "התרגול של היום עם אביטל",
+    videoLength: {
+      legend: "אורך התרגול",
+      long: "התרגול המלא",
+      longTime: "כ־15 דקות",
+      short: "התרגול הקצר",
+      shortTime: "כ־4 דקות",
+    },
     dayChip: "יום {n}",
     counted: "ימים של תרגול",
     remaining: {
@@ -959,6 +966,7 @@ export const copy = {
     video: {
       play: "הפעלת סרטון יום {n}",
       frameTitle: "סרטון התרגול של יום {n}",
+      frameTitleShort: "סרטון התרגול הקצר של יום {n}",
     },
     path: {
       summary: "14 ימים, {counted} ימים של תרגול. מפגשי לייב ביום 7 וביום 14",

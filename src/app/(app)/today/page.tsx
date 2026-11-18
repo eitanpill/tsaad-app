@@ -117,7 +117,8 @@ export default async function TodayPage() {
         titles={titles}
         habits={habits}
         olderChecked={olderChecked}
-        videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
+        videoAvailableLong={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
+        videoAvailableShort={day !== null && hasVideo(day, getVideoConfig(cfg.env), "short")}
         poster={day !== null ? posterUrl(day, getVideoConfig(cfg.env), cfg.env.BUNNY_CDN_HOST) : null}
         offerOpen={offerOpen}
         nextChangeIso={next ? next.toISOString() : null}

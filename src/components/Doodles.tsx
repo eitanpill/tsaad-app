@@ -83,3 +83,14 @@ export function PathDoodle({ ...p }: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+/** ערב: שמש שוקעת מאחורי שתי גבעות, לתחתית כותרת הלייב. רוחב מלא, דקורטיבי. */
+export function EveningHillsDoodle({ ...p }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 390 110" preserveAspectRatio="none" {...common} {...p}>
+      <circle className="lv-sun" cx="92" cy="58" r="44" stroke="none" fillOpacity="0.92" style={paint("sand")} />
+      <path d="M0 52 C 60 22 130 46 200 32 S 330 4 390 24 V110 H0 Z" stroke="none" style={paint("forest")} />
+      <path d="M0 82 C 80 60 160 92 240 74 S 350 56 390 68 V110 H0 Z" stroke="none" fill="#2F5A43" />
+    </svg>
+  );
+}

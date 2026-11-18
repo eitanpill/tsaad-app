@@ -5,7 +5,7 @@ import { getVideoConfig, hasVideo, posterUrl, videoFor } from "./video";
 
 const s = makeSchedule("2026-12-01");
 const now = new Date("2026-12-04T14:00:00+02:00");
-const env = { BUNNY_LIBRARY_ID: "lib1", BUNNY_TOKEN_KEY: "key", BUNNY_VIDEO_IDS: "a1,,c3,d4" } as never;
+const env = { BUNNY_LIBRARY_ID: "lib1", BUNNY_TOKEN_KEY: "key", BUNNY_VIDEO_IDS: "a1,,c3,d4", BUNNY_SHORT_VIDEO_IDS: "s1,s2,,s4" } as never;
 
 describe("poster url", () => {
   const cfg = getVideoConfig(env);
@@ -14,7 +14,7 @@ describe("poster url", () => {
   });
   it("is null without a host, without an id for that day, or without a library", () => {
     expect(posterUrl(4, cfg, undefined)).toBeNull();
-    expect(posterUrl(2, cfg, "vz-abc.b-cdn.net")).toBeNull();
+    expect(posterUrl(5, cfg, "vz-abc.b-cdn.net")).toBeNull();
     expect(posterUrl(4, getVideoConfig({} as never), "vz-abc.b-cdn.net")).toBeNull();
   });
 });
@@ -54,5 +54,41 @@ describe("video issuance", () => {
     // no env at all: days.ts alone
     const onlyFile = getVideoConfig({ BUNNY_LIBRARY_ID: "lib1", BUNNY_TOKEN_KEY: "key" } as never, days);
     expect(onlyFile?.ids[1]).toBe("fromFile2");
+  });
+});
+
+describe("short practice video", () => {
+  const cfg = getVideoConfig(env);
+  it("selects the short id (and the long one by default) for an unlocked day", () => {
+    const short = videoFor(4, now, s, cfg, "short");
+    expect(short.status === "ok" && short.url).toMatch(/\/embed\/lib1\/s4\?token=/);
+    const long = videoFor(4, now, s, cfg);
+    expect(long.status === "ok" && long.url).toMatch(/\/embed\/lib1\/d4\?token=/);
+    expect(videoFor(4, now, s, cfg, "long")).toEqual(long);
+  });
+  it("is unavailable per length when that length has no id", () => {
+    expect(videoFor(3, now, s, cfg, "short")).toEqual({ status: "unavailable" }); // long c3 only
+    expect(videoFor(2, now, s, cfg, "short").status).toBe("ok"); // short s2 only
+    expect(videoFor(2, now, s, cfg)).toEqual({ status: "unavailable" });
+    expect(hasVideo(2, cfg, "short")).toBe(true);
+    expect(hasVideo(3, cfg, "short")).toBe(false);
+    expect(hasVideo(3, cfg)).toBe(true);
+  });
+  it("locked days give nothing for short too", () => {
+    expect(videoFor(5, now, s, cfg, "short")).toEqual({ status: "locked" });
+    expect(videoFor(1, now, null, cfg, "short")).toEqual({ status: "locked" });
+  });
+  it("refuses an id that does not match the id pattern", () => {
+    const bad = { ...cfg!, shortIds: ["a/../b"] };
+    expect(videoFor(1, now, s, bad, "short")).toEqual({ status: "unavailable" });
+  });
+  it("the short id overrides days.ts per day, like the long one", () => {
+    const days = Array.from({ length: 14 }, (_, i) => ({ shortVideoId: i === 1 ? "f2" : i === 2 ? "f3" : undefined }));
+    const c = getVideoConfig({ BUNNY_LIBRARY_ID: "lib1", BUNNY_TOKEN_KEY: "key", BUNNY_SHORT_VIDEO_IDS: "s1,,env3" } as never, days);
+    expect(c?.shortIds.slice(0, 4)).toEqual(["s1", "f2", "env3", undefined]);
+  });
+  it("the poster comes from the long id, falling back to the short id", () => {
+    expect(posterUrl(4, cfg, "vz-abc.b-cdn.net")).toBe("https://vz-abc.b-cdn.net/d4/thumbnail.jpg");
+    expect(posterUrl(2, cfg, "vz-abc.b-cdn.net")).toBe("https://vz-abc.b-cdn.net/s2/thumbnail.jpg");
   });
 });

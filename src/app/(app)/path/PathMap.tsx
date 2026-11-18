@@ -94,25 +94,27 @@ export function PathMap({ stones, counted }: { stones: Stone[]; counted: number 
         aria-hidden="true"
         focusable="false"
       >
+        {/* the stream: a wide band of sky water, and a thin white current that flows along it (stops with no motion) */}
         <path
           transform="scale(1 1.13)"
           vectorEffect="non-scaling-stroke"
           d={ROAD}
           fill="none"
-          strokeWidth="18"
+          strokeWidth="26"
           strokeLinecap="round"
-          style={paint(null, "cream")}
+          strokeLinejoin="round"
+          style={paint(null, "sky")}
         />
-        {/* small round steps along the middle of the road, so it reads as a walk and not a plain stroke */}
         <path
+          className="map-current"
           transform="scale(1 1.13)"
           vectorEffect="non-scaling-stroke"
           d={ROAD}
           fill="none"
-          strokeWidth="4"
+          strokeWidth="3"
           strokeLinecap="round"
-          strokeDasharray="0.1 13"
-          style={paint(null, "stone-done")}
+          strokeDasharray="16 22"
+          style={paint(null, "white")}
         />
       </svg>
       <OpeningMarker />
