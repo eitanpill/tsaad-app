@@ -220,11 +220,10 @@ export default async function LandingPage() {
             <div key={w.title} className={`wk wk--${i + 1}`}>
               <h3>{w.title}</h3>
               <p>{w.body}</p>
-              <p className="wk-s">{L.weeks.sample}</p>
               <ul>
-                {w.days.map((n) => (
-                  <li key={n}>
-                    <b>{fill(L.weeks.day, { n })}</b> {DAYS[n - 1].habit.title}
+                {DAYS.filter((d) => d.day >= w.from && d.day <= w.to).map((d) => (
+                  <li key={d.day}>
+                    <b>{fill(L.weeks.day, { n: d.day })}</b> {d.habit.title}
                   </li>
                 ))}
               </ul>

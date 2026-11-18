@@ -538,12 +538,15 @@
 | `landing.map.lead` | נפגשים בלייב שלוש פעמים: מפגש פתיחה לפני שמתחילים, וביום 7 וביום 14. |  |
 | `landing.map.liveTitle` | לייב עם אביטל |  |
 | `landing.weeks.heading` | מה מחכה לכם בשבועיים |  |
-| `landing.weeks.lead` | הרגל אחד חדש בכל יום, ותנועה ומדיטציה קצרות שהולכות איתו. |  |
-| `landing.weeks.sample` | למשל: |  |
+| `landing.weeks.lead` | הרגל אחד חדש בכל יום, ותנועה ומדיטציה קצרות שהולכות איתו. אלה כל 14 ההרגלים: |  |
 | `landing.weeks.items.0.title` | שבוע 1: בוקר וגוף |  |
 | `landing.weeks.items.0.body` | הרגלים קטנים לפתיחת היום, ותנועה עדינה שמעירה את הגוף. |  |
+| `landing.weeks.items.0.from` | 1 |  |
+| `landing.weeks.items.0.to` | 7 |  |
 | `landing.weeks.items.1.title` | שבוע 2: גוף וערב |  |
 | `landing.weeks.items.1.body` | תנועה שבונה כוח, ובהמשך השבוע הרגלים לשעות הערב ולפני השינה. |  |
+| `landing.weeks.items.1.from` | 8 |  |
+| `landing.weeks.items.1.to` | 14 |  |
 | `landing.weeks.day` | יום {n} |  |
 | `landing.includes.heading` | מה מקבלים |  |
 | `landing.includes.items.0` | סרטון ממני בכל בוקר, בתוך האפליקציה. יום חדש נפתח ב־{unlockTime}. |  |
@@ -970,4 +973,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 815 מחרוזות.
+סך הכול 818 מחרוזות.
