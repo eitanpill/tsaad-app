@@ -288,7 +288,7 @@ describe.skipIf(!runIntegration)("evening reminders (integration)", () => {
         const ep = rowsOf<{ endpoint: string }>(await db.execute(sql`select endpoint from push_subscriptions where user_id = ${id}`))[0].endpoint;
         return byEndpoint.get(ep);
       };
-      expect(await bodyOf(open.id)).toMatchObject({ title: "ערב טוב \u{1F319}", body: `היום עוד פתוח, ויש זמן לסמן צעד אחד קטן. מחר בבוקר: ${DAYS[3].habit.title}.`, url: "/today", tag: "evening-3" });
+      expect(await bodyOf(open.id)).toMatchObject({ title: "ערב טוב \u{1F319}", body: `אם עוד לא יצא לכם לתרגל היום, יש עוד זמן. מחר בבוקר: ${DAYS[3].habit.title}.`, url: "/today", tag: "evening-3" });
       expect((await bodyOf(done.id)).body).toBe(`מחר בבוקר מחכה לכם: ${DAYS[3].habit.title}. לילה טוב.`);
       await runEveningReminders({ db, config, sender, now: d("2026-12-03T21:00:00+02:00") });
       expect(sent).toHaveLength(2);

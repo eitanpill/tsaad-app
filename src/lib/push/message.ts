@@ -6,15 +6,21 @@ import { fill } from "@/lib/format";
 
 export type PushMessage = { title: string; body: string; url: string; tag: string };
 
+/** סיומת התזכורת היומית: אמוג'י בקוד, כי הקופי נבדק שלא יכיל אמוג'י (כמו הירח בתזכורת הערב). */
+const MORNING_EMOJI = "\u{1F9D8}\u200D\u2640\uFE0F";
+
+/** גוף ההתראה היומית כפי שהיא מגיעה, כולל האמוג'י. משמש גם את הדוגמה במסך התזכורות. */
+export function morningPushBody(template: string, day: number): string {
+  return `${fill(template, { day })} ${MORNING_EMOJI}`;
+}
+
 /**
  * נוסח התזכורת היומית: עוסק בתרגול של היום בלבד, בלי אזכור של הלייב (גם בימים 7 ו־14).
- * יש תוכן ליום: perDay עם ההרגל של היום; אחרת generic.
+ * יש תוכן ליום: perDay; אחרת generic. (שני הנוסחים זהים, בלי שם ההרגל.)
  */
 export function buildReminderMessage(day: number): PushMessage {
   const content = DAYS.find((d) => d.day === day);
-  const body = content
-    ? fill(copy.push.perDay, { day, habit: content.habit.title })
-    : fill(copy.push.generic, { day });
+  const body = morningPushBody(content ? copy.push.perDay : copy.push.generic, day);
   return { title: copy.push.title, body, url: REMINDERS.openPath, tag: `day-${day}` };
 }
 

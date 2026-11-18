@@ -36,7 +36,9 @@ test.describe("before-start screen: the opening live card", () => {
     await expect(card(page).locator("time")).toContainText("30"); // the date (30 November)
     await expect(card(page).locator("button.lv-join[aria-disabled='true']")).toHaveText("הקישור ייפתח כאן שעה לפני המפגש.");
     await expect(card(page).getByRole("link", { name: "הוספה ליומן: מפגש הפתיחה" })).toHaveAttribute("href", "/api/live/0/ics");
-    await expect(card(page)).toContainText("לא נספר בכוס ולא נכלל ב־12 הימים");
+    await expect(card(page)).toContainText("הקישור מופיע רק למי שנרשמו לאתגר.");
+    await expect(card(page)).not.toContainText("נספר");
+    await expect(card(page)).not.toContainText("12 הימים");
     expect(await page.content()).not.toContain("e2e-room-day0");
     expect(await page.content()).not.toContain("[LIVE_DAY");
     await expectReflowAndTargets(page);

@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/auth/dal";
 import { getGhl } from "@/lib/ghl/link-delivery";
 import { getReminderTime, getWhatsappReminderPref } from "@/lib/ghl/preferences";
 import { fill } from "@/lib/format";
+import { morningPushBody } from "@/lib/push/message";
 import { timeTokens } from "@/lib/times";
 import { ReminderTimeForm } from "./ReminderTimeForm";
 import { RemindersControls } from "./RemindersControls";
@@ -29,7 +30,7 @@ export default async function RemindersPage() {
   // הערת הערב רק כשתזכורת הערב באמת נשלחת (live), לא בבדיקה (dry).
   const eveningOn = getConfig().env.EVENING_REMINDERS_MODE === "live";
   const times = timeTokens();
-  const previewText = fill(copy.push.generic, { day: copy.push.previewDay });
+  const previewText = morningPushBody(copy.push.generic, copy.push.previewDay);
 
   return (
     <>

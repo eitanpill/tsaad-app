@@ -103,7 +103,7 @@ test("static content: hero, the notification preview, the time form (default 07:
   const { ctx, page } = await openReminders(browser, { permission: "default" });
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("תזכורת יומית");
   await expect(page.locator(".t-rem-hero p")).toHaveText("הודעה אחת בכל יום בשעה שבחרתם, אחרי שהיום החדש נפתח. ברירת המחדל היא 07:30. אפשר לכבות בכל רגע.");
-  await expect(page.getByRole("region", { name: "דוגמה להתראה: יום 5 נפתח. דבר אחד קטן מספיק." })).toBeVisible();
+  await expect(page.getByRole("region", { name: "דוגמה להתראה: יום 5 לאתגר מתחיל. עוד צעד קטן ביום \u{1F9D8}\u200D\u2640\uFE0F" })).toBeVisible();
   await expect(timeSelect(page)).toHaveValue("450");
   await expect(page.getByText("ההתראה והתזכורת בוואטסאפ מגיעות בשעה שבחרתם. ברירת המחדל היא 07:30, והיום נפתח ב־05:00.")).toBeVisible();
   await expect(page.getByRole("link", { name: "איך מוסיפים למסך הבית" })).toHaveAttribute("href", "/install");

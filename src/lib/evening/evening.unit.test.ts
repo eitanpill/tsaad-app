@@ -138,13 +138,13 @@ describe("buildEveningReminderMessage", () => {
     const habit = DAYS[3].habit.title;
     expect(buildEveningReminderMessage({ variant: "open", habit, practice: "x" }, 3)).toEqual({
       title: "ערב טוב \u{1F319}",
-      body: `היום עוד פתוח, ויש זמן לסמן צעד אחד קטן. מחר בבוקר: ${habit}.`,
+      body: `אם עוד לא יצא לכם לתרגל היום, יש עוד זמן. מחר בבוקר: ${habit}.`,
       url: "/today",
       tag: "evening-3",
     });
     expect(buildEveningReminderMessage({ variant: "done", habit, practice: "x" }, 3).body).toBe(`מחר בבוקר מחכה לכם: ${habit}. לילה טוב.`);
     expect(buildEveningReminderMessage({ variant: "last" }, 14)).toMatchObject({
-      body: "היום האחרון של האתגר עוד פתוח, ויש זמן לסמן צעד אחד קטן. לילה טוב.",
+      body: "היום האחרון של האתגר עוד כאן, ויש עוד זמן לצעד קטן. לילה טוב.",
       tag: "evening-14",
     });
   });

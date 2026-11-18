@@ -269,7 +269,7 @@ test.describe("screen reader semantics", () => {
     await page.goto("/today");
     const snap = await page.locator("main").ariaSnapshot();
     // the ring states how many days counted, the cup how many steps today, both as text
-    expect(snap).toMatch(/ימים נספרו/);
+    expect(snap).toMatch(/ימים של תרגול/);
     expect(snap).toMatch(/img "[^"]*(כוס|צעד)[^"]*"/);
     await expect(page.getByRole("button", { name: /הפעלת סרטון/ })).toBeVisible();
     await expect(page.locator(".toast-region")).toHaveAttribute("aria-live", "polite");
