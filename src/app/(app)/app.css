@@ -1003,7 +1003,7 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 @media (max-width: 359px) { .habit-counts { grid-template-columns: minmax(0, 1fr); } }
 @media (min-width: 900px) { .ar-habits { grid-column: 1; } }
 
-/* ---- Polish round (later days): self-report marks, compact habit list ---- */
+/* ---- Polish round (later days): self-report marks ---- */
 /* The action buttons only record "I did it" (no video opens): the check circle carries a constant "עשיתי" under it. */
 .act .mark {
   position: absolute;
@@ -1020,18 +1020,3 @@ html:has(.bnav) { scroll-padding-bottom: 100px; }
 .act .mark .dot { position: static; margin: 0; inset: auto; }
 .act .did { font-size: 12px; font-weight: 700; line-height: 1.1; }
 .marks-head { display: flex; flex-direction: column; gap: 2px; }
-/* habit list: newest first, the rest behind a toggle */
-.habits-more {
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0 4px;
-  border: 0;
-  background: none;
-  color: var(--terracotta-text);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-}

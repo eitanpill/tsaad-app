@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { axe, createUser, expectReflowAndTargets, open, overflowingElements, pool, type Session } from "./helpers";
 
 /**
- * Polish round for the later days (walkthrough 2026-11-18): compact "ההרגלים שלי", self-report action buttons ("עשיתי"),
+ * Polish round for the later days (walkthrough 2026-11-18): "ההרגלים שלי" newest first, all open, self-report action buttons ("עשיתי"),
  * the opening invite only before starting, the locked-day date, day-14 wording, the Yesodot card after the window,
  * and the Avital photo fallback. START_DATE=2026-12-01 (day N opens 05:00 on 2026-12-N).
  * POLISH_SHOTS=<dir> also saves full-page screenshots at 390px (and a few at 320px) for the PR.
@@ -42,40 +42,22 @@ test.describe("server A", () => {
     s = await createUser(browser, "pol");
   });
 
-  test("habit list: newest first, three shown, a real toggle for the rest", async ({ browser }) => {
+  test("habit list: newest first, all habits open (no cap, no toggle)", async ({ browser }) => {
     await seed(habits([1, 2, 3, 4, 6, 7, 8, 10, 11, 12]));
     const { ctx, page } = await open(browser, s, TT.day13, "/today");
     const list = page.locator(".t-habits .habit-list");
-    await expect(list.locator("> li")).toHaveCount(3);
-    await expect(list.locator("> li").first()).toContainText("חדש היום");
-    await expect(page.locator(".t-habits .habits-count")).toHaveText("0 מתוך 13 הרגלים");
-    const more = page.getByRole("button", { name: "להצגת כל 13 ההרגלים" });
-    await expect(more).toHaveAttribute("aria-expanded", "false");
-    await expect(more).toHaveAttribute("aria-controls", (await list.getAttribute("id"))!);
-    await full(page, "after-day13-today");
-    await more.focus();
-    await page.keyboard.press("Enter");
     await expect(list.locator("> li")).toHaveCount(13);
-    const less = page.getByRole("button", { name: "להצגת פחות הרגלים" });
-    await expect(less).toHaveAttribute("aria-expanded", "true");
-    await expect(less).toBeFocused();
+    await expect(list.locator("> li").first()).toContainText("חדש היום");
+    await expect(page.locator(".habits-more")).toHaveCount(0);
+    await expect(page.locator(".t-habits .habits-count")).toHaveText("0 מתוך 13 הרגלים");
     await axe(page);
     await expectReflowAndTargets(page);
-    await less.click();
-    await expect(list.locator("> li")).toHaveCount(3);
+    await full(page, "after-day13-today");
     await ctx.close();
     const narrow = await open(browser, s, TT.day13, "/today", { width: 320 });
     expect(await overflowingElements(narrow.page)).toEqual([]);
     await full(narrow.page, "after-day13-today-320");
     await narrow.ctx.close();
-  });
-
-  test("short lists are not collapsed", async ({ browser }) => {
-    await seed([]);
-    const { ctx, page } = await open(browser, s, TT.day4Morning, "/today");
-    await expect(page.locator(".t-habits .habit-list > li")).toHaveCount(4);
-    await expect(page.locator(".habits-more")).toHaveCount(0);
-    await ctx.close();
   });
 
   test("action buttons read as self-report marks, and say the practice is in the video", async ({ browser }) => {
