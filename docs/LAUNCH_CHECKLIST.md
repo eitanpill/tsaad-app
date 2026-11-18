@@ -112,7 +112,7 @@ Run everything below from `~/tsaad-app` on the Mac, with `.env.local` holding th
    DATABASE_URL="$DATABASE_URL_UNPOOLED" npx drizzle-kit migrate
    ```
    It applies `drizzle/0013_users_disabled_at.sql` and `drizzle/0014_users_reminder_time.sql` (and any earlier migration that is missing).
-2. **Deploy** this commit to production (Vercel).
+2. **Deploy** this commit to production (Vercel) with `npm run deploy:prod`. It first runs `npm run db:check`, which reads `drizzle.__drizzle_migrations` and stops (nothing deployed) if any migration in `drizzle/` is not applied yet. Never deploy with a bare `vercel deploy --prod`: on 2026-11-16 code with `0016_habit_checks` reached production without the migration, and `/path` showed only "משהו לא עבד".
 3. **Create the first two accounts.** The command prints the activation link once, on its own line (stdout); the rest goes to stderr. Open it, or send it to the person, to set a password:
    ```bash
    npm run admin:create-user -- --confirm-production --username pit --name "פיט" --email <Pit's email> --phone <Pit's phone>
