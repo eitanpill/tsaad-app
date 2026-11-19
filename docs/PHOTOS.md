@@ -1,6 +1,6 @@
 # Photos of Avital
 
-The slots are built and wait for the files. While a slot is off, the screen looks exactly as before (nothing rendered, no empty box).
+The slots are built and wait for the files. While a slot is off: the landing "about" tile shows a small decorative sprig in a cream circle (no empty photo-sized box, no stand-in photo); the round `live` slot renders nothing.
 
 | Slot | File (under `public/avital/`) | Ratio | Send at least | Recommended | Where it shows |
 |---|---|---|---|---|---|

@@ -20,6 +20,10 @@ const SHAPES = [
   "55% 45% 50% 50% / 45% 55% 45% 55%",
   "50% 50% 58% 42% / 52% 48% 52% 48%",
 ];
+/**
+ * יום 0, מפגש ההיכרות: סימן בלבד, לפני יום 1 (בפינה, מעל ההתחלה של השביל). אין בו פעולות לסימון ואין מילוי.
+ */
+const OPENING_POINT: readonly [number, number] = [338, 46];
 /** כל מה שפתוח ושלא נספר מציג כוס עם מתאר רציף; עוד לא נפתח מקווקו. */
 const dashedFor = (s: StoneState) => s === "locked";
 
@@ -47,8 +51,34 @@ function StoneBody({ stone }: { stone: Stone }) {
   );
 }
 
+/**
+ * יום 0: סימן ניטרלי ולא קישור, מחוץ לרשימת 14 האבנים (אין לו פעולות לסימון, והרשימה נשארת של 14 הימים).
+ * אותו מראה כמו שאר האבנים (כוס ריקה ומתאר מקווקו, בלי מילוי); קורא המסך שומע אותו לפני הרשימה.
+ */
+function OpeningMarker() {
+  const [x, y] = OPENING_POINT;
+  return (
+    <div
+      className="stone stone--opening"
+      role="img"
+      aria-label={copy.a11y.path.stoneOpening}
+      data-day="0"
+      data-state="opening"
+      style={{ left: `${(x / BOARD_W) * 100}%`, top: y }}
+    >
+      <span aria-hidden="true" className="stone-link stone-link--plain">
+        <span className="stone-visual">
+          <StoneCup fill={0} dashed />
+          <i className="stone-rock stone-rock--opening" style={{ borderRadius: SHAPES[2] }} />
+          <span className="stone-num stone-num--hi">{`0 · ${copy.path.liveTag}`}</span>
+        </span>
+      </span>
+    </div>
+  );
+}
+
 /** The road under the stones (board coordinates). */
-const ROAD = "M300 54 C 200 62, 90 60, 52 124 C 30 168, 250 160, 300 220 C 330 262, 160 286, 80 300 C 30 312, 60 380, 130 386";
+const ROAD = "M338 48 L300 54 C 200 62, 90 60, 52 124 C 30 168, 250 160, 300 220 C 330 262, 160 286, 80 300 C 30 312, 60 380, 130 386";
 
 /**
  * המפה: רשימה מסודרת של 14 אבנים על שביל מתפתל. אבן שנפתחה היא קישור ליום שלה (היום הנוכחי ל־/today);
@@ -64,27 +94,30 @@ export function PathMap({ stones, counted }: { stones: Stone[]; counted: number 
         aria-hidden="true"
         focusable="false"
       >
+        {/* the stream: a wide band of sky water, and a thin white current that flows along it (stops with no motion) */}
         <path
           transform="scale(1 1.13)"
           vectorEffect="non-scaling-stroke"
           d={ROAD}
           fill="none"
-          strokeWidth="18"
+          strokeWidth="26"
           strokeLinecap="round"
-          style={paint(null, "cream")}
+          strokeLinejoin="round"
+          style={paint(null, "sky")}
         />
-        {/* small round steps along the middle of the road, so it reads as a walk and not a plain stroke */}
         <path
+          className="map-current"
           transform="scale(1 1.13)"
           vectorEffect="non-scaling-stroke"
           d={ROAD}
           fill="none"
-          strokeWidth="4"
+          strokeWidth="3"
           strokeLinecap="round"
-          strokeDasharray="0.1 13"
-          style={paint(null, "stone-done")}
+          strokeDasharray="16 22"
+          style={paint(null, "white")}
         />
       </svg>
+      <OpeningMarker />
       <ol className="stones" role="list" aria-label={fill(copy.a11y.path.summary, { counted })}>
         {stones.map((stone) => {
           const [x, y] = POINTS[stone.day - 1];

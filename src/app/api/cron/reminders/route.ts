@@ -3,7 +3,7 @@ import { getDb } from "@/db";
 import { isCronAuthorized, jsonNoStore, unauthorized } from "@/lib/cron/auth";
 import { logger } from "@/lib/logger";
 import { drainGhlOutbox, getGhl } from "@/lib/ghl/link-delivery";
-import { getPushSender, runLiveReminders, runReminders } from "@/lib/push";
+import { getPushSender, runEveningReminders, runLiveReminders, runReminders } from "@/lib/push";
 import { serverNow } from "@/lib/today/clock";
 
 /** Vercel Cron: GET עם Authorization: Bearer CRON_SECRET. מחזיר ספירות בלבד. */
@@ -23,9 +23,16 @@ export async function GET(request: Request) {
     } catch (e) {
       logger.error("live reminders failed", { error: e });
     }
+    // תזכורת הערב (מיום 0 עד 14, ברירת מחדל כבויה): גם היא בלתי תלויה, כשל בה לא מפיל את הקודמות.
+    let evening;
+    try {
+      evening = await runEveningReminders({ db: getDb(), config, sender, now, ghlConfig: ghl.cfg });
+    } catch (e) {
+      logger.error("evening reminders failed", { error: e });
+    }
     // תזכורות ה־GHL שנכנסו ל־outbox נשלחות מיד (בלי לחכות לריצת ה־sync); כשלים זמניים ינוסו שוב שם.
-    const drain = ghl.cfg.reminderMode === "live" ? await drainGhlOutbox(getDb(), now) : undefined;
-    return jsonNoStore({ ...result, ...(live ? { live } : {}), ...(drain ? { ghlSend: drain } : {}) });
+    const drain = ghl.cfg.reminderMode === "live" || ghl.cfg.eveningMode === "live" ? await drainGhlOutbox(getDb(), now) : undefined;
+    return jsonNoStore({ ...result, ...(live ? { live } : {}), ...(evening ? { evening } : {}), ...(drain ? { ghlSend: drain } : {}) });
   } catch (e) {
     logger.error("cron reminders failed", { error: e });
     return jsonNoStore({ error: "failed" }, 500);

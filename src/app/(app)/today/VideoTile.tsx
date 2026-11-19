@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { copy } from "@/content/copy.he";
 import { fill } from "@/lib/format";
 import { MeadowDoodle } from "@/components/Doodles";
@@ -8,28 +8,73 @@ import { AlertCircle } from "../_components/icons";
 import { paint } from "@/components/paint";
 
 type Phase = "idle" | "loading" | "ready" | "error";
+type Length = "long" | "short";
+
+const LENGTH_KEY = "tsaad.videoLength";
+
+function readStoredLength(): Length | null {
+  try {
+    const v = window.localStorage.getItem(LENGTH_KEY);
+    return v === "short" || v === "long" ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeLength(v: Length) {
+  try {
+    window.localStorage.setItem(LENGTH_KEY, v);
+  } catch {
+    // בלי אחסון מקומי האפליקציה עובדת כרגיל, רק בלי זיכרון הבחירה
+  }
+}
 
 /**
  * הסרטון של היום. כתובת ההטמעה החתומה מבוקשת מהשרת רק בלחיצה (GET /api/video/[day]), והשרת מנפיק אותה
- * רק ליום שנפתח. בלי autoplay. כשאין סרטון מוגדר ליום מוצג מצב ממתין (כפתור כבוי).
+ * רק ליום שנפתח. בלי autoplay. כשיש שתי גרסאות (מלאה וקצרה) המשתתפת בוחרת; המלאה נבחרת בפעם הראשונה והבחירה האחרונה
+ * נזכרת במכשיר. בחירת אורך לא מסמנת דבר. כשאין סרטון מוגדר ליום מוצג מצב ממתין (כפתור כבוי).
  */
 export function VideoTile({
   day,
-  available,
+  availableLong,
+  availableShort,
   title: heading,
   poster = null,
 }: {
   day: number;
-  available: boolean;
+  availableLong: boolean;
+  availableShort: boolean;
   title?: string;
   /** כתובת תמונה ממוזערת (Bunny), רק כשהוגדר מארח ומזהה סרטון ליום. בלעדיה (או אם נכשלה): איור חמים במקומה. */
   poster?: string | null;
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
+  const [chosen, setChosen] = useState<Length>("long");
+  const groupName = useId();
+  const both = availableLong && availableShort;
+  // כשקיימת גרסה אחת בלבד היא מנוגנת, בלי בחירה.
+  const length: Length = both ? chosen : availableShort && !availableLong ? "short" : "long";
+  const available = length === "short" ? availableShort : availableLong;
   const [src, setSrc] = useState<string | null>(null);
   const [posterOk, setPosterOk] = useState(true);
   const playRef = useRef<HTMLButtonElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
+
+  // הבחירה האחרונה במכשיר (נקראת אחרי ההידרציה, כדי שה־HTML מהשרת ישאר זהה)
+  useEffect(() => {
+    const stored = readStoredLength();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- קריאה חד־פעמית של localStorage אחרי ההידרציה
+    if (stored) setChosen(stored);
+  }, []);
+
+  function choose(next: Length) {
+    if (phase === "loading" || next === chosen) return;
+    setChosen(next);
+    storeLength(next);
+    // נגן שנטען (או שגיאה) שייך לאורך הקודם: חוזרים לכפתור הניגון של האורך החדש
+    setSrc(null);
+    setPhase("idle");
+  }
 
   // כפתור הניגון (או "לנסות שוב") מוחלף בנגן: המיקוד עובר לנגן, ולא נופל לגוף הדף.
   useEffect(() => {
@@ -40,7 +85,7 @@ export function VideoTile({
     if (!available || phase === "loading") return;
     setPhase("loading");
     try {
-      const res = await fetch(`/api/video/${day}`, { cache: "no-store", credentials: "same-origin" });
+      const res = await fetch(`/api/video/${day}${length === "short" ? "?v=short" : ""}`, { cache: "no-store", credentials: "same-origin" });
       const data = (await res.json()) as { url?: string };
       if (!res.ok || typeof data.url !== "string") throw new Error("video");
       setSrc(data.url);
@@ -50,9 +95,31 @@ export function VideoTile({
     }
   }
 
-  const title = fill(copy.a11y.video.frameTitle, { n: day });
+  const title = fill(length === "short" && both ? copy.a11y.video.frameTitleShort : copy.a11y.video.frameTitle, { n: day });
+  const lc = copy.today.videoLength;
   return (
     <>
+      {both ? (
+        <fieldset className="video-len" aria-busy={phase === "loading" ? true : undefined}>
+          <legend className="sr-only">{lc.legend}</legend>
+          {(["long", "short"] as const).map((v) => (
+            <div key={v} className="video-len__opt">
+              <input
+                type="radio"
+                id={`${groupName}-${v}`}
+                name={groupName}
+                value={v}
+                checked={length === v}
+                onChange={() => choose(v)}
+              />
+              <label htmlFor={`${groupName}-${v}`}>
+                <span className="video-len__label">{v === "long" ? lc.long : lc.short}</span>
+                <span className="video-len__time">{v === "long" ? lc.longTime : lc.shortTime}</span>
+              </label>
+            </div>
+          ))}
+        </fieldset>
+      ) : null}
       {phase === "error" ? (
         <section className="video-err" role="alert" aria-labelledby="video-err-h">
           <AlertCircle />

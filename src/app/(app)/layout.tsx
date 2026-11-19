@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AppShell } from "./_components/AppShell";
 import { ShellLoading } from "./_components/ShellLoading";
 import "./app.css";
+import "./flow.css";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 

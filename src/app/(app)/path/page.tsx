@@ -38,7 +38,6 @@ export default async function PathPage() {
       ),
     }));
   const next = schedule ? nextBoundary(now, schedule) : null;
-  const counter = fill(copy.path.counter, { n: model.counted });
 
   return (
     <>
@@ -46,7 +45,6 @@ export default async function PathPage() {
       <section className="t t-hero t-path-hero" aria-labelledby="path-h">
         <div className="path-hero-row">
           <h1 id="path-h">{copy.path.title}</h1>
-          <span className="chip chip--count">{counter}</span>
         </div>
         <p>{model.completed ? fill(copy.path.completed, { n: model.counted }) : copy.path.intro}</p>
       </section>

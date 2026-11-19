@@ -346,7 +346,7 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
         await mkUser();
         const { sender, sent } = fakeSender();
         await runReminders({ db, config: live(), sender, now: DAY1_0730 });
-        expect(JSON.parse(sent[0].payload).body).toContain("הרגל להיום");
+        expect(JSON.parse(sent[0].payload).body).toContain("עוד צעד קטן ביום");
 
         for (const [i, [day, iso]] of ([[7, "2026-12-07T05:30:00Z"], [14, "2026-12-14T05:30:00Z"]] as const).entries()) {
           for (const [j, env] of [{} as Record<string, string>, { LIVE_TIME_DAY7: "20:00", LIVE_TIME_DAY14: "19:30" }].entries()) {
@@ -354,7 +354,7 @@ describe.skipIf(!runIntegration)("background layer (integration)", () => {
             await runReminders({ db, config: cfg({ REMINDERS_ENABLED: "true", ...env }), sender, now: d(iso) });
             const body = JSON.parse(sent[1 + i * 2 + j].payload).body as string;
             expect(body).toContain(`יום ${day}`);
-            expect(body).toContain("הרגל להיום");
+            expect(body).toContain("עוד צעד קטן ביום");
             expect(body).not.toMatch(/לייב|מפגש|\d\d:\d\d/);
           }
         }

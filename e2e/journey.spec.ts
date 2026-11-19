@@ -100,8 +100,8 @@ test("14 days with the test clock: boundaries, yesterday until midnight, night h
   expect([...counted].sort((a, b) => a - b)).toEqual([1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14]);
   {
     const { page, close } = await openAt(browser, at(14, "21:00"), "/today");
-    await expect(page.getByRole("heading", { name: "האתגר הושלם" })).toBeVisible();
-    await expect(page.getByRole("img", { name: /12 מתוך 14/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "תודה שאתם כאן" })).toBeVisible();
+    await expect(page.getByRole("img", { name: /12 ימים של תרגול/ })).toBeVisible();
     await close();
   }
   // after the end (day 15 05:00): ended, nothing markable; yesterday (14) stays markable until midnight is over
@@ -110,7 +110,7 @@ test("14 days with the test clock: boundaries, yesterday until midnight, night h
     await expect(page.locator(".eyebrow-s")).toHaveText("האתגר הסתיים");
     await expect(page.locator("[data-action-key]")).toHaveCount(0);
     await page.goto("/path");
-    await expect(page.getByRole("main").getByText("12 מתוך 14", { exact: true })).toBeVisible();
+    await expect(page.locator(".t-path-hero p")).toHaveText("12 ימים של תרגול. תודה שהייתם איתנו.");
     await close();
   }
 });

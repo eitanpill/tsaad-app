@@ -8,7 +8,7 @@ import { getDb } from "@/db";
 import { requireUser } from "@/lib/auth/dal";
 import { fill } from "@/lib/format";
 import { getAppClock } from "@/lib/preview/context";
-import { dayOpening, dayTitles } from "@/lib/today/titles";
+import { OPENING_INVITE, dayOpeningLead, dayTitles } from "@/lib/today/titles";
 import { listCompletions } from "@/lib/today/completions";
 import { listDayHabitChecks } from "@/lib/habits/checks";
 import { getHabitList } from "@/lib/habits/list";
@@ -68,13 +68,24 @@ export default async function TodayPage() {
   const greetText = first ? fill(copy.today.greetingName, { greeting, name: first }) : greeting;
   // הכותרת היא הברכה (בשם הפרטי כשיש); שם ההרגל כבר בשורת הפתיחה ובכפתור, ולא חוזר בכותרת. ביום לייב: ההודעה על המפגש.
   // מספר היום כבר בתג שבכותרת העליונה ובשורת הפתיחה ("יום 4. ההרגל של היום: ..."), ולכן אין שורה קטנה נוספת ביום רגיל.
+  // ביום לייב: "היום יש מפגש לייב" רק עד שהמפגש הסתיים (סוף חלון הקישור). אחריו, הברכה הרגילה.
+  const todayLive = model.live && day !== null ? liveSession(day as 7 | 14, now, schedule, getLiveInputs(cfg.env)[day as 7 | 14]) : null;
+  const liveAhead = todayLive !== null && todayLive.state !== "passed";
   let eyebrow: string | null = copy.today.ended;
   let hero: string = greetText;
   if (day !== null) {
-    eyebrow = model.live ? greetText : null;
-    if (model.live) hero = copy.today.heroLive;
+    eyebrow = liveAhead ? greetText : null;
+    if (liveAhead) hero = copy.today.heroLive;
   }
-  const next = nextBoundary(now, schedule);
+  // "קחו נשימה אחת איתי, ומתחילים" רק לפני שמתחילים: לא בערב ולא אחרי מפגש הלייב. הלקוח מסתיר אותה גם אחרי הסימון הראשון.
+  const opening =
+    day === null
+      ? null
+      : { lead: dayOpeningLead(day), invite: greetingKey(now, tz) !== "evening" && !(todayLive && !liveAhead) ? OPENING_INVITE : null };
+  const boundaries = [nextBoundary(now, schedule), todayLive ? nextLiveChange([todayLive]) : null]
+    .filter((d): d is Date => d !== null)
+    .map((d) => d.getTime());
+  const next = boundaries.length ? new Date(Math.min(...boundaries)) : null;
   // רק היום ואתמול: כותרות של ימים נעולים לא נשלחות ללקוח.
   const titles: Record<number, DayTitles> = {};
   for (const d of [day, yesterday]) if (d !== null) titles[d] = dayTitles(d);
@@ -102,11 +113,12 @@ export default async function TodayPage() {
         showYesterday={yesterday !== null && yesterdayDone === 0}
         eyebrow={eyebrow}
         hero={hero}
-        opening={day !== null ? dayOpening(day) : null}
+        opening={opening}
         titles={titles}
         habits={habits}
         olderChecked={olderChecked}
-        videoAvailable={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
+        videoAvailableLong={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
+        videoAvailableShort={day !== null && hasVideo(day, getVideoConfig(cfg.env), "short")}
         poster={day !== null ? posterUrl(day, getVideoConfig(cfg.env), cfg.env.BUNNY_CDN_HOST) : null}
         offerOpen={offerOpen}
         nextChangeIso={next ? next.toISOString() : null}

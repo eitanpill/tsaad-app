@@ -6,7 +6,7 @@ import { actionKey } from "@/lib/today/view";
 import { TYPE_LABEL } from "./action-labels";
 import { CheckIcon } from "../_components/icons";
 
-/** כפתור פעולה (מתג): aria-pressed, עם שם הסוג והכותרת. משותף למסך היום ולמסך יום קודם. */
+/** כפתור פעולה (מתג): aria-pressed, עם שם הסוג, הכותרת ו"עשיתי". סימון בלבד, לא פותח תוכן. משותף למסך היום ולמסך יום קודם. */
 export function ActionButton({
   day,
   action,
@@ -42,8 +42,12 @@ export function ActionButton({
           {detail ? <small className="act-detail">{detail}</small> : null}
         </span>
       )}
-      <span className="dot" aria-hidden="true">
-        {pressed ? <CheckIcon /> : null}
+      {/* סימון עצמי: עיגול הוי ומתחתיו "עשיתי" (בלייב: "הייתי"), אותו נוסח בשני המצבים. הכפתור לא פותח סרטון. */}
+      <span className="mark">
+        <span className="dot" aria-hidden="true">
+          {pressed ? <CheckIcon /> : null}
+        </span>
+        <span className="did">{isLive ? copy.today.wasThere : copy.today.didIt}</span>
       </span>
     </button>
   );

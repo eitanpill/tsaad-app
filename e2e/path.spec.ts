@@ -119,8 +119,14 @@ test.describe("path: states", () => {
     expect(names[13]).toBe("יום 14, לייב, עוד לא נפתח");
     expect(names.every((n) => n.endsWith("עוד לא נפתח"))).toBe(true);
     expect((await stoneLinks(page)).every((h) => h === null)).toBe(true);
-    await expect(page.locator(".chip--count")).toHaveText("0 מתוך 14");
-    await expect(page.locator("ol.stones")).toHaveAttribute("aria-label", "14 ימים, 0 נספרו. מפגשי לייב ביום 7 וביום 14");
+    await expect(page.locator("ol.stones")).toHaveAttribute("aria-label", "14 ימים, 0 ימים של תרגול. מפגשי לייב ביום 7 וביום 14");
+    // day 0 (the opening session): a neutral, non-interactive marker outside the list of 14, not filled
+    const opening = page.locator('[data-day="0"]');
+    await expect(opening).toHaveAttribute("role", "img");
+    await expect(opening).toHaveAttribute("aria-label", "יום 0, מפגש ההיכרות");
+    await expect(opening).toContainText("0 · לייב");
+    await expect(opening.locator("a")).toHaveCount(0);
+    await expect(opening.locator("path.wave")).toHaveCount(0);
     await axe(page);
     await shot(page, "path-before-start");
     await ctx.close();
@@ -130,17 +136,16 @@ test.describe("path: states", () => {
     await seed([[1, "habit"], [2, "habit"], [3, "move"], [4, "habit"]]);
     const { ctx, page } = await open(browser, T.day4Noon, "/path");
     const names = await stoneNames(page);
-    expect(names.slice(0, 5)).toEqual(["יום 1, נספר", "יום 2, נספר", "יום 3, נספר", "יום 4, היום", "יום 5, עוד לא נפתח"]);
+    expect(names.slice(0, 5)).toEqual(["יום 1, בוצע", "יום 2, בוצע", "יום 3, בוצע", "יום 4, היום", "יום 5, עוד לא נפתח"]);
     expect(names[6]).toBe("יום 7, לייב, עוד לא נפתח");
     const links = await stoneLinks(page);
     expect(links.slice(0, 6)).toEqual(["/day/1", "/day/2", "/day/3", "/today", "/day/5", null]);
-    await expect(page.locator(".chip--count")).toHaveText("4 מתוך 14");
     await expect(page.locator(".stone-tag")).toHaveText("היום");
-    await expect(page.locator(".stone-num").nth(6)).toHaveText("7 · לייב");
-    await expect(page.locator(".stone-num").nth(13)).toHaveText("14 · לייב");
+    await expect(page.locator("ol.stones .stone-num").nth(6)).toHaveText("7 · לייב");
+    await expect(page.locator("ol.stones .stone-num").nth(13)).toHaveText("14 · לייב");
     const legend = page.locator(".t-legend li");
     // as in AppPath: only the states that are on the path (no missed day yet)
-    await expect(legend).toHaveText(["נספר", "היום", "עוד לא נפתח", "מפגש לייב"]);
+    await expect(legend).toHaveText(["בוצע", "היום", "עוד לא נפתח", "מפגש לייב"]);
     await expect(page.getByRole("navigation", { name: "ניווט ראשי" }).getByRole("link", { name: "השביל" })).toHaveAttribute("aria-current", "page");
     await axe(page);
     await shot(page, "path-mid");
@@ -152,16 +157,16 @@ test.describe("path: states", () => {
     const { ctx, page } = await open(browser, T.day7, "/path");
     const names = await stoneNames(page);
     expect(names.slice(0, 8)).toEqual([
-      "יום 1, נספר",
-      "יום 2, לא נספר",
-      "יום 3, נספר",
-      "יום 4, לא נספר",
-      "יום 5, נספר",
+      "יום 1, בוצע",
+      "יום 2, לצפייה בלבד",
+      "יום 3, בוצע",
+      "יום 4, לצפייה בלבד",
+      "יום 5, בוצע",
       "יום 6, אפשר לסמן עד חצות",
       "יום 7, לייב, היום",
       "יום 8, עוד לא נפתח",
     ]);
-    await expect(page.locator(".t-legend li")).toHaveText(["נספר", "היום", "אפשר לסמן עד חצות", "לא נספר", "עוד לא נפתח", "מפגש לייב"]);
+    await expect(page.locator(".t-legend li")).toHaveText(["בוצע", "היום", "אפשר לסמן עד חצות", "לצפייה בלבד", "עוד לא נפתח", "מפגש לייב"]);
     // yesterday differs from "missed" by a clock badge (shape), not only by tone; the legend swatch carries it too
     await expect(page.locator('.stone[data-state="yesterday"] .stone-badge')).toHaveCount(1);
     await expect(page.locator('.stone[data-state="missed"] .stone-badge')).toHaveCount(0);
@@ -178,7 +183,7 @@ test.describe("path: states", () => {
     const { ctx, page } = await open(browser, T.day5Night, "/path");
     const names = await stoneNames(page);
     // the date is the 5th but the challenge day is still 4 until 05:00; day 3 closed at 00:00
-    expect(names.slice(2, 5)).toEqual(["יום 3, לא נספר", "יום 4, היום", "יום 5, עוד לא נפתח"]);
+    expect(names.slice(2, 5)).toEqual(["יום 3, לצפייה בלבד", "יום 4, היום", "יום 5, עוד לא נפתח"]);
     await expect(page.locator(".t-legend li")).toHaveCount(5);
     await ctx.close();
   });
@@ -186,10 +191,9 @@ test.describe("path: states", () => {
   test("completed: 12 counted shows the completion line", async ({ browser }) => {
     await seed(habits([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]));
     const { ctx, page } = await open(browser, T.day13, "/path");
-    await expect(page.locator(".t-path-hero p")).toHaveText("12 מתוך 14. האתגר הושלם.");
-    await expect(page.locator(".chip--count")).toHaveText("12 מתוך 14");
+    await expect(page.locator(".t-path-hero p")).toHaveText("12 ימים של תרגול. תודה שהייתם איתנו.");
     const names = await stoneNames(page);
-    expect(names[11]).toBe("יום 12, נספר");
+    expect(names[11]).toBe("יום 12, בוצע");
     expect(names[12]).toBe("יום 13, היום");
     expect(names[13]).toBe("יום 14, לייב, עוד לא נפתח");
     await axe(page);
@@ -202,18 +206,17 @@ test.describe("path: states", () => {
     let { ctx, page } = await open(browser, T.day14Late, "/path");
     let names = await stoneNames(page);
     expect(names[13]).toBe("יום 14, לייב, אפשר לסמן עד חצות");
-    expect(names[8]).toBe("יום 9, לא נספר");
+    expect(names[8]).toBe("יום 9, לצפייה בלבד");
     expect(names.some((n) => n.endsWith("עוד לא נפתח") || n.endsWith("היום"))).toBe(false);
-    await expect(page.locator(".chip--count")).toHaveText("8 מתוך 14");
     // the legend lists only states that can still occur: no "today", no "not open yet"
-    await expect(page.locator(".t-legend li")).toHaveText(["נספר", "אפשר לסמן עד חצות", "לא נספר", "מפגש לייב"]);
+    await expect(page.locator(".t-legend li")).toHaveText(["בוצע", "אפשר לסמן עד חצות", "לצפייה בלבד", "מפגש לייב"]);
     await axe(page);
     await shot(page, "path-after-end");
     await ctx.close();
     ({ ctx, page } = await open(browser, T.ended, "/path"));
     names = await stoneNames(page);
-    expect(names[13]).toBe("יום 14, לייב, לא נספר");
-    await expect(page.locator(".t-legend li")).toHaveText(["נספר", "לא נספר", "מפגש לייב"]);
+    expect(names[13]).toBe("יום 14, לייב, לצפייה בלבד");
+    await expect(page.locator(".t-legend li")).toHaveText(["בוצע", "לצפייה בלבד", "מפגש לייב"]);
     await ctx.close();
   });
 });
@@ -222,12 +225,12 @@ test.describe("path: accessibility", () => {
   test("list semantics, keyboard order, focus ring, enter opens a day, targets 44px", async ({ browser }) => {
     await seed(habits([1, 2, 3]));
     const { ctx, page } = await open(browser, T.day4Noon, "/path");
-    await expect(page.getByRole("list", { name: /14 ימים, 3 נספרו/ })).toBeVisible();
+    await expect(page.getByRole("list", { name: /14 ימים, 3 ימים של תרגול/ })).toBeVisible();
     await expect(page.getByRole("listitem")).not.toHaveCount(0);
     const nav = page.getByRole("navigation", { name: "ניווט ראשי" });
     await expect(nav.getByRole("link", { name: "השביל" })).toHaveAttribute("aria-current", "page");
     // the map links are keyboard reachable, in stone order, after the header controls
-    const link3 = page.getByRole("link", { name: "יום 3, נספר" });
+    const link3 = page.getByRole("link", { name: "יום 3, בוצע" });
     await link3.focus();
     expect(await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle)).toBe("solid");
     await page.keyboard.press("Tab");
@@ -282,7 +285,7 @@ test.describe("path: accessibility", () => {
     await seed(habits([1, 2]));
     const { ctx, page } = await open(browser, T.day4Noon, "/path", { reducedMotion: true });
     const names = await page.evaluate(() => [
-      getComputedStyle(document.querySelector(".stone .wave")!).animationName,
+      getComputedStyle(document.querySelector(".map-current")!).animationName,
       getComputedStyle(document.querySelector(".stone-rock--today")!).animationName,
     ]);
     expect(names).toEqual(["none", "none"]);
@@ -334,15 +337,15 @@ test.describe("bottom nav never hides content", () => {
 });
 
 test.describe("day screen", () => {
-  test("older day, not marked: view only, 'לא נספר', video stays available, axe", async ({ browser }) => {
+  test("older day, not marked: view only, 'לצפייה בלבד', video stays available, axe", async ({ browser }) => {
     await seed([]);
     const { ctx, page } = await open(browser, T.day4Noon, "/day/2");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("יום 2");
-    await expect(page.locator(".eyebrow-s")).toHaveText("לא נספר");
-    await expect(page.getByText("הסימון של יום 2 נסגר, ולכן הוא לא נספר. אפשר לצפות בסרטון.")).toBeVisible();
+    await expect(page.locator(".eyebrow-s")).toHaveText("לצפייה בלבד");
+    await expect(page.getByText("הסימון של יום 2 נסגר. אפשר לצפות בסרטון.")).toBeVisible();
     // the day's own content is shown, but nothing can be marked
     await expect(page.getByText(DAYS[1].habit.title).first()).toBeVisible();
-    await expect(page.locator("p.opening")).toHaveText(DAYS[1].opening);
+    await expect(page.locator("p.opening")).toHaveText(DAYS[1].opening.replace(" קחו נשימה אחת איתי, ומתחילים.", ""));
     await expect(page.getByRole("button", { name: /^(הרגל|תנועה|מדיטציה)/ })).toHaveCount(0);
     await expect(page.locator(".t-actions .ro-item")).toHaveCount(3);
     await expect(page.locator(".t-actions").getByText("לא סומן")).toHaveCount(3);
@@ -354,11 +357,11 @@ test.describe("day screen", () => {
     await ctx.close();
   });
 
-  test("older day that was counted: 'נספר' and the marked action", async ({ browser }) => {
+  test("older day that was counted: 'בוצע' and the marked action", async ({ browser }) => {
     await seed([[2, "move"]]);
     const { ctx, page } = await open(browser, T.day4Noon, "/day/2");
-    await expect(page.locator(".eyebrow-s")).toHaveText("נספר");
-    await expect(page.getByText("יום 2 נספר. הסימון נסגר, ואפשר לצפות בסרטון.")).toBeVisible();
+    await expect(page.locator(".eyebrow-s")).toHaveText("בוצע");
+    await expect(page.getByText("יום 2 סומן. הסימון נסגר, ואפשר לצפות בסרטון.")).toBeVisible();
     await expect(page.locator('.ro-item[data-marked="true"]')).toContainText("תנועה");
     await expect(page.getByText("סומן", { exact: true })).toHaveCount(1);
     await axe(page);
@@ -389,7 +392,7 @@ test.describe("day screen", () => {
     expect(await countRows()).toBe(0);
     await page.goto("/day/3");
     await expect(page.getByRole("button", { name: /^הרגל/ })).toHaveCount(0);
-    await expect(page.locator(".eyebrow-s")).toHaveText("לא נספר");
+    await expect(page.locator(".eyebrow-s")).toHaveText("לצפייה בלבד");
     await ctx.close();
   });
 
@@ -438,8 +441,8 @@ test.describe("day screen", () => {
   test("far future: its own copy, no previous-day line, axe", async ({ browser }) => {
     await seed([]);
     const { ctx, page } = await open(browser, T.day4Noon, "/day/9");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("יום 9 עוד לא נפתח");
-    await expect(page.getByText("כל בוקר ב־05:00 נפתח יום אחד. אפשר לחזור מחר.")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("יום 9 נפתח ביום רביעי, 9 בדצמבר");
+    await expect(page.getByText("כל בוקר ב־05:00 נפתח יום אחד, לפי הסדר.")).toBeVisible();
     await expect(page.getByText(/אפשר לסמן עד חצות/)).toHaveCount(0);
     await axe(page);
     await shot(page, "day-locked-far");
@@ -487,7 +490,7 @@ test.describe("day screen", () => {
     // a percent-encoded digit is the same day as the plain one (Next decodes the param)
     const enc = await ctx.newPage();
     expect((await enc.goto("/day/%37"))!.status()).toBe(200);
-    await expect(enc.getByRole("heading", { level: 1 })).toHaveText("יום 7 עוד לא נפתח");
+    await expect(enc.getByRole("heading", { level: 1 })).toHaveText("יום 7 נפתח ביום שני, 7 בדצמבר");
     await enc.close();
     // signed out: the same 404 (the check needs no session and reveals nothing about the user)
     const anon = await browser.newContext({ locale: "he-IL" });

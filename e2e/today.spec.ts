@@ -142,7 +142,7 @@ test.describe("states (axe, copy, server clock)", () => {
       "יום 1. ההרגל של היום: כוס מים חמימים עם לימון כשקמים. קחו נשימה אחת איתי, ומתחילים.",
     );
     await expect(page.getByRole("img", { name: "הכוס של היום, ריקה" })).toBeVisible();
-    await expect(page.getByRole("img", { name: "0 מתוך 14 ימים" })).toBeVisible();
+    await expect(page.getByRole("img", { name: "0 ימים של תרגול" })).toBeVisible();
     await expect(page.getByRole("button", { name: /^הרגל/ })).toHaveAttribute("aria-pressed", "false");
     await axe(page);
     await shot(page, "today-day1-empty");
@@ -157,8 +157,8 @@ test.describe("states (axe, copy, server clock)", () => {
     await expect(page.getByRole("heading", { level: 1 })).not.toContainText("אמבטיית");
     await expect(habit(page)).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("img", { name: "הכוס של היום, חצי מלאה" })).toBeVisible();
-    await expect(page.getByRole("img", { name: "4 מתוך 14 ימים" })).toBeVisible();
-    await expect(page.getByText("עוד 8 ימים להשלמת האתגר")).toBeVisible();
+    await expect(page.getByRole("img", { name: "4 ימים של תרגול" })).toBeVisible();
+    await expect(page.getByText("צעד קטן אחרי צעד קטן")).toBeVisible();
     expect(await ringLines(page)).toBeLessThanOrEqual(3);
     await expect(page.getByText("שכחתם לסמן אתמול?")).toHaveCount(0);
     await axe(page);
@@ -220,10 +220,10 @@ test.describe("states (axe, copy, server clock)", () => {
     await seed([[1, "habit"], [2, "habit"], [3, "habit"], [4, "habit"], [5, "habit"]]);
     const { ctx, page } = await open(browser, T.day13);
     // the long message has its own full-width tile; the ring tile keeps only its short caption
-    await expect(page.locator(".t-progress-note")).toHaveText("אפשר להמשיך לתרגל עד יום 14, גם בלי להשלים את האתגר.");
+    await expect(page.locator(".t-progress-note")).toHaveText("אפשר להמשיך לתרגל עד יום 14, בקצב שלכם.");
     await expect(page.locator(".t-ring")).not.toContainText("אפשר להמשיך");
     expect(await ringLines(page)).toBeLessThanOrEqual(3);
-    await expect(page.getByText(/עוד \d+ ימים להשלמת האתגר/)).toHaveCount(0);
+    await expect(page.getByText("צעד קטן אחרי צעד קטן")).toHaveCount(0);
     await axe(page);
     await shot(page, "today-unreachable");
     await ctx.close();
@@ -232,12 +232,12 @@ test.describe("states (axe, copy, server clock)", () => {
   test("completion: 12 counted", async ({ browser }) => {
     await seed(Array.from({ length: 12 }, (_, i): [number, string] => [i + 1, "habit"]));
     const { ctx, page } = await open(browser, T.day12);
-    await expect(page.getByRole("heading", { name: "האתגר הושלם" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "תודה שאתם כאן" })).toBeVisible();
     await expect(page.getByRole("button", { name: "שתפו" })).toBeVisible();
     await expect(page.locator(".t-map")).toBeVisible();
     await expect(page.locator(".t-progress-note")).toHaveText("אפשר להמשיך עד יום 14.");
     expect(await ringLines(page)).toBeLessThanOrEqual(3);
-    await expect(page.getByRole("img", { name: "12 מתוך 14 ימים" })).toBeVisible();
+    await expect(page.getByRole("img", { name: "12 ימים של תרגול" })).toBeVisible();
     await axe(page);
     await shot(page, "today-completed");
     await ctx.close();
@@ -255,7 +255,7 @@ test.describe("states (axe, copy, server clock)", () => {
     await expect(page.getByText("שכחתם לסמן אתמול?")).toHaveCount(0);
     // the challenge is over: no "you can keep practising until day 14"
     await expect(page.getByText(/אפשר להמשיך/)).toHaveCount(0);
-    await expect(page.locator(".t-sum-days")).toContainText("הימים שנספרו");
+    await expect(page.locator(".t-sum-days")).toContainText("ימי התרגול שלכם");
     await axe(page);
     await shot(page, "today-ended");
     await ctx.close();
@@ -272,7 +272,7 @@ test.describe("marking", () => {
     await expect(habit(page)).toBeFocused();
     const region = page.locator(".toast-region");
     await expect(region).toHaveAttribute("aria-live", "polite");
-    await expect(region).toContainText("צעד אחד. היום נחשב.");
+    await expect(region).toContainText("צעד אחד, וזה יפה.");
     await expect(page.getByRole("img", { name: "הכוס של היום, חצי מלאה" })).toBeVisible();
     await expect.poll(countRows).toBe(1);
     await shot(page, "today-toast-saved");
@@ -352,10 +352,11 @@ test.describe("shell, motion, video, CSP", () => {
     const order: string[] = [];
     for (let i = 0; i < 9; i++) {
       await page.keyboard.press("Tab");
-      order.push(await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || document.activeElement?.textContent?.trim().slice(0, 14) || ""));
+      order.push(await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || (document.activeElement as HTMLInputElement | null)?.labels?.[0]?.textContent?.trim() || document.activeElement?.textContent?.trim().slice(0, 14) || ""));
     }
     expect(order[0]).toBe("דילוג לתוכן");
-    expect(order.slice(1, 6)).toEqual(["YOGIT, למסך היום", "עצירת אנימציה", expect.stringContaining("ימים נספרו"), expect.stringContaining("הפעלת סרטון"), expect.stringMatching(/^הרגל/)]);
+    // the long/short choice is one tab stop (a radio group), before the play button
+    expect(order.slice(1, 7)).toEqual(["YOGIT, למסך היום", "עצירת אנימציה", expect.stringContaining("ימים של תרגול"), expect.stringContaining("התרגול המלא"), expect.stringContaining("הפעלת סרטון"), expect.stringMatching(/^הרגל/)]);
     // focus ring is drawn
     const outline = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
     expect(outline).toBe("solid");
