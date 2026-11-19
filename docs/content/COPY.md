@@ -252,19 +252,55 @@
 | מפתח | טקסט | הערות |
 |---|---|---|
 | `install.title` | צעד קטן ביום, על המסך שלכם |  |
-| `install.lead` | כמה שלבים קצרים, ואז היא נפתחת כמו כל אפליקציה. | מחליף את “שתי לחיצות”, שלא היה מדויק. |
-| `install.iphone.heading` | באייפון, בספארי |  |
-| `install.iphone.step1` | לוחצים על כפתור השיתוף |  |
-| `install.iphone.step1Sub` | הריבוע עם החץ, בתחתית המסך |  |
-| `install.iphone.step2` | בוחרים “הוספה למסך הבית” |  |
-| `install.iphone.step2Sub` | אם לא רואים, גוללים למטה ברשימה. |  |
-| `install.iphone.step3` | פותחים מהאייקון החדש |  |
-| `install.iphone.step3Sub` | ומאשרים התראות כשמופיעה השאלה. |  |
-| `install.android.heading` | באנדרואיד |  |
-| `install.android.body` | אם מופיע כפתור “התקנה”, לוחצים עליו. אם לא, פותחים את תפריט הדפדפן ובוחרים “התקנת אפליקציה” או “הוספה למסך הבית”. |  |
-| `install.android.installButton` | התקנה |  |
-| `install.why.heading` | בשביל התזכורת | במקום “למה זה חשוב”. הניסוח מדויק לאייפון בלבד. |
-| `install.why.body` | באייפון, בלי הוספה למסך הבית לא מגיעה תזכורת. | במקום “למה זה חשוב”. הניסוח מדויק לאייפון בלבד. |
+| `install.lead` | פחות מדקה, פעם אחת, ומאז האתגר נפתח כמו כל אפליקציה. |  |
+| `install.why.heading` | למה להוסיף למסך הבית? |  |
+| `install.why.items.0.0` | לחיצה אחת, וישר לצעד של היום |  |
+| `install.why.items.0.1` | בלי לחפש את הקישור בוואטסאפ או במייל. |  |
+| `install.why.items.1.0` | התזכורת של הבוקר מגיעה לטלפון |  |
+| `install.why.items.1.1` | באייפון היא מגיעה רק אחרי ההוספה למסך הבית. |  |
+| `install.why.items.2.0` | נפתח במסך מלא, כמו אפליקציה |  |
+| `install.why.items.2.1` | בלי שורת כתובת ובלי לשוניות שמסיחות את הדעת. |  |
+| `install.why.items.3.0` | בלי חנות אפליקציות ובלי הורדה |  |
+| `install.why.items.3.1` | כמעט לא תופס מקום, ואפשר למחוק בכל רגע. |  |
+| `install.prompt.lead` | הדפדפן הזה מוכן להתקנה בלחיצה אחת: |  |
+| `install.prompt.button` | התקנה |  |
+| `install.how.heading` | איך מוסיפים? |  |
+| `install.how.lead` | בחרו את המכשיר שלכם. פתחנו את ההוראות שמתאימות למכשיר הזה. |  |
+| `install.how.yours` | המכשיר שלכם |  |
+| `install.iphone.heading` | אייפון, בספארי |  |
+| `install.iphone.steps.0.0` | לוחצים על כפתור השיתוף |  |
+| `install.iphone.steps.0.1` | הריבוע עם החץ למעלה, בתחתית המסך. לא רואים אותו? לוחצים קודם על שלוש הנקודות ליד הכתובת. |  |
+| `install.iphone.steps.1.0` | בוחרים “הוספה למסך הבית” |  |
+| `install.iphone.steps.1.1` | גוללים קצת למטה ברשימה, עד שמופיע. |  |
+| `install.iphone.steps.2.0` | לוחצים “הוספה” |  |
+| `install.iphone.steps.2.1` | בפינה העליונה של המסך. |  |
+| `install.iphone.steps.3.0` | פותחים מהאייקון החדש |  |
+| `install.iphone.steps.3.1` | מעכשיו נכנסים לאתגר רק ממנו. |  |
+| `install.iphoneOther.heading` | אייפון, בכרום או בדפדפן אחר |  |
+| `install.iphoneOther.lead` | באייפון הכי בטוח להוסיף מספארי. זה לוקח עוד חצי דקה: |  |
+| `install.iphoneOther.steps.0.0` | מעתיקים את הקישור |  |
+| `install.iphoneOther.steps.0.1` | בכפתור “העתקת הקישור” כאן למטה. |  |
+| `install.iphoneOther.steps.1.0` | פותחים את ספארי ומדביקים בשורת הכתובת |  |
+| `install.iphoneOther.steps.1.1` | שם נכנסים שוב עם שם המשתמש והסיסמה. |  |
+| `install.iphoneOther.steps.2.0` | ממשיכים לפי השלבים של ספארי |  |
+| `install.iphoneOther.steps.2.1` | כפתור השיתוף, ואז “הוספה למסך הבית”. |  |
+| `install.iphoneOther.copy` | העתקת הקישור |  |
+| `install.iphoneOther.copied` | הקישור הועתק. עכשיו פותחים את ספארי. |  |
+| `install.iphoneOther.copyFailed` | לא הצלחנו להעתיק. אפשר להעתיק ידנית את הכתובת: |  |
+| `install.iphoneOther.inApp` | פתחתם מתוך וואטסאפ, אינסטגרם או פייסבוק? לוחצים על שלוש הנקודות ובוחרים “פתיחה בדפדפן” או “פתיחה בספארי”. |  |
+| `install.android.heading` | אנדרואיד |  |
+| `install.android.steps.0.0` | פותחים את תפריט הדפדפן |  |
+| `install.android.steps.0.1` | שלוש הנקודות בפינה העליונה. בדפדפן של סמסונג: שלושת הקווים למטה. |  |
+| `install.android.steps.1.0` | בוחרים “התקנת אפליקציה” או “הוספה למסך הבית” |  |
+| `install.android.steps.1.1` | השם משתנה קצת מטלפון לטלפון. |  |
+| `install.android.steps.2.0` | מאשרים, ופותחים מהאייקון החדש |  |
+| `install.android.steps.2.1` | האייקון מופיע במסך הבית אחרי כמה שניות. |  |
+| `install.desktop.heading` | מחשב |  |
+| `install.desktop.lead` | האתגר בנוי לטלפון, ושם גם מגיעה התזכורת. במחשב אפשר פשוט להמשיך מהדפדפן. רוצים אייקון גם במחשב? |  |
+| `install.desktop.steps.0.0` | בכרום או באדג': לוחצים על סמל ההתקנה |  |
+| `install.desktop.steps.0.1` | בקצה שורת הכתובת. אין סמל? בתפריט שלוש הנקודות מחפשים “התקנה”. |  |
+| `install.desktop.steps.1.0` | במק, בספארי: תפריט “קובץ” |  |
+| `install.desktop.steps.1.1` | ובוחרים “הוספה ל־Dock”. |  |
 | `install.done` | הוספתי, אפשר להתחיל |  |
 | `install.later` | אחר כך |  |
 | `install.installed` | האפליקציה כבר על המסך שלכם. | חדש בשלב 9. מוצג במקום ההוראות כשהאפליקציה כבר נפתחה מהמסך הראשי. |
@@ -994,9 +1030,9 @@
 ## טענות טכניות לבדיקה בפועל (שלב 11)
 
 - שמירת סימונים בלי אינטרנט: לא נבנתה (today.toastOffline לא בשימוש; states.offline אומר שסימון צריך חיבור).
-- תזכורת בוקר בהתראה, כולל באייפון אחרי הוספה למסך הבית (reminders, install.why, landing.faq).
+- תזכורת בוקר בהתראה, כולל באייפון אחרי הוספה למסך הבית (reminders, install.why.items, landing.faq).
 - שליחת קישור הפעלה ושחזור במייל בלבד (login.firstTime, forgot, messages).
-- התקנה באנדרואיד (install.android, בנוסח מותנה).
+- התקנה באנדרואיד ובמחשב (install.android, install.desktop, install.prompt: הכפתור מופיע רק כשהדפדפן מציע התקנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
 סך הכול 839 מחרוזות.
