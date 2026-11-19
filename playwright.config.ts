@@ -48,6 +48,7 @@ const APP_ENV = {
   BUNNY_LIBRARY_ID: "e2e-library",
   BUNNY_TOKEN_KEY: "e2e-not-a-real-key",
   BUNNY_VIDEO_IDS: "e2evid1,e2evid2,e2evid3,e2evid4",
+  BUNNY_SHORT_VIDEO_IDS: "e2eshort1,e2eshort2,e2eshort3,e2eshort4",
   LIVE_TIME_DAY7: "20:00",
   LIVE_URL_DAY7: "https://live.example.test/e2e-room-day7",
   VAPID_PUBLIC_KEY: E2E_VAPID_PUBLIC_KEY,

@@ -17,6 +17,7 @@ import {
 import { getAppClock } from "@/lib/preview/context";
 import { listCompletions } from "@/lib/today/completions";
 import { WithRoundPhoto } from "@/components/AvitalPhoto";
+import { EveningHillsDoodle } from "@/components/Doodles";
 import { LiveIcon } from "../_components/icons";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
 import { AttendanceToggle } from "./AttendanceToggle";
@@ -115,6 +116,7 @@ export default async function LivePage() {
         <p className="lv-when">
           <When s={focus} tz={tz} />
         </p>
+        <EveningHillsDoodle className="lv-hills" />
       </section>
 
       <section className="t t-live-act" aria-label={focus.day === 0 ? copy.live.day0.tag : fill(copy.common.dayLabel, { n: focus.day })}>

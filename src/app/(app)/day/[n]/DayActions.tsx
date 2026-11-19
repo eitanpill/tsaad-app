@@ -3,6 +3,7 @@
 import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { copy } from "@/content/copy.he";
 import { actionsForDay, type Action } from "@/lib/days";
+import { fill } from "@/lib/format";
 import { actionKey } from "@/lib/today/view";
 import { ToastDock } from "../../_components/ToastDock";
 import { toggleAction } from "../../today/actions";
@@ -70,6 +71,7 @@ export function DayActions({
         <h2 id="day-actions-h" className="act-title">
           {heading}
         </h2>
+        <p className="act-hint">{fill(copy.today.marksLeadDay, { n: day })}</p>
         <div className="act-grid">
         {actionsForDay(day).map((a, i) => (
           <ActionButton

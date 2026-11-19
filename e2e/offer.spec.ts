@@ -24,7 +24,7 @@ test.beforeAll(async ({ browser }) => {
 
 test("offer is not yet open while the day-14 live runs, and no price or link is in the page", async ({ browser }) => {
   const { ctx, page } = await open(browser, s, TT.liveRunning, "/offer");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההצעה תופיע כאן ביום 14");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההצעה תופיע כאן אחרי מפגש הסיום");
   const html = await page.content();
   for (const x of ["271 ₪", "139 ₪", "pay.example.test"]) expect(html).not.toContain(x);
   await axe(page);
@@ -78,7 +78,7 @@ test("open offer at 200% browser zoom on a 390px phone (CSS viewport 195px): no 
   await ctx.close();
 });
 
-test("open until the last minute, then expired (server clock), Yesodot still its own", async ({ browser }) => {
+test("open until the last minute, then expired (server clock), Yesodot card hidden too", async ({ browser }) => {
   let o = await open(browser, s, TT.lastMinute, "/offer");
   await expect(o.page.getByRole("link", { name: "לקביעת הפגישה האישית בזום" })).toBeVisible();
   await o.ctx.close();
@@ -86,7 +86,9 @@ test("open until the last minute, then expired (server clock), Yesodot still its
   await expect(o.page.getByText("ההצעה הסתיימה.")).toBeVisible();
   const html = await o.page.content();
   for (const x of ["271 ₪", "139 ₪", "session271"]) expect(html).not.toContain(x);
-  await expect(o.page.getByRole("heading", { level: 2, name: "יסודות היוגה" })).toBeVisible();
+  // the Yesodot price is part of the same 48h window: once it closes, the card (and its price) is gone
+  await expect(o.page.getByRole("heading", { level: 2, name: "יסודות היוגה" })).toHaveCount(0);
+  expect(html).not.toContain("1,265");
   await shot(o.page, "offer-expired");
   await axe(o.page);
   await o.ctx.close();
@@ -97,7 +99,7 @@ test("a client cannot move the clock: the real server clock decides (no test hea
   const page = await ctx.newPage();
   await page.goto("/offer");
   // without the run key the header is ignored; the env clock (2026-12-04) applies: not yet
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההצעה תופיע כאן ביום 14");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההצעה תופיע כאן אחרי מפגש הסיום");
   await ctx.close();
 });
 

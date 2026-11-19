@@ -39,6 +39,9 @@ function useOlderHabits(day: number, initial: number[], cb: { onSaved: (to: bool
 
 export const habitKey = (day: number, habitDay: number) => `h${day}:${habitDay}`;
 
+/** הרשימה מהחדש לישן: ההרגל של היום ראשון, וכל ההרגלים פתוחים מול העיניים (החלטת פית 2026-11-18, בלי קיצור). */
+const newestFirst = <T,>(items: T[]) => [...items].reverse();
+
 /**
  * "ההרגלים שלי": רשימת תיבות סימון מצטברת. ההרגל החדש הוא שלב ה"הרגל" (stepDone / onToggleStep מההורה, כך שהכוס זזה בדיוק כמו בכפתור);
  * שאר ההרגלים נשמרים ב־habit_checks. מקבלים key={day} כדי שמצב ישן לא יישאר אחרי מעבר יום.
@@ -71,7 +74,6 @@ export function HabitChecklist({
   const items = buildChecklist(day, habits, stepDone, older.checked);
   const Heading = headingLevel === 2 ? "h2" : "h3";
   const done = items.filter((i) => i.checked).length;
-
   return (
     <section className="t t-habits ar-habits" aria-labelledby={`${uid}-h`}>
       <div className="habits-head">
@@ -82,7 +84,7 @@ export function HabitChecklist({
       </div>
       {markNew ? <p className="act-hint">{copy.habits.intro}</p> : null}
       <ul className="habit-list" aria-label={fill(copy.a11y.habits.group, { n: day })}>
-        {items.map((it) => (
+        {newestFirst(items).map((it) => (
           <HabitRowView
             key={it.habitDay}
             day={day}
@@ -132,7 +134,7 @@ export function HabitChecklistReadOnly({ day, items }: { day: number; items: Che
         <span className="habits-count">{fill(items.length === 1 ? copy.habits.countOne : copy.habits.count, { done, total: items.length })}</span>
       </div>
       <ul className="ro-list" aria-label={fill(copy.a11y.habits.list, { n: day })}>
-        {items.map((it) => (
+        {newestFirst(items).map((it) => (
           <li key={it.habitDay} className="ro-item" data-marked={it.checked}>
             <span className="habit-text">
               {it.title}

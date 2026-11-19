@@ -5,14 +5,14 @@ import { getOfferModel } from "@/lib/offer/config";
 import { getAppClock } from "@/lib/preview/context";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
 import { OfferTiles } from "./OfferTiles";
-import { YesodotTile } from "./YesodotTile";
 
 export const metadata: Metadata = { title: `${copy.offer.day14.heading} | ${copy.brand.name}` };
 
 /**
  * ההמשך אחרי 14 הימים. כל המצבים נקבעים בשרת לפי שעון השרת (lib/offer/model.ts), בלי ספירה לאחור:
  * notYet (לפני סוף הלייב ביום 14, או שחסר נתון בתצורה): אין קישורים ואין מחירים ב־HTML; open: הצעות עם מועד סיום; expired: הסתיימה.
- * "יסודות היוגה" נפרד, עם תוקף משלו (בדף /yesodot), ומוצג בשני המצבים האחרונים.
+ * "יסודות היוגה" נפרד, עם תוקף משלו (בדף /yesodot). הכרטיס שלו מוצג רק כשהחלון פתוח: המחיר המוזל (1,265 ₪) תקף 48 שעות
+ * מסוף מפגש הסיום, ואחרי שהחלון נסגר הכרטיס לא מופיע (החלטה 2026-11-18).
  */
 export default async function OfferPage() {
   await requireUser();
@@ -40,7 +40,6 @@ export default async function OfferPage() {
           <h1 id="ofr-h">{O.day14.heading}</h1>
           <p className="ofr-expired">{O.day14.expired}</p>
         </section>
-        <YesodotTile />
       </>
     );
   }

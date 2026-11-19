@@ -22,11 +22,16 @@ test.describe("landing /tsaad (public)", () => {
     expect(await cta.count()).toBe(0); // the disabled button's visible name is the label; it is not the link
     await expect(page.getByText("ההרשמה לאתגר היא 79 ₪. זה לא מנוי.").first()).toBeVisible();
     await expect(page.getByText("תאריך ההתחלה יפורסם בקרוב.")).toHaveCount(0); // START_DATE is set on this server
-    await expect(page.getByText("האתגר מתחיל ב־1 בדצמבר.")).toBeVisible();
+    await expect(page.getByText("האתגר מתחיל ב־1 בדצמבר.").first()).toBeVisible();
     expect(await page.locator("body").innerText()).not.toMatch(RAW);
-    // day 14 live time unset: the neutral line replaces the placeholder
-    await expect(page.getByText("יום 14: השעה תפורסם בקרוב.")).toBeVisible();
-    await expect(page.getByText("יום 7: ", { exact: false })).toContainText("20:00");
+    // the close date and the opening-live date come from START_DATE (2026-12-01): last signup day is day 2
+    await expect(page.getByText("ההרשמה פתוחה עד סוף יום רביעי, 2 בדצמבר.").first()).toBeVisible();
+    await expect(page.getByText("יום שני, 30 בנובמבר: מפגש הפתיחה בלייב. למחרת, ב־1 בדצמבר, נפתח היום הראשון.")).toBeVisible();
+    // live dates always shown; day 14 time unset: the neutral line follows the date
+    const lives = page.locator("section[aria-labelledby=land-live-h] li");
+    await expect(lives).toHaveCount(3);
+    await expect(lives.nth(1)).toContainText("יום שני, 7 בדצמבר, 20:00");
+    await expect(lives.nth(2)).toContainText("יום שני, 14 בדצמבר. השעה תפורסם בקרוב.");
     await shot(page, "landing");
     await axe(page);
   });
@@ -228,7 +233,7 @@ test.describe("offer and Yesodot with nothing configured (server A)", () => {
   test("offer: not yet, no prices or links, axe", async ({ browser }) => {
     const s = await createUser(browser, "ofa");
     const { ctx, page } = await open(browser, s, T.day14Noon, "/offer");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההצעה תופיע כאן ביום 14");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("ההצעה תופיע כאן אחרי מפגש הסיום");
     const html = await page.content();
     for (const x of ["271 ₪", "139 ₪", "1,265", "pay.example.test"]) expect(html).not.toContain(x);
     await shot(page, "offer-not-yet");
@@ -259,7 +264,7 @@ test.describe("offer and Yesodot with nothing configured (server A)", () => {
     await o.ctx.close();
     o = await open(browser, s, T.day14Noon, "/today");
     const tile = o.page.locator(".t-entry");
-    await expect(tile.getByRole("heading", { level: 2 })).toHaveText("ההצעה תופיע כאן ביום 14");
+    await expect(tile.getByRole("heading", { level: 2 })).toHaveText("ההצעה תופיע כאן אחרי מפגש הסיום");
     await shot(o.page, "today-offer-entry");
     await axe(o.page);
     await tile.getByRole("link", { name: "לצפייה בהצעות" }).click();

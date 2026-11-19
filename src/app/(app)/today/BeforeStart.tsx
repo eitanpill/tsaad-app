@@ -107,7 +107,7 @@ export function BeforeStart({
         </a>
       ) : null}
       <span id="open-live-note" className="lv-note">
-        {L.linkRegisteredOnly} {L.day0.note}
+        {L.linkRegisteredOnly}
       </span>
     </section>
   ) : null;

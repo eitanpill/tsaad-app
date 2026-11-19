@@ -28,7 +28,8 @@ test.describe("slots off (server A)", () => {
     await expect(page.getByRole("img", { name: ALT_ABOUT })).toHaveCount(0);
     const tile = page.locator("section[aria-labelledby=land-av-h]");
     await expect(tile.getByRole("heading", { level: 2 })).toHaveText("אביטל פלס");
-    await expect(tile.locator("> *")).toHaveCount(2); // heading + paragraph only
+    await expect(tile.locator("> *")).toHaveCount(4); // heading, the decorative fallback, two paragraphs
+    await expect(tile.getByTestId("avital-fallback")).toHaveAttribute("aria-hidden", "true");
     expect(await page.locator("img").count()).toBe(0);
     await axe(page);
   });

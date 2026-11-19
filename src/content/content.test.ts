@@ -46,12 +46,15 @@ const ALLOWED_TOKENS = new Set([
   "until",
   "total",
   "unlockTime",
+  "closeDate",
+  "day0Date",
   "reminderTime",
   "liveTime",
   "n",
   "prev",
   "day",
   "habit",
+  "practice",
   "type",
   "title",
   "state",
@@ -272,7 +275,7 @@ describe("copy", () => {
 
   it("has a generic daily push text, and a separate live-reminder text", () => {
     expect(copy.push.generic).toContain("{day}");
-    expect(copy.push.perDay).toContain("{habit}");
+    expect(copy.push.perDay).toContain("{day}");
     expect(copy.push.liveTitle).toContain("שעה");
     expect(copy.push.liveBody).not.toMatch(/\{/);
   });

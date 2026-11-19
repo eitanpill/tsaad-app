@@ -27,6 +27,8 @@ export type DayContent = {
    * המשתנה BUNNY_VIDEO_IDS דורס אותו לאותו יום כשהוא מוגדר. קובץ זה נשאר בשרת: המזהה לא נשלח לדפדפן, והסרטון נחתם בבקשה (ראו docs/CONTENT.md).
    */
   readonly videoId?: string;
+  /** מזהה גרסת התרגול הקצרה (כ־4 דקות) ב־Bunny Stream, באותו פורמט. אופציונלי; המשתנה BUNNY_SHORT_VIDEO_IDS דורס אותו לאותו יום. */
+  readonly shortVideoId?: string;
   readonly habit: DayAction;
   readonly movement: DayAction;
   readonly meditation: DayAction;

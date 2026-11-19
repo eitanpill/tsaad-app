@@ -23,8 +23,8 @@ test("after day 14 with the offer open: summary, path, share, and the offers inl
   await seed(twelve);
   const { ctx, page } = await open(browser, s, OPEN, "/today");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("בוקר טוב, בדיקה");
-  await expect(page.getByRole("heading", { level: 2, name: "האתגר הושלם" })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: "הימים שנספרו" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "תודה שאתם כאן" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "ימי התרגול שלכם" })).toBeVisible();
   await expect(page.locator(".t-sum-days")).toContainText("1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14");
   await expect(page.locator(".t-sum-cups")).toContainText("כוס מלאה");
   await expect(page.locator(".t-map")).toBeVisible();

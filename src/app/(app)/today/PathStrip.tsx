@@ -22,6 +22,10 @@ export function PathStrip({ stones, counted, day }: { stones: Stone[]; counted: 
     <section className="t t-strip" aria-label={copy.a11y.strip.region}>
       <Link href="/path" className="strip-link" aria-label={label} prefetch={false}>
         <span className="strip-stones" aria-hidden="true">
+          {/* the thread of the stream the stones sit on */}
+          <svg className="strip-thread" viewBox="0 0 360 20" preserveAspectRatio="none" focusable="false">
+            <path d="M0 10 C30 3 60 17 90 10 S150 3 180 10 S240 17 270 10 S330 3 360 10" fill="none" strokeWidth="5" strokeLinecap="round" />
+          </svg>
           {stones.map((s) => (
             <span key={s.day} className={`sstone sstone--${s.state}${s.live ? " sstone--live" : ""}`}>
               <i className="sstone-dot">

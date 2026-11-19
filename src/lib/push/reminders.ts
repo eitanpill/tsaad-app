@@ -44,7 +44,7 @@ export async function sendPushBatch(args: {
   claimed: string[];
   payload: string;
   date: string;
-  channel: "push" | "live_push";
+  channel: "push" | "live_push" | "evening_push";
 }): Promise<{ sent: number; failed: number; removedSubscriptions: number }> {
   const { db, sender, claimed, payload, date, channel } = args;
   const out = { sent: 0, failed: 0, removedSubscriptions: 0 };

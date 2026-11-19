@@ -21,6 +21,13 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ NEXT_COHORT_URL: "http://next.example.test" })).toThrow();
   });
 
+  it("BUNNY_SHORT_VIDEO_IDS has the same format as BUNNY_VIDEO_IDS", () => {
+    expect(parseEnv({}).BUNNY_SHORT_VIDEO_IDS).toBeUndefined();
+    expect(parseEnv({ BUNNY_SHORT_VIDEO_IDS: "a1,,c_3-" }).BUNNY_SHORT_VIDEO_IDS).toBe("a1,,c_3-");
+    expect(() => parseEnv({ BUNNY_SHORT_VIDEO_IDS: "a/b" })).toThrow();
+    expect(() => parseEnv({ BUNNY_SHORT_VIDEO_IDS: Array(15).fill("a").join(",") })).toThrow();
+  });
+
   it("treats empty strings as unset", () => {
     const e = parseEnv({ START_DATE: "", LIVE_URL_DAY7: "", TZ_NAME: "", SESSION_SPOTS: "" });
     expect(e.START_DATE).toBeUndefined();

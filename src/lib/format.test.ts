@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fill, withStartDate } from "./format";
+import { fill, formatHeDate, withStartDate } from "./format";
 
 describe("fill", () => {
   it("fills known variables and leaves unknown ones", () => {
@@ -18,5 +18,12 @@ describe("withStartDate", () => {
     const out = withStartDate("[START_DATE] ו־[START_DATE]", "2026-12-01");
     expect(out).not.toContain("[START_DATE]");
     expect(out).toContain("1");
+  });
+});
+
+describe("formatHeDate", () => {
+  it("formats a local date in Hebrew, with or without the weekday, independent of the server time zone", () => {
+    expect(formatHeDate("2026-11-30")).toBe("30 בנובמבר");
+    expect(formatHeDate("2026-11-29", { weekday: true })).toBe("יום ראשון, 29 בנובמבר");
   });
 });
