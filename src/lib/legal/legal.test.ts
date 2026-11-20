@@ -58,6 +58,6 @@ describe("legal render helpers", () => {
     expect(parseContact("javascript:alert(1)")).toEqual({ kind: "text", value: "javascript:alert(1)" });
   });
   it("formats the review date", () => {
-    expect(formatLegalDate(LEGAL.accessibilityLastChecked)).toBe("10 בנובמבר 2026");
+    expect(formatLegalDate(LEGAL.accessibilityLastChecked)).toBe("20 בנובמבר 2026");
   });
 });

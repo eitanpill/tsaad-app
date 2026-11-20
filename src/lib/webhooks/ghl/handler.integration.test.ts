@@ -178,6 +178,13 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     expect(captured[0].username).toMatch(/^whtestfull\d{6}$/);
   });
 
+  it("a name listed in ADMIN_USERNAMES is never given to a webhook signup (even when no account holds it)", async () => {
+    const r = await call(contact({ email: "WHTEST.boss@example.test" }), {}, { ...env, ADMIN_USERNAMES: "pit, whtest.boss" });
+    expect(r.json.status).toBe("created");
+    await runAfter();
+    expect(captured[0].username).toBe("whtest.boss2");
+  });
+
   it("a reserved local part (admin, support...) never becomes the username", async () => {
     const r = await call(contact({ contact_id: "ghl-wh-admin", email: "Admin@example.test", phone: "0527770001" }));
     expect(r.json.status).toBe("created");

@@ -159,6 +159,7 @@ export async function handleGhlSignup(req: Request, deps: HandlerDeps): Promise<
       ttlMinutes,
       rateLimitSecret,
       log,
+      adminUsernames: env.ADMIN_USERNAMES,
     });
   } catch (e) {
     log.error("ghl webhook: processing failed", { error: e });

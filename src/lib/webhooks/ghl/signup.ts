@@ -6,6 +6,7 @@ import { rateLimitKeys, registerAttempt } from "@/lib/auth/rate-limit";
 import { rowsOf } from "@/lib/auth/sql";
 import { issueTokenIn } from "@/lib/auth/tokens";
 import type { Logger } from "@/lib/logger";
+import { isAdminUsername } from "@/lib/stats/admin";
 import type { SignupPayload } from "./payload";
 import { USERNAME_MAX, usernameBase, usernameCandidate, usernameRandomCandidate } from "./username";
 
@@ -58,6 +59,8 @@ export async function processSignup(
     rateLimitSecret: string;
     log: Logger;
     random?: () => number;
+    /** ADMIN_USERNAMES (raw). A webhook signup never gets one of these names, even if that admin account was deleted. */
+    adminUsernames?: string;
   },
 ): Promise<SignupOutcome> {
   const { payload } = args;
@@ -134,6 +137,7 @@ export async function processSignup(
     for (let n = 1; n <= MAX_USERNAME_TRIES && userId === null; n++) {
       username =
         n <= SEQUENTIAL_USERNAME_TRIES ? usernameCandidate(base, n) : usernameRandomCandidate(base, args.random);
+      if (isAdminUsername(username, args.adminUsernames)) continue;
       displayName = payload.displayName ?? username;
       const res = await tx.execute(
         sql`insert into users (username, display_name, email, phone, ghl_contact_id)
