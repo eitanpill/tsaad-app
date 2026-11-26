@@ -29,6 +29,9 @@ test.describe("landing /tsaad (public)", () => {
     expect(await page.locator("body").innerText()).not.toMatch(RAW);
     // the close date and the opening-live date come from START_DATE (2026-12-01): last signup day is day 2
     await expect(page.getByText("ההרשמה פתוחה עד סוף יום רביעי, 2 בדצמבר.").first()).toBeVisible();
+    // links at the end: Linktree only; never the participants' WhatsApp group
+    await expect(page.getByRole("link", { name: "כל הקישורים של YOGIT" })).toHaveAttribute("href", "https://linktree.yogit-yoga.co.il");
+    await expect(page.locator('a[href*="chat.whatsapp.com"]')).toHaveCount(0);
     // short page: no list of the 14 habits
     await expect(page.getByText("כוס מים חמימים עם לימון")).toHaveCount(0);
     // live dates always shown; day 14 time unset: the neutral line follows the date

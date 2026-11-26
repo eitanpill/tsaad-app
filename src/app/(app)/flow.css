@@ -237,6 +237,16 @@ h1 { letter-spacing: -0.01em; }
 .t-live-other { background: var(--sage); grid-column: span 2; min-height: 0; }
 .t-live-cant { background: var(--sky); grid-column: span 2; min-height: 0; }
 
+/* WhatsApp group: a sage pebble with one big forest button (cream on forest, about 14:1). */
+.t-group { grid-column: 1 / -1; background: var(--sage); color: var(--maroon); padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: var(--shadow-soft); }
+.t-group h2 { margin: 0; font-size: 20px; line-height: 1.2; font-weight: 800; }
+.t-group p { margin: 0; font-size: 15px; line-height: 1.45; }
+.btn-group { display: flex; align-items: center; justify-content: center; gap: 10px; box-sizing: border-box; min-height: 52px; margin-top: 4px; padding: 10px 20px; border-radius: var(--peb-btn-2); background: var(--forest); color: var(--cream); font-size: 17px; font-weight: 800; line-height: 1.3; text-align: center; text-decoration: none; box-shadow: var(--shadow-lift); transition: transform 0.2s var(--ease-flow); }
+.btn-group svg { flex: none; }
+.btn-group:hover { transform: translateY(-1px); text-decoration: underline; text-underline-offset: 3px; }
+.btn-group:active { transform: none; }
+[data-motion='off'] .btn-group { transition: none; }
+
 /* Smaller screens keep the same rhythm. */
 @media (max-width: 340px) {
   .t-hero h1 { font-size: 32px; }
@@ -250,10 +260,13 @@ h1 { letter-spacing: -0.01em; }
 @media (min-width: 900px) {
   .t-hero, .t-path-hero, .t-rem-hero, .t-ofr-hero, .t-in-hero, .t-live-hero, .t-lockhero { margin-inline: -24px; padding-inline: 40px; }
   .ar-cup, .ar-ring { grid-column: 2; }
+  .today .ar-group { grid-column: 1 / -1; }
   .today .t-cup { flex-direction: column; text-align: center; }
   .today .t-cup .cup-svg { width: 140px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-sun, .cup-svg .wave, .cup-steam, .map-current { animation: none; }
+  .btn-group { transition: none; }
+  .btn-group:hover { transform: none; }
 }

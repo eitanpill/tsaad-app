@@ -8,6 +8,7 @@ import { timeTokens } from "@/lib/times";
 import { CupIcon } from "../_components/icons";
 import { LiveIcon } from "../_components/icons";
 import { RefreshAtBoundary } from "../_components/RefreshAtBoundary";
+import { GroupJoin } from "./GroupJoin";
 
 const base = { width: 26, height: 26, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, focusable: "false" } as const;
 const WaveIcon = () => (
@@ -121,6 +122,8 @@ export function BeforeStart({
       </section>
 
       {openingIsToday ? liveCard : null}
+
+      <GroupJoin />
 
       {count ? (
         <section className="t t--half t-count ar-cup" aria-label={daysUntil !== null && daysUntil > 1 ? `${daysUntil} ${B.days}` : undefined}>
