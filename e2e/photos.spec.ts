@@ -28,9 +28,11 @@ test.describe("slots off (server A)", () => {
     await expect(page.getByRole("img", { name: ALT_ABOUT })).toHaveCount(0);
     const tile = page.locator("section[aria-labelledby=land-av-h]");
     await expect(tile.getByRole("heading", { level: 2 })).toHaveText("אביטל פלס");
-    await expect(tile.locator("> *")).toHaveCount(4); // heading, the decorative fallback, two paragraphs
+    await expect(tile.locator("> *")).toHaveCount(3); // heading, the decorative fallback, one paragraph
     await expect(tile.getByTestId("avital-fallback")).toHaveAttribute("aria-hidden", "true");
-    expect(await page.locator("img").count()).toBe(0);
+    // the only image is the app screenshot (the hero slot renders nothing while off)
+    await expect(page.locator("img")).toHaveCount(1);
+    await expect(page.locator(".pt-phone img")).toHaveAttribute("alt", /צילום מסך מאפליקציית האתגר/);
     await axe(page);
   });
 
@@ -60,6 +62,8 @@ test.describe("slots on (server B, fixture images)", () => {
     await expect(tile.locator(".av-photo")).toHaveCount(1);
     const box = await tile.locator(".av-photo").boundingBox();
     expect(box!.width / box!.height).toBeCloseTo(4 / 5, 1);
+    // the second photo of Avital sits in the hero
+    await expect(page.locator(".pt-hero .av-photo--hero img")).toHaveCount(1);
     // local file only (through the Next image route, same origin)
     expect(await img.getAttribute("src")).toMatch(/^\/_next\/image\?url=%2Favital%2F/);
     await expectReflowAndTargets(page);
