@@ -125,6 +125,10 @@
 .pt-incl { display: flex; flex-direction: column; gap: 26px; }
 .pt-incl .ticks { gap: 14px; }
 .pt-incl .ticks li { font-size: 17px; font-weight: 600; }
+.pt-incl .pt-lead { margin: 0; font-size: 17px; line-height: 1.5; font-weight: 700; color: var(--terracotta-text); max-width: 34ch; }
+/* Logo: top left (in RTL, flex-end is the left edge), a bit smaller (Pit 2026-11-26). */
+.pub-land .pt-bar { justify-content: flex-end; }
+.pub-land .pt-av p { margin: 0; }
 .pt-phone { margin: 0; align-self: center; width: min(78%, 300px); padding: 10px; border-radius: 40px; background: var(--maroon); box-shadow: 0 24px 48px -28px rgba(46, 8, 8, 0.55); }
 .pt-phone img { display: block; width: 100%; height: auto; border-radius: 30px; }
 .pub-land .pt-lives ul { margin: 18px 0; gap: 16px; }
