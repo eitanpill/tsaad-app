@@ -582,7 +582,6 @@
 | `landing.price.amount` | 79 |  |
 | `landing.price.currency` | ₪ |  |
 | `landing.price.note` | תשלום אחד. בלי מנוי. |  |
-| `landing.price.label` | המחיר: 79 ₪, תשלום אחד, בלי מנוי. |  |
 | `landing.pain.heading` | מכירים את זה? |  |
 | `landing.pain.quotes.0` | “כבר ניסיתי. זה החזיק שבוע.” |  |
 | `landing.pain.quotes.1` | “אין לי חצי שעה ביום ליוגה.” |  |
@@ -993,4 +992,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 833 מחרוזות.
+סך הכול 832 מחרוזות.

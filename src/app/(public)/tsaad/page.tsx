@@ -92,11 +92,10 @@ export default async function LandingPage() {
     ) : (
       <div className="pt-signup" data-signup={where}>
         <p className="pt-price">
-          <span className="sr-only">{L.price.label}</span>
-          <span className="amt" aria-hidden="true">
+          <span className="amt">
             {L.price.amount} <span className="cur">{L.price.currency}</span>
           </span>
-          <span className="pn" aria-hidden="true">{L.price.note}</span>
+          <span className="pn">{L.price.note}</span>
         </p>
         <LandingCta href={ctaHref} label={where === "close" ? L.close.cta : L.hero.cta} noteId={`cta-note-${where}`} />
         {dates ? (
