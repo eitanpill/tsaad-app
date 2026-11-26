@@ -23,21 +23,21 @@ export type AvitalPhoto = {
 };
 
 export const AVITAL_PHOTOS: Record<AvitalSlot, AvitalPhoto> = {
-  // Landing page (/tsaad), first photo, at the top beside the title. A professional, recognizable portrait.
+  // Landing page (/tsaad), first photo, at the top beside the title. A yoga photo (Pit 2026-11-26: the first photo should feel like yoga).
   hero: {
-    file: "avital-hero.jpg",
-    ratio: 4 / 5,
-    recommended: { width: 1200, height: 1500 },
-    present: true,
-    alt: "אביטל פלס, מורת היוגה, עומדת בין העצים ומחייכת",
-  },
-  // Landing page (/tsaad), second photo, in the "אביטל פלס" tile. A different recognizable photo (in practice).
-  about: {
-    file: "avital-about.jpg",
+    file: "avital-hero-pose.jpg",
     ratio: 4 / 5,
     recommended: { width: 1200, height: 1500 },
     present: true,
     alt: "אביטל פלס יושבת על סלע ליד הנחל בתנוחת יוגה",
+  },
+  // Landing page (/tsaad), second photo, in the "אביטל פלס" tile. A different photo: the portrait.
+  about: {
+    file: "avital-about-portrait.jpg",
+    ratio: 4 / 5,
+    recommended: { width: 1200, height: 1500 },
+    present: true,
+    alt: "אביטל פלס, מורת היוגה, עומדת בין העצים ומחייכת",
   },
   // /live hero tile and the opening-live card on the before-start screen.
   live: {

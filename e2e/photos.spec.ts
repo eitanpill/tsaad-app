@@ -30,7 +30,7 @@ test.describe("slots off (server A)", () => {
     await page.goto("/tsaad");
     for (const alt of [ALT_HERO, ALT_ABOUT]) {
       const img = await imageLoaded(page, alt);
-      expect(await img.getAttribute("src")).toMatch(/^\/_next\/image\?url=%2Favital%2Favital-(hero|about)\.jpg/);
+      expect(await img.getAttribute("src")).toMatch(/^\/_next\/image\?url=%2Favital%2Favital-(hero-pose|about-portrait)\.jpg/);
     }
     await expect(page.locator(".pt-hero .av-photo--hero")).toHaveCount(1);
     const box = await page.locator("section[aria-labelledby=land-av-h] .av-photo").boundingBox();

@@ -34,6 +34,11 @@ test.describe("landing /tsaad (public)", () => {
     await expect(page.locator('a[href*="chat.whatsapp.com"]')).toHaveCount(0);
     // short page: no list of the 14 habits
     await expect(page.getByText("כוס מים חמימים עם לימון")).toHaveCount(0);
+    // round 3 (Pit): not only yoga, two practice lengths, no "arrival is a choice", FAQ times filled from config
+    await expect(page.getByText(/^לא רק יוגה\./)).toBeVisible();
+    await expect(page.getByText(/קצרה של כ־4 דקות וארוכה של כ־15 דקות/).first()).toBeVisible();
+    await expect(page.getByText("ההגעה היא בחירה")).toHaveCount(0);
+    expect(await page.locator(".pt-faq").innerText()).not.toMatch(/\{\w+\}/);
     // live dates always shown; day 14 time unset: the neutral line follows the date
     const lives = page.locator("section[aria-labelledby=land-live-h] li");
     await expect(lives).toHaveCount(3);

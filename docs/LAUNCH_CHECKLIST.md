@@ -103,7 +103,7 @@ Order for turning on GHL sending (each step with Pit's approval): finish the GHL
 - [ ] Lawyer review of the legal texts (`docs/LEGAL_REVIEW.md`); the pages are marked DRAFT until then.
 - [ ] Accessibility statement: contact filled, check date still accurate.
 - [ ] Owner decisions still open: listed in `/mnt/project-files/app/stage11/review.md` ("Needs the owner").
-- [ ] Photos of Avital (optional, the screens work without them): put `avital-about.jpg` (4:5, 1200 x 1500) and `avital-live.jpg` (1:1, 800 x 800) in `public/avital/`, 200 to 400 KB each, and set `present: true` in `src/content/photos.ts`. Details in `docs/PHOTOS.md`.
+- [ ] Photos of Avital (optional, the screens work without them): put `avital-about-portrait.jpg` (4:5, 1200 x 1500) and `avital-live.jpg` (1:1, 800 x 800) in `public/avital/`, 200 to 400 KB each, and set `present: true` in `src/content/photos.ts`. Details in `docs/PHOTOS.md`.
 
 ## 6. Owner and reviewer access before GHL is connected (Pit and Avital log in and review the app)
 Production runs with `GHL_DELIVERY_MODE=off`: the app sends nothing, so the owner creates the accounts and sends each link by hand. `START_DATE` may stay unset: the day preview lets reviewers see any day.

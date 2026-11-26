@@ -8,6 +8,7 @@ import { Logo } from "@/components/Logo";
 import { getConfig } from "@/config";
 import { copy } from "@/content/copy.he";
 import { socialLinks } from "@/content/landing-links";
+import { timeTokens } from "@/lib/times";
 import { fill, formatHeDate, withStartDate } from "@/lib/format";
 import { getLiveInputs } from "@/lib/live/config";
 import { liveDate, liveSessions, type LiveSession } from "@/lib/live/model";
@@ -84,6 +85,7 @@ export default async function LandingPage() {
     : null;
   const lives = [L.lives.day0, L.lives.day7, L.lives.day14] as const;
   const links = socialLinks();
+  const times = timeTokens();
 
   /** בלוק הרשמה: המחיר בגדול, הכפתור, ושורת התאריכים. מופיע שלוש פעמים בדף; אחרי סגירת ההרשמה: שורת "נסגרה". */
   const signup = (where: "hero" | "mid" | "close", dates = true) =>
@@ -117,7 +119,7 @@ export default async function LandingPage() {
       <section className="pt pt-hero" aria-labelledby="land-h1">
         <div className="pt-bar">
           <span className="logo">
-            <Logo height={26} />
+            <Logo height={20} />
           </span>
         </div>
         <div className="pt-hero-grid">
@@ -153,6 +155,7 @@ export default async function LandingPage() {
       <section className="pt pt--sand pt-incl" aria-labelledby="land-incl-h">
         <div className="pt-stack">
           <h2 id="land-incl-h">{L.includes.heading}</h2>
+          <p className="pt-lead">{L.includes.lead}</p>
           <ul className="ticks">
             {L.includes.items.map((t) => (
               <li key={t}>
@@ -180,13 +183,14 @@ export default async function LandingPage() {
             </li>
           ))}
         </ul>
-        <p className="n">{L.lives.note}</p>
       </section>
 
       <section className="pt pt--sage pt-stack pt-av" aria-labelledby="land-av-h">
         <h2 id="land-av-h">{L.avital.heading}</h2>
         <AvitalPhoto slot="about" variant="tile" />
-        <p>{L.avital.body}</p>
+        {L.avital.body.map((para) => (
+          <p key={para}>{para}</p>
+        ))}
       </section>
 
       <section className="pt pt-faq" aria-labelledby="land-faq-h">
@@ -194,7 +198,7 @@ export default async function LandingPage() {
         {L.faq.items.map((item) => (
           <details key={item.q}>
             <summary>{item.q}</summary>
-            <p>{item.a}</p>
+            <p>{fill(item.a, times)}</p>
           </details>
         ))}
       </section>
