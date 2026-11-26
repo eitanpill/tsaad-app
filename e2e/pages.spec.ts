@@ -20,13 +20,17 @@ test.describe("landing /tsaad (public)", () => {
     await expect(page.locator("button.cta--off").first()).toHaveAttribute("aria-disabled", "true");
     await expect(page.locator("#cta-note-hero")).toHaveText("ההרשמה תיפתח כאן.");
     expect(await cta.count()).toBe(0); // the disabled button's visible name is the label; it is not the link
-    await expect(page.getByText("ההרשמה לאתגר היא 79 ₪. זה לא מנוי.").first()).toBeVisible();
+    // the price is big and visual; screen readers get it as one sentence
+    await expect(page.locator(".pt-price .sr-only").first()).toHaveText("המחיר: 79 ₪, תשלום אחד, בלי מנוי.");
+    await expect(page.locator("[data-signup]")).toHaveCount(3); // hero, after "what you get", closing tile
+    await expect(page.locator(".pt-float")).toBeHidden(); // the floating button needs a real signup link and scrolling
     await expect(page.getByText("תאריך ההתחלה יפורסם בקרוב.")).toHaveCount(0); // START_DATE is set on this server
-    await expect(page.getByText("האתגר מתחיל ב־1 בדצמבר.").first()).toBeVisible();
+    await expect(page.getByText("מתחילים ב־1 בדצמבר").first()).toBeVisible();
     expect(await page.locator("body").innerText()).not.toMatch(RAW);
     // the close date and the opening-live date come from START_DATE (2026-12-01): last signup day is day 2
     await expect(page.getByText("ההרשמה פתוחה עד סוף יום רביעי, 2 בדצמבר.").first()).toBeVisible();
-    await expect(page.getByText("יום שני, 30 בנובמבר: מפגש הפתיחה בלייב. למחרת, ב־1 בדצמבר, נפתח היום הראשון.")).toBeVisible();
+    // short page: no list of the 14 habits
+    await expect(page.getByText("כוס מים חמימים עם לימון")).toHaveCount(0);
     // live dates always shown; day 14 time unset: the neutral line follows the date
     const lives = page.locator("section[aria-labelledby=land-live-h] li");
     await expect(lives).toHaveCount(3);
@@ -81,12 +85,10 @@ test.describe("landing /tsaad (public)", () => {
     await ctx.close();
   });
 
-  test("keyboard order: skip link, pause animation, CTA (focusable while disabled), login", async ({ page }) => {
+  test("keyboard order: skip link, CTA (focusable while disabled), login", async ({ page }) => {
     await page.goto("/tsaad");
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "דילוג לתוכן" })).toBeFocused();
-    await page.keyboard.press("Tab");
-    await expect(page.getByRole("button", { name: "עצירת אנימציה" })).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(page.locator("button.cta--off").first()).toBeFocused();
     expect(await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle)).toBe("solid");
@@ -94,21 +96,16 @@ test.describe("landing /tsaad (public)", () => {
     await expect(page.getByRole("link", { name: "כניסה", exact: true })).toBeFocused();
   });
 
-  test("reduced motion: the water and the glow do not animate", async ({ browser }) => {
-    const ctx = await browser.newContext({ reducedMotion: "reduce", viewport: { width: 390, height: 844 } });
-    const page = await ctx.newPage();
+  test("no looping animation and no pause button on the sales page (nothing moves for more than 5 seconds)", async ({ page }) => {
     await page.goto("/tsaad");
-    const names = await page.locator(".pub-wv, .pub-glow, .pub-ring").evaluateAll((els) => els.map((e) => getComputedStyle(e).animationName));
-    expect(names.length).toBeGreaterThan(0);
-    for (const n of names) expect(n).toBe("none");
-    await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
-    await ctx.close();
-  });
-
-  test("the motion button pauses the water (data-motion=off)", async ({ page }) => {
-    await page.goto("/tsaad");
-    await page.getByRole("button", { name: "עצירת אנימציה" }).click();
-    await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
+    await expect(page.getByRole("button", { name: "עצירת אנימציה" })).toHaveCount(0);
+    const looping = await page.evaluate(() =>
+      document.getAnimations().filter((a) => {
+        const t = a.effect?.getComputedTiming();
+        return t && (t.iterations === Infinity || Number(t.endTime) > 5000);
+      }).length,
+    );
+    expect(looping).toBe(0);
   });
 
   test("login stays reachable from the landing page, and the footer links to the legal pages", async ({ page }) => {

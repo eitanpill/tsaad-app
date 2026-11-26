@@ -33,7 +33,8 @@ for (const [name, base] of [
       await expect(page.getByText("ההרשמה למחזור הזה נסגרה").first()).toBeVisible();
       await expect(page.locator(".cta")).toHaveCount(0);
       await expect(page.getByRole("button", { name: /אני בפנים/ })).toHaveCount(0);
-      await expect(page.getByText("האתגר מתחיל ב־1 בדצמבר.")).toHaveCount(0);
+      await expect(page.getByText("מתחילים ב־1 בדצמבר")).toHaveCount(0);
+      await expect(page.locator(".pt-price, [data-signup], .pt-float")).toHaveCount(0);
       const next = page.getByRole("link", { name: "לעדכון על המחזור הבא" });
       if (name === "B") await expect(next).toHaveAttribute("href", "https://next.example.test/updates");
       else await expect(next).toHaveCount(0);
