@@ -25,6 +25,7 @@ import { ActionButton } from "./ActionButton";
 import { toggleAction } from "./actions";
 import { Cup } from "./Cup";
 import { FinishTiles } from "./FinishTiles";
+import { GroupJoin } from "./GroupJoin";
 import { HabitChecklist, habitKey, type HabitRow } from "./HabitChecklist";
 import { PathStrip } from "./PathStrip";
 import { Ring } from "./Ring";
@@ -217,6 +218,8 @@ export function TodayBoard(p: BoardProps) {
           </p>
         ) : null}
       </section>
+
+      <GroupJoin />
 
       {finished || ended ? (
         <div className="finish-wrap">

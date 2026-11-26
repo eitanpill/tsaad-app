@@ -350,13 +350,14 @@ test.describe("shell, motion, video, CSP", () => {
     const nav = page.getByRole("navigation", { name: "ניווט ראשי" });
     await expect(nav.getByRole("link", { name: "היום" })).toHaveAttribute("aria-current", "page");
     const order: string[] = [];
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 10; i++) {
       await page.keyboard.press("Tab");
       order.push(await page.evaluate(() => document.activeElement?.getAttribute("aria-label") || (document.activeElement as HTMLInputElement | null)?.labels?.[0]?.textContent?.trim() || document.activeElement?.textContent?.trim().slice(0, 14) || ""));
     }
     expect(order[0]).toBe("דילוג לתוכן");
     // the long/short choice is one tab stop (a radio group), before the play button
-    expect(order.slice(1, 7)).toEqual(["YOGIT, למסך היום", "עצירת אנימציה", expect.stringContaining("ימים של תרגול"), expect.stringContaining("התרגול המלא"), expect.stringContaining("הפעלת סרטון"), expect.stringMatching(/^הרגל/)]);
+    // the WhatsApp group button sits right under the heading, before the path strip
+    expect(order.slice(1, 8)).toEqual(["YOGIT, למסך היום", "עצירת אנימציה", expect.stringContaining("להצטרפות לקבוצ"), expect.stringContaining("ימים של תרגול"), expect.stringContaining("התרגול המלא"), expect.stringContaining("הפעלת סרטון"), expect.stringMatching(/^הרגל/)]);
     // focus ring is drawn
     const outline = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
     expect(outline).toBe("solid");
