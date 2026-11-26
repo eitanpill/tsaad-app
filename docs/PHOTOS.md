@@ -4,6 +4,7 @@ The slots are built and wait for the files. While a slot is off: the landing "ab
 
 | Slot | File (under `public/avital/`) | Ratio | Send at least | Recommended | Where it shows |
 |---|---|---|---|---|---|
+| `hero` | `avital-hero.jpg` | 4:5 portrait | 600 x 750 px | 1200 x 1500 px | Landing `/tsaad`, first photo of Avital, in the top tile under the signup button (beside the title on desktop). Preloaded. Professional, recognizable portrait. While off: nothing (the hero keeps its text-only layout). |
 | `about` | `avital-about.jpg` | 4:5 portrait | 600 x 750 px | 1200 x 1500 px | Landing `/tsaad`, the "אביטל פלס" tile (between the heading and the text). Below the fold, so not preloaded. |
 | `live` | `avital-live.jpg` | 1:1 square | 400 x 400 px | 800 x 800 px | A round 72 px photo beside the tag on the `/live` hero tile, and on the opening-live card of the before-start screen (`/today` before the challenge starts). The same file in both places. |
 

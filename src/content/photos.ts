@@ -7,7 +7,7 @@
  *
  * Local files only (CSP img-src 'self'); no remote hosts.
  */
-export type AvitalSlot = "about" | "live";
+export type AvitalSlot = "hero" | "about" | "live";
 
 export type AvitalPhoto = {
   /** File name under public/avital/. */
@@ -23,7 +23,15 @@ export type AvitalPhoto = {
 };
 
 export const AVITAL_PHOTOS: Record<AvitalSlot, AvitalPhoto> = {
-  // Landing page, "about Avital" tile (/tsaad).
+  // Landing page (/tsaad), first photo, at the top beside the title. A professional, recognizable portrait.
+  hero: {
+    file: "avital-hero.jpg",
+    ratio: 4 / 5,
+    recommended: { width: 1200, height: 1500 },
+    present: false,
+    alt: "אביטל פלס, מורת היוגה",
+  },
+  // Landing page (/tsaad), second photo, in the "אביטל פלס" tile. A different recognizable photo (in practice).
   about: {
     file: "avital-about.jpg",
     ratio: 4 / 5,

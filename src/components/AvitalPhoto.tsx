@@ -5,16 +5,17 @@ import { avitalPhoto } from "@/lib/photos/avital";
 import { SprigDoodle } from "@/components/Doodles";
 
 const SIZES: Record<AvitalSlot, string> = {
+  hero: "(min-width: 900px) 360px, 70vw",
   about: "(min-width: 640px) 320px, 80vw",
   live: "72px",
 };
 
 /**
- * Avital's photo for a slot. While the slot is off (see src/content/photos.ts): the tile shows a small decorative fallback, the round variant nothing.
+ * Avital's photo for a slot. While the slot is off (see src/content/photos.ts): the tile shows a small decorative fallback, the round and hero variants nothing.
  * The box takes its size from the ratio (aspect-ratio in CSS), the image fills it: no layout shift, no stretching.
  * `priority` only for the one above the fold (passed to next/image as `preload`; its own `priority` prop is deprecated in Next 16).
  */
-export function AvitalPhoto({ slot, variant, priority = false }: { slot: AvitalSlot; variant: "tile" | "round"; priority?: boolean }) {
+export function AvitalPhoto({ slot, variant, priority = false }: { slot: AvitalSlot; variant: "tile" | "round" | "hero"; priority?: boolean }) {
   const p = avitalPhoto(slot);
   // בלי תמונה: באריח הגדול, עיגול דקורטיבי קטן בצבעי המותג (לא מסגרת ריקה בגודל תמונה, ולא תמונה מומצאת). בעיגול הקטן: כלום.
   if (!p) return variant === "tile" ? <AvitalFallback /> : null;

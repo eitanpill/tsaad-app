@@ -36,7 +36,7 @@ function png(width: number, height: number): Buffer {
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 }
 
-export const FIXTURES = { "e2e-about.png": [160, 200], "e2e-live.png": [160, 160] } as const;
+export const FIXTURES = { "e2e-hero.png": [160, 200], "e2e-about.png": [160, 200], "e2e-live.png": [160, 160] } as const;
 
 export function writePhotoFixtures() {
   mkdirSync(DIR, { recursive: true });
