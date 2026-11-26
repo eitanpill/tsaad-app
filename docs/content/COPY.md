@@ -623,7 +623,7 @@
 | `landing.social.heading` | להמשיך להכיר |  |
 | `landing.social.linktree` | כל הקישורים של YOGIT |  |
 | `landing.social.media` | אביטל בתקשורת |  |
-| `landing.social.community` | קבוצת הוואטסאפ של האתגר |  |
+| `landing.social.community` | הקהילה שלנו |  |
 | `landing.footer.nav` | מידע משפטי וכניסה | חדש בשלב 10: תחתית הדף הציבורי. |
 | `landing.footer.accessibility` | הצהרת נגישות | חדש בשלב 10: תחתית הדף הציבורי. |
 | `landing.footer.privacy` | מדיניות פרטיות | חדש בשלב 10: תחתית הדף הציבורי. |

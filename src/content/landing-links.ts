@@ -1,9 +1,7 @@
-import { COMMUNITY_GROUP_URL } from "./social";
-
 /**
  * Links at the end of the sales page (/tsaad). One place for the URLs.
  *
- * TODO(Pit): fill in the Linktree and media URLs. While a URL is null that link is not shown, and when all three are null the whole
+ * TODO(Pit): fill in the Linktree and media URLs. Never put the challenge WhatsApp group here (Pit 2026-11-26: participants only). While a URL is null that link is not shown, and when all three are null the whole
  * "להמשיך להכיר" block is hidden, so the page never shows a link that goes nowhere.
  * Only https URLs; they open in the same tab.
  */
@@ -14,8 +12,8 @@ export const SOCIAL_LINKS: Record<SocialKey, string | null> = {
   linktree: null,
   // [MEDIA_URL] Avital in the media (press page, or a social profile: Pit to confirm which)
   media: null,
-  // The challenge's WhatsApp group.
-  community: COMMUNITY_GROUP_URL,
+  // [COMMUNITY_URL] a PUBLIC community (not the challenge WhatsApp group: that one is only for paying participants, inside the app).
+  community: null,
 };
 
 export const SOCIAL_ORDER: readonly SocialKey[] = ["linktree", "media", "community"];

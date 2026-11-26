@@ -10,10 +10,8 @@ describe("sales page links", () => {
     expect(socialLinks({ linktree: "javascript:alert(1)", media: "not a url", community: null })).toEqual([]);
   });
 
-  it("the community link is the challenge WhatsApp group, without tracking parameters", () => {
-    expect(SOCIAL_LINKS.community).toBe(COMMUNITY_GROUP_URL);
-    const u = new URL(COMMUNITY_GROUP_URL);
-    expect(u.hostname).toBe("chat.whatsapp.com");
-    expect(u.search).toBe("");
+  it("never links the paid participants' WhatsApp group from the public sales page", () => {
+    expect(Object.values(SOCIAL_LINKS)).not.toContain(COMMUNITY_GROUP_URL);
+    expect(Object.values(SOCIAL_LINKS).some((u) => u?.includes("chat.whatsapp.com"))).toBe(false);
   });
 });

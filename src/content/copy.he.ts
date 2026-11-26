@@ -789,7 +789,7 @@ export const copy = {
       heading: "להמשיך להכיר",
       linktree: "כל הקישורים של YOGIT",
       media: "אביטל בתקשורת",
-      community: "קבוצת הוואטסאפ של האתגר",
+      community: "הקהילה שלנו",
     },
     // תחתית הדף הציבורי (לצד הקישורים המשפטיים).
     footer: {
