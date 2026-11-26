@@ -117,14 +117,14 @@ test.describe("server A", () => {
     await ctx.close();
   });
 
-  test("landing: Avital tile has the decorative fallback, no image", async ({ page }) => {
+  test("landing: Avital tile shows her photo (no fallback)", async ({ page }) => {
     await page.goto("/tsaad");
-    const fb = page.getByTestId("avital-fallback");
-    await expect(fb).toBeVisible();
-    await expect(fb).toHaveAttribute("aria-hidden", "true");
+    const tile = page.locator("section[aria-labelledby=land-av-h]");
+    await expect(tile.locator(".av-photo img")).toHaveCount(1);
+    await expect(page.getByTestId("avital-fallback")).toHaveCount(0);
     await axe(page);
-    await fb.scrollIntoViewIfNeeded();
-    if (SHOTS) await page.locator("section[aria-labelledby=land-av-h]").screenshot({ path: `${SHOTS}/after-landing-avital.png` });
+    await tile.scrollIntoViewIfNeeded();
+    if (SHOTS) await tile.screenshot({ path: `${SHOTS}/after-landing-avital.png` });
   });
 });
 

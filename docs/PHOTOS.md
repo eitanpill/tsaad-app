@@ -1,5 +1,7 @@
 # Photos of Avital
 
+Status (2026-11-26): `hero` and `about` are ON with photos from the shared album (cropped to 4:5, 1200x1500, about 220 KB each). `live` is still off.
+
 The slots are built and wait for the files. While a slot is off: the landing "about" tile shows a small decorative sprig in a cream circle (no empty photo-sized box, no stand-in photo); the round `live` slot renders nothing.
 
 | Slot | File (under `public/avital/`) | Ratio | Send at least | Recommended | Where it shows |
