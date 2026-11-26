@@ -178,7 +178,7 @@ test.describe("legal pages (public)", () => {
   test("accessibility statement carries the last-check date and the known limitation about captions", async ({ page }) => {
     await page.goto("/legal/accessibility");
     const t = await page.locator("main").innerText();
-    expect(t).toContain("10 בנובמבר 2026");
+    expect(t).toContain("20 בנובמבר 2026");
     expect(t).toContain("כתוביות בעברית");
   });
 
