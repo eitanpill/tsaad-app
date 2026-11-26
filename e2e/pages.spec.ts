@@ -20,8 +20,8 @@ test.describe("landing /tsaad (public)", () => {
     await expect(page.locator("button.cta--off").first()).toHaveAttribute("aria-disabled", "true");
     await expect(page.locator("#cta-note-hero")).toHaveText("ההרשמה תיפתח כאן.");
     expect(await cta.count()).toBe(0); // the disabled button's visible name is the label; it is not the link
-    // the price is big and visual; screen readers get it as one sentence
-    await expect(page.locator(".pt-price .sr-only").first()).toHaveText("המחיר: 79 ₪, תשלום אחד, בלי מנוי.");
+    // the price is big and plain text (read as is by screen readers, nothing hidden that could be clipped at 200% zoom)
+    await expect(page.locator(".pt-price").first()).toHaveText(/79\s*₪\s*תשלום אחד\. בלי מנוי\./);
     await expect(page.locator("[data-signup]")).toHaveCount(3); // hero, after "what you get", closing tile
     await expect(page.locator(".pt-float")).toBeHidden(); // the floating button needs a real signup link and scrolling
     await expect(page.getByText("תאריך ההתחלה יפורסם בקרוב.")).toHaveCount(0); // START_DATE is set on this server
@@ -29,6 +29,9 @@ test.describe("landing /tsaad (public)", () => {
     expect(await page.locator("body").innerText()).not.toMatch(RAW);
     // the close date and the opening-live date come from START_DATE (2026-12-01): last signup day is day 2
     await expect(page.getByText("ההרשמה פתוחה עד סוף יום רביעי, 2 בדצמבר.").first()).toBeVisible();
+    // links at the end: Linktree only; never the participants' WhatsApp group
+    await expect(page.getByRole("link", { name: "כל הקישורים של YOGIT" })).toHaveAttribute("href", "https://linktree.yogit-yoga.co.il");
+    await expect(page.locator('a[href*="chat.whatsapp.com"]')).toHaveCount(0);
     // short page: no list of the 14 habits
     await expect(page.getByText("כוס מים חמימים עם לימון")).toHaveCount(0);
     // live dates always shown; day 14 time unset: the neutral line follows the date

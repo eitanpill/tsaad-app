@@ -591,7 +591,6 @@
 | `landing.price.amount` | 79 |  |
 | `landing.price.currency` | ₪ |  |
 | `landing.price.note` | תשלום אחד. בלי מנוי. |  |
-| `landing.price.label` | המחיר: 79 ₪, תשלום אחד, בלי מנוי. |  |
 | `landing.pain.heading` | מכירים את זה? |  |
 | `landing.pain.quotes.0` | “כבר ניסיתי. זה החזיק שבוע.” |  |
 | `landing.pain.quotes.1` | “אין לי חצי שעה ביום ליוגה.” |  |
@@ -633,7 +632,7 @@
 | `landing.social.heading` | להמשיך להכיר |  |
 | `landing.social.linktree` | כל הקישורים של YOGIT |  |
 | `landing.social.media` | אביטל בתקשורת |  |
-| `landing.social.community` | קבוצת הוואטסאפ של האתגר |  |
+| `landing.social.community` | הקהילה שלנו |  |
 | `landing.footer.nav` | מידע משפטי וכניסה | חדש בשלב 10: תחתית הדף הציבורי. |
 | `landing.footer.accessibility` | הצהרת נגישות | חדש בשלב 10: תחתית הדף הציבורי. |
 | `landing.footer.privacy` | מדיניות פרטיות | חדש בשלב 10: תחתית הדף הציבורי. |
@@ -1002,4 +1001,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 837 מחרוזות.
+סך הכול 836 מחרוזות.

@@ -28,16 +28,16 @@ export const AVITAL_PHOTOS: Record<AvitalSlot, AvitalPhoto> = {
     file: "avital-hero.jpg",
     ratio: 4 / 5,
     recommended: { width: 1200, height: 1500 },
-    present: false,
-    alt: "אביטל פלס, מורת היוגה",
+    present: true,
+    alt: "אביטל פלס, מורת היוגה, עומדת בין העצים ומחייכת",
   },
   // Landing page (/tsaad), second photo, in the "אביטל פלס" tile. A different recognizable photo (in practice).
   about: {
     file: "avital-about.jpg",
     ratio: 4 / 5,
     recommended: { width: 1200, height: 1500 },
-    present: false,
-    alt: "אביטל פלס מתרגלת יוגה",
+    present: true,
+    alt: "אביטל פלס יושבת על סלע ליד הנחל בתנוחת יוגה",
   },
   // /live hero tile and the opening-live card on the before-start screen.
   live: {

@@ -2,13 +2,17 @@ import { expect, test, type Page } from "@playwright/test";
 import { axe, createUser, expectReflowAndTargets, open, type Session } from "./helpers";
 
 /**
- * Avital photo slots. Server A leaves them off (no photo files yet): the no-photo design, with nothing broken or empty.
+ * Avital photo slots. Server A uses the real manifest: the landing photos (hero, about) are on with the real files,
+ * the /live round photo is still off.
  * Server B turns them on with generated placeholder images (TSAAD_E2E_PHOTOS, public/avital/e2e-*.png, git-ignored).
  */
 const A = "http://localhost:3100";
 const B = "http://localhost:3101";
-const ALT_ABOUT = "אביטל פלס מתרגלת יוגה";
-const ALT_LIVE = "אביטל פלס, מורת היוגה";
+import { AVITAL_PHOTOS } from "../src/content/photos";
+
+const ALT_ABOUT = AVITAL_PHOTOS.about.alt;
+const ALT_HERO = AVITAL_PHOTOS.hero.alt;
+const ALT_LIVE = AVITAL_PHOTOS.live.alt;
 const EARLY = "2026-11-25T12:00:00+02:00"; // before start: the opening-live card shows on /today
 const LIVE_DAY = "2026-12-07T10:00:00+02:00";
 
@@ -22,17 +26,18 @@ async function imageLoaded(page: Page, alt: string) {
 test.describe("slots off (server A)", () => {
   test.use({ baseURL: A });
 
-  test("landing: no photo element, no broken image, no empty box; the about tile is as before", async ({ page }) => {
+  test("landing: the two real photos of Avital load (hero and about), local, 4:5 boxes, no overflow, axe", async ({ page }) => {
     await page.goto("/tsaad");
-    await expect(page.locator(".av-photo")).toHaveCount(0);
-    await expect(page.getByRole("img", { name: ALT_ABOUT })).toHaveCount(0);
-    const tile = page.locator("section[aria-labelledby=land-av-h]");
-    await expect(tile.getByRole("heading", { level: 2 })).toHaveText("אביטל פלס");
-    await expect(tile.locator("> *")).toHaveCount(3); // heading, the decorative fallback, one paragraph
-    await expect(tile.getByTestId("avital-fallback")).toHaveAttribute("aria-hidden", "true");
-    // the only image is the app screenshot (the hero slot renders nothing while off)
-    await expect(page.locator("img")).toHaveCount(1);
+    for (const alt of [ALT_HERO, ALT_ABOUT]) {
+      const img = await imageLoaded(page, alt);
+      expect(await img.getAttribute("src")).toMatch(/^\/_next\/image\?url=%2Favital%2Favital-(hero|about)\.jpg/);
+    }
+    await expect(page.locator(".pt-hero .av-photo--hero")).toHaveCount(1);
+    const box = await page.locator("section[aria-labelledby=land-av-h] .av-photo").boundingBox();
+    expect(box!.width / box!.height).toBeCloseTo(4 / 5, 1);
+    await expect(page.getByTestId("avital-fallback")).toHaveCount(0);
     await expect(page.locator(".pt-phone img")).toHaveAttribute("alt", /צילום מסך מאפליקציית האתגר/);
+    await expectReflowAndTargets(page);
     await axe(page);
   });
 
