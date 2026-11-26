@@ -52,11 +52,13 @@ test.describe("before-start screen: the opening live card", () => {
     await expect(card(page)).toContainText("היום: מפגש הפתיחה");
     const order = await page.evaluate(() => {
       const idx = (sel: string) => Array.from(document.querySelectorAll(".today--before > section")).findIndex((e) => e.matches(sel));
-      return { hero: idx(".t-hero"), live: idx("[data-testid=opening-live]"), count: idx(".t-count") };
+      return { hero: idx(".t-hero"), live: idx("[data-testid=opening-live]"), group: idx("[data-testid=group-join]"), count: idx(".t-count") };
     });
     expect(order.hero).toBe(0);
     expect(order.live).toBe(1);
-    expect(order.count).toBe(2);
+    // the WhatsApp group tile follows the live card, then the countdown
+    expect(order.group).toBe(2);
+    expect(order.count).toBe(3);
     await axe(page);
     await ctx.close();
   });
