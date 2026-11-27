@@ -39,7 +39,7 @@
   padding: 20px;
 }
 .tile--sky { background: var(--sky); }
-.tile--white { background: #fff; }
+.tile--white { background: var(--white); }
 .tile--sage { background: var(--sage); color: var(--forest); }
 .tile--sand { background: var(--sand); }
 
@@ -91,7 +91,7 @@
   height: 44px;
   border-radius: 50%;
   background: var(--forest);
-  color: #fff;
+  color: var(--white);
 }
 
 .form {
@@ -123,7 +123,7 @@
   padding: 0 14px;
   border: 2px solid var(--muted);
   border-radius: var(--radius-btn);
-  background: #fff;
+  background: var(--white);
   color: var(--maroon);
   font: inherit;
   font-size: 18px;
@@ -205,7 +205,7 @@
   border: 2px solid var(--forest);
   border-radius: 999px;
   background: var(--forest);
-  color: #fff;
+  color: var(--white);
   font-family: var(--font-heading), sans-serif;
   font-weight: 800;
   font-size: 18px;
@@ -218,7 +218,7 @@
 
 .btn--secondary {
   min-height: 48px;
-  background: #fff;
+  background: var(--white);
   color: var(--forest);
 }
 
@@ -259,3 +259,18 @@
   .auth-art p { margin: 0; font-family: var(--font-heading), sans-serif; font-weight: 800; font-size: 22px; text-align: center; }
   .auth-header { padding-bottom: 12px; }
 }
+
+/* ---- Forest stream restyle ---- */
+.auth-title { font-weight: 300; font-size: 40px; }
+.tile--sky, .tile--sand { background: var(--sky); }
+.tile--white { background: var(--white); border: 1px solid var(--line); }
+.btn { background: var(--terracotta); color: var(--maroon); border: 2px solid var(--terracotta); min-height: 56px; font-weight: 700; transition: background 0.16s var(--ease-out), transform 0.12s var(--ease-out); }
+.btn:hover:not(:disabled) { background: var(--amber-soft); }
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn--secondary { background: var(--white); color: var(--forest); border-color: var(--forest); }
+.btn--secondary:hover:not(:disabled) { background: var(--sky); }
+.input { border-radius: var(--radius-sm); }
+.note-icon { color: var(--on-dark); }
+.field label { font-weight: 700; }
+.auth-art { background: var(--sage); color: var(--forest); }
+.auth-art p { font-weight: 300; }

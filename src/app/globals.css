@@ -1,40 +1,45 @@
 :root {
-  --cream: #FAF8F4;
-  --sky: #EDF5FD;
-  --sand: #F0E8E1;
-  --sage: #D2DCD1;
-  --olive: #D6DBBD;
-  --terracotta: #BB6F51;
-  --terracotta-text: #8A4A33;
-  --forest: #123021;
+  --cream: #F5F7F2; /* mist: page background */
+  --sky: #E8ECE4; /* stone */
+  --sand: #EEEBE4;
+  --sage: #DCE3D8;
+  --olive: #E4E7DA;
+  --terracotta: #F2A541; /* amber: CTA fill and accents. Text on it is always var(--maroon). */
+  --terracotta-text: #9A4E0C; /* amber-ink: amber-ish text on light (5.06:1 on stone) */
+  --forest: #1D3A2E;
+  --forest-deep: #14281F;
+  --amber-soft: #F7BE6E;
+  --on-dark: #F5F7F2;
+  --on-dark-muted: #C5D1C8;
   --water: #6F8A6E;
   --water-light: #A9C2AF; /* surface of the water in the cups, decorative */
-  --maroon: #2E0808;
-  --muted: #6B4B45;
-  --stone-done: #D9C7B8;
-  --line: #E8DDD3;
+  --maroon: #17251D; /* ink: body text */
+  --muted: #4B6354; /* moss: secondary text */
+  --stone-done: #CBD6C8;
+  --line: #C9D2C6; /* hairlines, decorative only */
   --white: #FFFFFF;
-  --glass: #F2F4F1; /* empty cup glass on the path (contrast.md) */
-  --skeleton: #EDEDE0; /* loading blocks, decorative */
-  --dash: #8E7B6F; /* dashed outline of an inactive button */
-  --radius-tile: 26px;
-  --radius-btn: 16px;
-  --radius-sm: 12px;
-  --radius-md: 18px;
+  --glass: #F2F5F0; /* empty cup glass on the path */
+  --skeleton: #E2E7DD; /* loading blocks, decorative */
+  --dash: #6E8577; /* dashed outline of an inactive button */
+  --radius-tile: 28px;
+  --radius-btn: 28px;
+  --radius-sm: 14px;
+  --radius-md: 20px;
   --radius-pill: 999px;
-  /* Elevation: floating bars (bottom nav) and pop-ups (toast, preview card). */
-  --shadow-float: 0 10px 30px -12px rgba(46, 8, 8, 0.35);
-  --shadow-pop: 0 12px 24px -12px rgba(46, 8, 8, 0.45);
-  --gap: 10px;
+  --shadow-float: 0 8px 24px -14px rgba(23, 37, 29, 0.3);
+  --shadow-pop: 0 8px 20px -14px rgba(23, 37, 29, 0.35);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --gap: 12px;
+  --font-body: var(--font-heading); /* Heebo for everything */
 }
 
-/* White text on --terracotta only at 19px bold or larger (contrast 3.6:1). */
+/* Text on --terracotta (amber) is always var(--maroon) (7.76:1); white on amber fails (2.05:1). */
 
 body {
   margin: 0;
   background: var(--cream);
   color: var(--maroon);
-  font-family: var(--font-body), Rubik, Arial, sans-serif;
+  font-family: var(--font-body), Arial, sans-serif;
 }
 
 h1,
@@ -42,8 +47,11 @@ h2,
 h3,
 b,
 strong {
-  font-family: var(--font-heading), 'Noto Sans Hebrew', sans-serif;
+  font-family: var(--font-heading), sans-serif;
 }
+
+body { font-size: 1.0625rem; line-height: 1.55; }
+h1, h2 { font-weight: 300; }
 
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -58,6 +66,7 @@ strong {
   outline-offset: 2px;
   box-shadow: 0 0 0 2px var(--cream);
 }
+:focus-visible { outline-width: 3px; outline-offset: 3px; }
 
 .visually-hidden,
 .sr-only {
@@ -82,7 +91,7 @@ strong {
   display: inline-flex;
   align-items: center;
   background: var(--forest);
-  color: var(--white);
+  color: var(--on-dark);
   border-radius: var(--radius-btn);
   font-weight: 700;
 }
@@ -93,18 +102,19 @@ strong {
 
 /* 404 page (src/app/not-found.tsx): outside the signed-in shell, so it carries its own small layout. */
 .nf-page { max-width: 440px; margin: 0 auto; padding: 24px 12px; box-sizing: border-box; }
-.nf-card { background: var(--sky); border-radius: var(--radius-tile); padding: 20px 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-.nf-card h1 { margin: 0; font-size: 26px; line-height: 1.1; font-weight: 900; }
+.nf-card { background: var(--forest); color: var(--on-dark);  border-radius: var(--radius-tile); padding: 20px 18px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.nf-card h1 { margin: 0; font-size: 36px; line-height: 1.1; font-weight: 300; }
 .nf-card p { margin: 0; font-size: 15px; line-height: 1.45; }
 .nf-action {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
   padding: 0 20px;
-  border: 2px solid var(--forest);
+  border: 0;
   border-radius: var(--radius-pill);
-  background: var(--white);
-  color: var(--forest);
+  background: var(--terracotta);
+  color: var(--maroon);
+  min-height: 52px;
   font-weight: 700;
   text-decoration: none;
 }
@@ -112,7 +122,7 @@ strong {
 /* Avital photo slots (src/components/AvitalPhoto.tsx). Only rendered when a photo exists. */
 .av-photo { position: relative; display: block; overflow: hidden; background: var(--sand); flex-shrink: 0; }
 .av-photo--tile { width: min(100%, 320px); border-radius: var(--radius-tile); }
-.av-photo--round { width: 72px; border-radius: 50%; border: 3px solid #fff; }
+.av-photo--round { width: 72px; border-radius: 50%; border: 3px solid var(--white); }
 .av-img { object-fit: cover; }
 .av-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 /* No photo yet: a small cream circle with a sprig (decorative), so the tile does not look like a missing image. */
