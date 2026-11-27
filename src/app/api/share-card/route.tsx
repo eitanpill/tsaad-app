@@ -34,7 +34,7 @@ function parseCardMask(url: URL): number[] | null {
   return days && days.length >= CHALLENGE.daysToComplete ? days : null;
 }
 
-const C = { cream: "#FAF8F4", sky: "#EDF5FD", sand: "#F0E8E1", sage: "#D2DCD1", terra: "#BB6F51", terraText: "#8A4A33", forest: "#123021", maroon: "#2E0808", muted: "#6B4B45" };
+const C = { cream: "#F5F7F2", sky: "#E8ECE4", sand: "#EEEBE4", sage: "#DCE3D8", terra: "#F2A541", terraText: "#9A4E0C", forest: "#1D3A2E", maroon: "#17251D", muted: "#4B6354" };
 
 export async function GET(req: Request) {
   const days = parseCardMask(new URL(req.url));
@@ -61,7 +61,7 @@ export async function GET(req: Request) {
         }}
       >
         {counted.has(d) ? (
-          <svg width="52" height="52" viewBox="0 0 14 14"><path d="M2.5 7.5 L5.8 10.5 L11.5 3.5" fill="none" stroke="#2E0808" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <svg width="52" height="52" viewBox="0 0 14 14"><path d="M2.5 7.5 L5.8 10.5 L11.5 3.5" fill="none" stroke="#17251D" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
         ) : null}
       </div>
       <div style={{ display: "flex", marginTop: 10, fontSize: 30, color: counted.has(d) ? C.terraText : C.muted, fontFamily: "Card", fontWeight: 800 }}>{d}</div>
@@ -78,9 +78,9 @@ export async function GET(req: Request) {
       <div style={{ width: 1080, height: 1350, display: "flex", flexDirection: "column", background: C.cream, fontFamily: "Card", padding: 54 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: C.sky, borderRadius: 64, padding: "70px 50px 60px" }}>
           <svg width="190" height="190" viewBox="0 0 80 80" style={{ marginBottom: 30 }}>
-            <path d="M43 25 C 53 22 62 30 61 41 C 60 52 50 60 39 59 C 28 58 21 49 22 39 C 23 29 31 22 42 23 L 47 24" fill="#F0E8E1" transform="translate(2 2)" />
-            <path d="M40 21 C 51 20 60 29 59 40 C 58 52 48 59 38 58 C 28 57 21 49 22 39 C 23 29 31 21 42 22 L 46 23.5" fill="none" stroke="#BB6F51" strokeWidth="3.4" strokeLinecap="round" />
-            <path d="M40 5 L 41 12 M62 12 L 58 17.5 M75 38 L 67.5 39 M17 12 L 21.5 17 M5 40 L 12 40.5 M66 66 L 61 61.5" fill="none" stroke="#BB6F51" strokeWidth="3.2" strokeLinecap="round" />
+            <path d="M43 25 C 53 22 62 30 61 41 C 60 52 50 60 39 59 C 28 58 21 49 22 39 C 23 29 31 22 42 23 L 47 24" fill="#EEEBE4" transform="translate(2 2)" />
+            <path d="M40 21 C 51 20 60 29 59 40 C 58 52 48 59 38 58 C 28 57 21 49 22 39 C 23 29 31 21 42 22 L 46 23.5" fill="none" stroke="#F2A541" strokeWidth="3.4" strokeLinecap="round" />
+            <path d="M40 5 L 41 12 M62 12 L 58 17.5 M75 38 L 67.5 39 M17 12 L 21.5 17 M5 40 L 12 40.5 M66 66 L 61 61.5" fill="none" stroke="#F2A541" strokeWidth="3.2" strokeLinecap="round" />
           </svg>
           <div style={{ display: "flex", fontSize: 92, lineHeight: 1.1, fontWeight: 800, color: C.maroon, textAlign: "center" }}>{flip(copy.finish.shareText)}</div>
         </div>

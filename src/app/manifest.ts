@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 import { copy } from "@/content/copy.he";
 
 /** צבעי המותג (globals.css): רקע קרם, ועוד ירוק יער לשורת המצב. start_url הוא מסך היום (שם מפנים ל־/login אם אין סשן). */
-export const BRAND_BACKGROUND = "#FAF8F4";
-export const BRAND_THEME = "#123021";
+export const BRAND_BACKGROUND = "#F5F7F2";
+export const BRAND_THEME = "#1D3A2E";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
