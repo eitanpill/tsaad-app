@@ -134,4 +134,22 @@ describe("VideoTile length choice (long or short practice)", () => {
     get.mockRestore();
     set.mockRestore();
   });
+
+  it("with no version uploaded yet it still shows the choice, and both stay pending", () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const { container } = render(<VideoTile day={3} availableLong={false} availableShort={false} />);
+    expect(container.querySelector("fieldset.video-len")).not.toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(lc.short) }));
+    expect(screen.getByText(copy.today.videoPending)).toBeInTheDocument();
+  });
+
+  it("admin preview (forceChoice) shows the choice even with one version; the missing one is pending", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<VideoTile day={3} availableLong availableShort={false} forceChoice />);
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(lc.short) }));
+    expect(screen.getByText(copy.today.videoPending)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: playName }));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

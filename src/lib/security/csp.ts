@@ -24,13 +24,16 @@ const CDN_HOST_RE = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.b-cdn\.net$/;
 
 /**
  * @param opts.thumbHost מארח ה־CDN של Bunny (BUNNY_CDN_HOST), רק לתמונות הממוזערות של הסרטונים: נוסף ל־img-src ולא לשום הנחיה אחרת.
+ * @param opts.audioHost מארח ה־Pull Zone של הקלטות המדיטציה (BUNNY_AUDIO_HOST): נוסף ל־media-src בלבד.
  * @param opts.metaPixel רק בדף המכירה ורק כשהוגדר META_PIXEL_ID (src/lib/meta/pixel.ts): מתיר את הסקריפט של מטא
  *   (connect.facebook.net; עם 'strict-dynamic' הוא נטען ממילא מהקוד שלנו, והמארח נשאר לדפדפנים ישנים) ואת שליחת האירועים
  *   ל־www.facebook.com (img-src ו־connect-src). שאר הדפים לא מקבלים שום מקור של מטא.
  */
-export function buildCsp(nonce: string, opts: { dev?: boolean; thumbHost?: string; metaPixel?: boolean } = {}): string {
+export function buildCsp(nonce: string, opts: { dev?: boolean; thumbHost?: string; audioHost?: string; metaPixel?: boolean } = {}): string {
   const dev = opts.dev ?? false;
   const thumb = opts.thumbHost && CDN_HOST_RE.test(opts.thumbHost) ? ` https://${opts.thumbHost}` : "";
+  // מארח הקלטות המדיטציה (BUNNY_AUDIO_HOST): נוסף ל־media-src בלבד.
+  const audio = opts.audioHost && CDN_HOST_RE.test(opts.audioHost) ? ` https://${opts.audioHost}` : "";
   const metaScript = opts.metaPixel ? ` ${META_SCRIPT_ORIGIN}` : "";
   const metaEvents = opts.metaPixel ? ` ${META_EVENTS_ORIGIN}` : "";
   return [
@@ -41,7 +44,7 @@ export function buildCsp(nonce: string, opts: { dev?: boolean; thumbHost?: strin
     `img-src 'self' data: blob:${thumb}${metaEvents}`,
     "font-src 'self' data:",
     `connect-src 'self'${metaEvents}${dev ? " ws: wss:" : ""}`,
-    "media-src 'self' blob:",
+    `media-src 'self' blob:${audio}`,
     // רישום ה־service worker (/sw.js) וה־manifest. worker-src מפורש: עם 'strict-dynamic' ב־script-src, 'self' לא נספר שם.
     "worker-src 'self'",
     "manifest-src 'self'",

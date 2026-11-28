@@ -21,6 +21,15 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ NEXT_COHORT_URL: "http://next.example.test" })).toThrow();
   });
 
+  it("BUNNY_AUDIO_* accept a b-cdn host and up to 14 safe file paths", () => {
+    expect(parseEnv({ BUNNY_AUDIO_HOST: "tsaad-audio.b-cdn.net" }).BUNNY_AUDIO_HOST).toBe("tsaad-audio.b-cdn.net");
+    expect(() => parseEnv({ BUNNY_AUDIO_HOST: "evil.com" })).toThrow();
+    expect(parseEnv({ BUNNY_AUDIO_FILES: "med/day01.mp3,,med/day03.m4a" }).BUNNY_AUDIO_FILES).toBe("med/day01.mp3,,med/day03.m4a");
+    for (const bad of ["../x.mp3", "/abs.mp3", "a//b.mp3", "a b.mp3", "x.mp3?y=1", Array(15).fill("a.mp3").join(",")]) {
+      expect(() => parseEnv({ BUNNY_AUDIO_FILES: bad })).toThrow();
+    }
+  });
+
   it("BUNNY_SHORT_VIDEO_IDS has the same format as BUNNY_VIDEO_IDS", () => {
     expect(parseEnv({}).BUNNY_SHORT_VIDEO_IDS).toBeUndefined();
     expect(parseEnv({ BUNNY_SHORT_VIDEO_IDS: "a1,,c_3-" }).BUNNY_SHORT_VIDEO_IDS).toBe("a1,,c_3-");

@@ -40,20 +40,24 @@ export function VideoTile({
   availableShort,
   title: heading,
   poster = null,
+  forceChoice = false,
 }: {
   day: number;
   availableLong: boolean;
   availableShort: boolean;
   title?: string;
+  /** תצוגה מקדימה של מנהל: הבחירה בין המלא לקצר מוצגת תמיד, גם כשרק גרסה אחת הועלתה (השנייה מראה "יעלה בקרוב"). */
+  forceChoice?: boolean;
   /** כתובת תמונה ממוזערת (Bunny), רק כשהוגדר מארח ומזהה סרטון ליום. בלעדיה (או אם נכשלה): איור חמים במקומה. */
   poster?: string | null;
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [chosen, setChosen] = useState<Length>("long");
   const groupName = useId();
-  const both = availableLong && availableShort;
-  // כשקיימת גרסה אחת בלבד היא מנוגנת, בלי בחירה.
-  const length: Length = both ? chosen : availableShort && !availableLong ? "short" : "long";
+  // הבחירה מוצגת כששתי הגרסאות קיימות, וגם כששתיהן עוד לא הועלו (אז שתיהן "יעלה בקרוב"). כשרק אחת הועלתה,
+  // משתתפת לא רואה בחירה שמובילה לסרטון חסר: מנוגנת הגרסה הקיימת. במנהל (forceChoice) הבחירה תמיד מוצגת.
+  const both = forceChoice || availableLong === availableShort;
+  const length: Length = both ? chosen : availableShort ? "short" : "long";
   const available = length === "short" ? availableShort : availableLong;
   const [src, setSrc] = useState<string | null>(null);
   const [posterOk, setPosterOk] = useState(true);
@@ -101,7 +105,7 @@ export function VideoTile({
     <>
       {both ? (
         <fieldset className="video-len" aria-busy={phase === "loading" ? true : undefined}>
-          <legend className="sr-only">{lc.legend}</legend>
+          <legend className="video-len__legend">{lc.legend}</legend>
           {(["long", "short"] as const).map((v) => (
             <div key={v} className="video-len__opt">
               <input
