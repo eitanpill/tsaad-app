@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { SalesPageLink } from "@/components/SalesPageLink";
 import { Suspense } from "react";
 import { copy } from "@/content/copy.he";
 import { InfoIcon } from "../_components/icons";
@@ -38,9 +38,9 @@ export default function LoginPage() {
       <section className="tile tile--sand">
         <div className="row-between">
           <b>{copy.login.notRegistered}</b>
-          <Link href="/tsaad" className="link">
+          <SalesPageLink className="link">
             {copy.login.toLanding}
-          </Link>
+          </SalesPageLink>
         </div>
       </section>
     </>

@@ -151,6 +151,17 @@
 }
 @keyframes ptfloat { from { opacity: 0; transform: translateY(12px); } }
 
+/* באנר פיקסל מטא (MetaPixel.tsx): בתחתית, לא חוסם, בלי אנימציה. בזמן שהוא פתוח הכפתור הצף מוסתר כדי שלא יכסו זה את זה. */
+:root[data-pixel-banner='open'] .pt-float { display: none; }
+.pub-shell:has(.pt-consent) { padding-bottom: 168px; }
+.pt-consent { position: fixed; z-index: 21; bottom: max(12px, env(safe-area-inset-bottom)); inset-inline: 16px; margin-inline: auto; max-width: 560px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--white); color: var(--maroon); border: 1px solid var(--line); box-shadow: var(--shadow-float); font-size: 15px; line-height: 1.5; }
+.pt-consent p { margin: 0 0 10px; }
+.pt-consent-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pt-consent-btn { min-height: 44px; min-width: 96px; padding: 8px 18px; border-radius: var(--radius-btn); border: 2px solid var(--forest); background: var(--white); color: var(--forest); font: inherit; font-weight: 600; cursor: pointer; }
+.pt-consent-btn--yes { background: var(--forest); color: var(--white); }
+.pt-consent-btn:focus-visible { outline: 3px solid var(--terracotta-text); outline-offset: 2px; }
+@media (forced-colors: active) { .pt-consent { border: 1px solid CanvasText; } .pt-consent-btn { border-color: ButtonText; } }
+
 @media (min-width: 900px) {
   .pub-shell:has(.pub-land) { max-width: 1080px; padding: 24px 24px 48px; }
   .pub-land { grid-template-columns: repeat(12, 1fr); gap: 20px; }

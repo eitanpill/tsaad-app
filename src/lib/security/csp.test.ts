@@ -33,6 +33,14 @@ describe("csp", () => {
     expect(prod).toContain("worker-src 'self'");
     expect(prod).toContain("manifest-src 'self'");
   });
+  it("opens Meta hosts only when the pixel is on", () => {
+    expect(prod).not.toContain("facebook");
+    const px = buildCsp("abc", { metaPixel: true });
+    expect(/script-src ([^;]+)/.exec(px)![1]).toBe("'self' 'nonce-abc' 'strict-dynamic' https://connect.facebook.net");
+    expect(/img-src ([^;]+)/.exec(px)![1]).toBe("'self' data: blob: https://www.facebook.com");
+    expect(/connect-src ([^;]+)/.exec(px)![1]).toBe("'self' https://www.facebook.com");
+    expect(px).toContain("frame-src https://iframe.mediadelivery.net");
+  });
   it("nonces are unique and base64", () => {
     const a = newNonce();
     expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/);
