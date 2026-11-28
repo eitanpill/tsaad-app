@@ -371,4 +371,39 @@ describe.skipIf(!runIntegration)("GHL signup webhook (integration)", () => {
     expect(logs.join("\n")).not.toContain("zed@");
     expect(await count("users", sql`username = 'whtest.fail'`)).toBe(1);
   });
+  it("Meta Purchase: one event for a new account only (not on retries, reissues or opt-out), after the response", async () => {
+    const sent: Array<Record<string, unknown>> = [];
+    const meta = { conversions: async (ev: unknown) => void sent.push(ev as Record<string, unknown>), purchaseValue: 79 };
+    const c = contact();
+    const first = await call(c, {}, env, meta);
+    expect(first.json.status).toBe("created");
+    expect(sent).toHaveLength(0); // רק ב־after
+    await runAfter();
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ value: 79, currency: "ILS", ghlContactId: c.contact_id, email: c.email, sourceUrl: `${ORIGIN}/tsaad` });
+    expect(String(sent[0].eventId)).toMatch(/^ghl:/);
+
+    await call(c, {}, env, meta); // אותו אירוע שוב (duplicate) או אותו איש קשר (reissued)
+    await runAfter();
+    expect(sent).toHaveLength(1);
+
+    const optOut = await call(contact({ tags: "tsaad_registered,tsaad_no_meta" }), {}, env, meta);
+    expect(optOut.json.status).toBe("created");
+    await runAfter();
+    expect(sent).toHaveLength(1);
+  });
+
+  it("a failing Meta call never breaks the signup or the activation email", async () => {
+    const meta = {
+      conversions: async () => {
+        throw new Error("meta down");
+      },
+      purchaseValue: 79,
+    };
+    const r = await call(contact(), {}, env, meta);
+    expect(r.json).toEqual({ ok: true, status: "created" });
+    await runAfter();
+    expect(captured).toHaveLength(1);
+    expect(logs.join("\n")).toContain("meta purchase event failed");
+  });
 });

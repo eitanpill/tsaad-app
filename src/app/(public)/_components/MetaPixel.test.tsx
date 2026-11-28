@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { act } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { copy } from "@/content/copy.he";
 import { META_CONSENT_KEY, META_SCRIPT_URL } from "@/lib/meta/pixel";
 import { MetaPixel } from "./MetaPixel";
@@ -79,6 +80,67 @@ describe("MetaPixel", () => {
     render(<MetaPixel pixelId="123456789" mode="optin" value={79} />);
     expect(scripts()).toHaveLength(1);
     expect(screen.queryByRole("region")).toBeNull();
+  });
+
+  it("sends ViewContent once, when the 'what you get' section scrolls into view", () => {
+    let fire: ((e: { isIntersecting: boolean }[]) => void) | null = null;
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(cb: (e: { isIntersecting: boolean }[]) => void) {
+          fire = cb;
+        }
+        observe() {}
+        disconnect = disconnect;
+      },
+    );
+    try {
+      render(
+        <>
+          <section data-meta-viewcontent="">includes</section>
+          <MetaPixel pixelId="123456789" mode="notice" value={79} />
+        </>,
+      );
+      const views = () => calls().filter((c) => c[1] === "ViewContent");
+      act(() => fire?.([{ isIntersecting: false }]));
+      expect(views()).toHaveLength(0);
+      act(() => fire?.([{ isIntersecting: true }]));
+      act(() => fire?.([{ isIntersecting: true }]));
+      expect(views()).toEqual([
+        ["track", "ViewContent", { content_name: "tsaad-challenge", content_type: "product", value: 79, currency: "ILS" }],
+      ]);
+      expect(disconnect).toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("no ViewContent after 'no thanks'", () => {
+    let fire: ((e: { isIntersecting: boolean }[]) => void) | null = null;
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(cb: (e: { isIntersecting: boolean }[]) => void) {
+          fire = cb;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    try {
+      render(
+        <>
+          <section data-meta-viewcontent="">includes</section>
+          <MetaPixel pixelId="123456789" mode="notice" value={79} />
+        </>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: P.decline }));
+      act(() => fire?.([{ isIntersecting: true }]));
+      expect(calls().filter((c) => c[1] === "ViewContent")).toHaveLength(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("leaving the page stops the pixel", () => {
