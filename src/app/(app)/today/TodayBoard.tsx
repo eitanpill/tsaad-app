@@ -29,6 +29,7 @@ import { GroupJoin } from "./GroupJoin";
 import { HabitChecklist, habitKey, type HabitRow } from "./HabitChecklist";
 import { PathStrip } from "./PathStrip";
 import { Ring } from "./Ring";
+import { AudioTile } from "./AudioTile";
 import { VideoTile } from "./VideoTile";
 
 export type BoardProps = {
@@ -50,6 +51,10 @@ export type BoardProps = {
   opening: { lead: string; invite: string | null } | null;
   videoAvailableLong: boolean;
   videoAvailableShort: boolean;
+  /** הקלטת מדיטציה הוגדרה ליום (נגן שמע מתחת לסרטון). */
+  audioAvailable: boolean;
+  /** תצוגה מקדימה של מנהל: בחירת אורך התרגול מוצגת תמיד. */
+  previewing: boolean;
   /** תמונה ממוזערת של סרטון היום (רק כשהוגדרו מארח ומזהה), או null. */
   poster: string | null;
   /** חלון ההצעה של יום 14 פתוח (נקבע בשרת): מוסיף קישור להצעות באריח הסיום. */
@@ -257,7 +262,8 @@ export function TodayBoard(p: BoardProps) {
 
       {p.day ? (
         <div className="ar-video">
-          <VideoTile day={p.day} availableLong={p.videoAvailableLong} availableShort={p.videoAvailableShort} poster={p.poster} />
+          <VideoTile day={p.day} availableLong={p.videoAvailableLong} availableShort={p.videoAvailableShort} poster={p.poster} forceChoice={p.previewing} />
+          {p.audioAvailable || actionsForDay(p.day).includes("meditate") ? <AudioTile day={p.day} available={p.audioAvailable} /> : null}
         </div>
       ) : null}
 

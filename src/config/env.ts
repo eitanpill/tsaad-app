@@ -151,6 +151,20 @@ export const envSchema = z.object({
       .regex(/^([A-Za-z0-9_-]*,){0,13}[A-Za-z0-9_-]*$/, "up to 14 comma-separated ids"),
   ),
 
+  /**
+   * הקלטות המדיטציה (שמע): מארח ה־Pull Zone של Bunny Storage (למשל tsaad-audio.b-cdn.net). בלעדיו אין נגן שמע.
+   */
+  BUNNY_AUDIO_HOST: optional(z.string().regex(/^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.b-cdn\.net$/, "a *.b-cdn.net hostname")),
+  /** נתיבי קובצי השמע של ימים 1..14 בתוך ה־Pull Zone, מופרדים בפסיקים לפי הסדר; מקום ריק = אין עדיין הקלטה ליום. */
+  BUNNY_AUDIO_FILES: optional(
+    z
+      .string()
+      .regex(/^([A-Za-z0-9_./-]*,){0,13}[A-Za-z0-9_./-]*$/, "up to 14 comma-separated file paths")
+      .refine((v) => !v.split(",").some((p) => p.includes("..") || p.startsWith("/") || p.includes("//")), "no '..', leading '/' or '//'"),
+  ),
+  /** מפתח Token Authentication של ה־Pull Zone (Security → Token Authentication). אופציונלי; כשמוגדר, כל קישור לשמע נחתם לשעתיים. */
+  BUNNY_AUDIO_TOKEN_KEY: optional(z.string().min(1)),
+
   VAPID_PUBLIC_KEY: optional(z.string().min(1)),
   VAPID_PRIVATE_KEY: optional(z.string().min(1)),
   VAPID_SUBJECT: optional(

@@ -46,4 +46,12 @@ describe("csp", () => {
     expect(a).toMatch(/^[A-Za-z0-9+/]{22}==$/);
     expect(newNonce()).not.toBe(a);
   });
+
+  it("media-src gets the meditation audio host only when a valid one is configured", () => {
+    expect(/media-src ([^;]+)/.exec(prod)![1]).toBe("'self' blob:");
+    expect(/media-src ([^;]+)/.exec(buildCsp("abc", { audioHost: "tsaad-audio.b-cdn.net" }))![1]).toBe("'self' blob: https://tsaad-audio.b-cdn.net");
+    for (const bad of ["evil.com", "a.b-cdn.net.evil.com", "https://a.b-cdn.net"]) {
+      expect(/media-src ([^;]+)/.exec(buildCsp("abc", { audioHost: bad }))![1]).toBe("'self' blob:");
+    }
+  });
 });

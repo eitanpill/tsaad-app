@@ -22,6 +22,7 @@ export async function proxy(request: NextRequest) {
   const csp = buildCsp(nonce, {
     dev: process.env.NODE_ENV === "development",
     thumbHost: process.env.BUNNY_CDN_HOST,
+    audioHost: process.env.BUNNY_AUDIO_HOST,
     metaPixel,
   });
 

@@ -356,8 +356,9 @@ test.describe("shell, motion, video, CSP", () => {
     }
     expect(order[0]).toBe("דילוג לתוכן");
     // the long/short choice is one tab stop (a radio group), before the play button
+    // the meditation audio player sits right under the video, before the actions
     // the WhatsApp group button sits right under the heading, before the path strip
-    expect(order.slice(1, 8)).toEqual(["YOGIT, למסך היום", "עצירת אנימציה", expect.stringContaining("להצטרפות לקבוצ"), expect.stringContaining("ימים של תרגול"), expect.stringContaining("התרגול המלא"), expect.stringContaining("הפעלת סרטון"), expect.stringMatching(/^הרגל/)]);
+    expect(order.slice(1, 8)).toEqual(["YOGIT, למסך היום", "עצירת אנימציה", expect.stringContaining("להצטרפות לקבוצ"), expect.stringContaining("ימים של תרגול"), expect.stringContaining("התרגול המלא"), expect.stringContaining("הפעלת סרטון"), "הקלטת המדיטציה של יום 1"]);
     // focus ring is drawn
     const outline = await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle);
     expect(outline).toBe("solid");

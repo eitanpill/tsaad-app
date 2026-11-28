@@ -12,6 +12,7 @@ import { OPENING_INVITE, dayOpeningLead, dayTitles } from "@/lib/today/titles";
 import { listCompletions } from "@/lib/today/completions";
 import { listDayHabitChecks } from "@/lib/habits/checks";
 import { getHabitList } from "@/lib/habits/list";
+import { getAudioConfig, hasAudio } from "@/lib/today/audio";
 import { getVideoConfig, hasVideo, posterUrl } from "@/lib/today/video";
 import { firstNameOf } from "@/lib/today/first-name";
 import { actionKey, greetingKey, nextBoundary, todayModel } from "@/lib/today/view";
@@ -27,7 +28,7 @@ export const metadata: Metadata = { title: `${copy.nav.today} | ${copy.brand.nam
 
 export default async function TodayPage() {
   const user = await requireUser();
-  const { now, schedule } = await getAppClock();
+  const { now, schedule, previewDay } = await getAppClock();
   const cfg = getConfig();
   const model = todayModel(now, schedule);
 
@@ -119,6 +120,8 @@ export default async function TodayPage() {
         olderChecked={olderChecked}
         videoAvailableLong={day !== null && hasVideo(day, getVideoConfig(cfg.env))}
         videoAvailableShort={day !== null && hasVideo(day, getVideoConfig(cfg.env), "short")}
+        audioAvailable={day !== null && hasAudio(day, getAudioConfig(cfg.env))}
+        previewing={previewDay !== null}
         poster={day !== null ? posterUrl(day, getVideoConfig(cfg.env), cfg.env.BUNNY_CDN_HOST) : null}
         offerOpen={offerOpen}
         nextChangeIso={next ? next.toISOString() : null}

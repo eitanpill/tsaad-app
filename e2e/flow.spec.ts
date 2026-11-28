@@ -35,7 +35,7 @@ test("today: long/short choice, the water cup, soft marks", async ({ browser }) 
   for (const width of [390, 320]) {
     await seed([[1, "habit"], [1, "move"], [1, "meditate"], [2, "habit"], [2, "move"], [3, "habit"], [4, "habit"]]);
     const { ctx, page } = await open(browser, s, T.day4Noon, "/today", { width });
-    const choice = page.getByRole("group", { name: "אורך התרגול" });
+    const choice = page.getByRole("group", { name: "כמה זמן יש לכם היום?" });
     await expect(choice).toBeVisible();
     await expect(choice.getByRole("radio", { name: /התרגול המלא/ })).toBeChecked();
     await expect(page.getByRole("img", { name: /חצי/ }).first()).toBeVisible();
