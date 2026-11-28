@@ -642,6 +642,12 @@
 | `landing.close.body` | 14 בקרים, וצעד קטן בכל אחד מהם. אני מחכה לכם. |  |
 | `landing.close.cta` | אני בפנים |  |
 | `landing.floating` | להרשמה לאתגר, 79 ₪ |  |
+| `landing.pixel.region` | הודעה על מדידת פרסום |  |
+| `landing.pixel.notice` | הדף הזה משתמש בפיקסל של מטא (פייסבוק ואינסטגרם) כדי למדוד את הפרסום שלנו. |  |
+| `landing.pixel.optin` | אפשר להפעיל בדף הזה את הפיקסל של מטא (פייסבוק ואינסטגרם), כדי שנוכל למדוד את הפרסום שלנו? |  |
+| `landing.pixel.more` | פרטים במדיניות הפרטיות |  |
+| `landing.pixel.accept` | אישור |  |
+| `landing.pixel.decline` | לא, תודה |  |
 | `landing.social.heading` | להמשיך להכיר |  |
 | `landing.social.linktree` | כל הקישורים של YOGIT |  |
 | `landing.social.media` | אביטל בתקשורת |  |
@@ -885,7 +891,7 @@
 | `legal.privacy.sections.2.id` | p-not |
 | `legal.privacy.sections.2.heading` | מה האפליקציה לא עושה |
 | `legal.privacy.sections.2.body.0.list.0` | היא לא מבקשת ולא שומרת מידע רפואי או בריאותי. |
-| `legal.privacy.sections.2.body.0.list.1` | היא לא כוללת פרסומות, כלי ניתוח התנהגות או מעקב של צד שלישי. |
+| `legal.privacy.sections.2.body.0.list.1` | מסכי האפליקציה (אחרי ההתחברות) לא כוללים פרסומות, כלי ניתוח התנהגות או מעקב של צד שלישי. החריג היחיד הוא דף המכירה הציבורי, ראו ״פיקסל של מטא בדף המכירה״. |
 | `legal.privacy.sections.2.body.0.list.2` | היא לא שומרת פרטי תשלום. התשלום מתבצע מחוץ לאפליקציה. |
 | `legal.privacy.sections.3.id` | p-purpose |
 | `legal.privacy.sections.3.heading` | למה משתמשים במידע |
@@ -905,42 +911,51 @@
 | `legal.privacy.sections.4.body.1.list.3` | GoHighLevel: מערכת ההרשמה, הדיוור וניהול הקשרים של YOGIT. ממנה מגיעים פרטי ההרשמה, ודרכה נשלחים באימייל קישורי הפעלה ואיפוס סיסמה, ובוואטסאפ נשלחת תזכורת הבוקר. לשם כך האפליקציה כותבת באיש הקשר שלכם ב־GoHighLevel קישור אישי קצר־תוקף ותג, ואינה שולחת לשם נתוני שימוש. |
 | `legal.privacy.sections.4.body.1.list.4` | שירותי התראות של הדפדפן (לפי הדפדפן והמכשיר: Google, Apple, Mozilla או Microsoft): מקבלים את כתובת המנוי ואת תוכן ההתראה, רק למי שהפעילו התראות. |
 | `legal.privacy.sections.4.body.2` | התשלום מתבצע בדף תשלום חיצוני (Morning) ומפגשי הלייב מתקיימים בשירות שיחות וידאו חיצוני. השירותים האלה מטפלים במידע לפי המדיניות שלהם. |
-| `legal.privacy.sections.4.body.3` | איננו מוכרות מידע אישי ואיננו מעבירות אותו לצורך פרסום. |
-| `legal.privacy.sections.5.id` | p-abroad |
-| `legal.privacy.sections.5.heading` | העברת מידע אל מחוץ לישראל |
-| `legal.privacy.sections.5.body.0` | חלק מהשירותים שמפורטים למעלה פועלים מחוץ לישראל. מסד הנתונים נמצא באירופה (גרמניה). אנחנו מעבירות מידע אל מחוץ לישראל רק לשירותים הדרושים להפעלת האפליקציה, ובהתאם לדין. |
-| `legal.privacy.sections.6.id` | p-retention |
-| `legal.privacy.sections.6.heading` | לכמה זמן שומרים |
-| `legal.privacy.sections.6.body.0.list.0` | חשבון והתקדמות: נשמרים עד שמוחקים את החשבון. אפשר למחוק בכל זמן (ראו ״הזכויות שלכם״). |
-| `legal.privacy.sections.6.body.0.list.1` | התחברות: עד {sessionAbsoluteDays} ימים מרגע הכניסה, או עד {sessionIdleDays} ימים בלי שימוש. אחר כך היא נמחקת. |
-| `legal.privacy.sections.6.body.0.list.2` | קישורי הפעלה ואיפוס: נמחקים 7 ימים אחרי שפג תוקפם או שנעשה בהם שימוש. |
-| `legal.privacy.sections.6.body.0.list.3` | ניסיונות כניסה והגבלת קצב: נמחקים אחרי יום. |
-| `legal.privacy.sections.6.body.0.list.4` | מזהים טכניים של אירועי הרשמה: {webhookEventsDays} ימים. |
-| `legal.privacy.sections.6.body.0.list.5` | עדכונים לתור הסנכרון: שנשלחו, {syncSentDays} ימים. שנכשלו סופית, {syncDeadDays} ימים לצורך בדיקה. |
-| `legal.privacy.sections.6.body.0.list.6` | יומן תזכורות: {reminderLogDays} ימים. |
-| `legal.privacy.sections.6.body.1` | מחיקת חשבון מוחקת את כל המידע שמפורט כאן, חוץ ממה שמוחזק במערכות חיצוניות (ראו ״מחיקת חשבון״), ומזהים טכניים מגובבים (של ניסיונות כניסה ושל אירועי הרשמה) שאינם כוללים שם או פרטי קשר ונמחקים במועדים שלמעלה. |
-| `legal.privacy.sections.7.id` | p-cookies |
-| `legal.privacy.sections.7.heading` | עוגיות ואחסון בדפדפן |
-| `legal.privacy.sections.7.body.0` | האפליקציה משתמשת בעוגייה אחת בלבד: עוגיית התחברות חיונית. היא מוגדרת כ־HttpOnly, Secure ו־SameSite=Lax, ונמחקת ביציאה מהחשבון. אין עוגיות פרסום, מעקב או ניתוח. ספירות השימוש המצטברות נשמרות בשרת בלבד, בלי עוגיות ובלי כלי ניתוח של צד שלישי. |
-| `legal.privacy.sections.7.body.1` | בדפדפן נשמרת גם ההעדפה ״עצירת אנימציה״ (אחסון מקומי, רק במכשיר שלכם), ומטמון של קבצים סטטיים ושל עמוד ״אין חיבור״, בלי מידע אישי. |
-| `legal.privacy.sections.7.body.2` | נגן הסרטונים של Bunny פועל בדומיין שלו, ועשוי לשמור מידע בדפדפן לפי המדיניות של Bunny. |
-| `legal.privacy.sections.8.id` | p-rights |
-| `legal.privacy.sections.8.heading` | הזכויות שלכם |
-| `legal.privacy.sections.8.body.0` | לפי חוק הגנת הפרטיות אפשר לבקש לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי ולבקש למחוק אותו. |
-| `legal.privacy.sections.8.body.1.list.0` | מחיקה: בדף ״החשבון שלי״ באפליקציה אפשר למחוק את החשבון בעצמכם. הסיסמה נדרשת כדי לוודא שזו בקשה שלכם. |
-| `legal.privacy.sections.8.body.1.list.1` | עיון ותיקון: בפנייה אל [PRIVACY_CONTACT]. |
-| `legal.privacy.sections.8.body.1.list.2` | התראות: אפשר לכבות בכל זמן בדף ״תזכורות״ או בהגדרות הדפדפן והמכשיר. תזכורת בוואטסאפ: אפשר לכבות בכל זמן בדף ״תזכורות״. |
-| `legal.privacy.sections.8.body.2` | אם נראה לכם שנפגעה הפרטיות שלכם, אפשר גם לפנות אל הרשות להגנת הפרטיות. |
-| `legal.privacy.sections.9.id` | p-delete |
-| `legal.privacy.sections.9.heading` | מחיקת חשבון |
-| `legal.privacy.sections.9.body.0` | מחיקת חשבון מוחקת מהאפליקציה את פרטי החשבון, ההתקדמות, ההתחברויות, ההתראות והתור, ומתנתקת מכל המכשירים. אי אפשר לשחזר. |
-| `legal.privacy.sections.9.body.1` | פרטי הקשר שלכם נשמרים גם במערכת ההרשמה של YOGIT, מחוץ לאפליקציה. מחיקה משם נעשית בפנייה אל YOGIT: [PRIVACY_CONTACT]. |
-| `legal.privacy.sections.10.id` | p-security |
-| `legal.privacy.sections.10.heading` | אבטחה |
-| `legal.privacy.sections.10.body.0` | אנחנו נוקטות אמצעים סבירים להגנה על המידע: חיבור מוצפן, סיסמאות מוצפנות חד־כיוונית, גיבוב של אסימונים, הגבלת ניסיונות כניסה וגישה מוגבלת למידע. אין מערכת שאפשר להבטיח עליה אבטחה מוחלטת. |
-| `legal.privacy.sections.11.id` | p-changes |
-| `legal.privacy.sections.11.heading` | שינויים במדיניות |
-| `legal.privacy.sections.11.body.0` | אם המדיניות תשתנה, העמוד הזה יתעדכן, והתאריך שבראשו ישתנה. |
+| `legal.privacy.sections.4.body.3` | איננו מוכרות מידע אישי. פרטי החשבון וההתקדמות באפליקציה לא מועברים לצורך פרסום. |
+| `legal.privacy.sections.5.id` | p-pixel |
+| `legal.privacy.sections.5.heading` | פיקסל של מטא בדף המכירה |
+| `legal.privacy.sections.5.body.0` | בדף המכירה הציבורי (/tsaad) בלבד, ולא במסכי האפליקציה, עשוי לפעול הפיקסל של Meta Platforms (פייסבוק ואינסטגרם). הוא עוזר לנו למדוד את הפרסום: כמה אנשים הגיעו לדף מתוך מודעה, וכמה לחצו על כפתור ההרשמה. |
+| `legal.privacy.sections.5.body.1.list.0` | מה נשלח למטא: שהדף נצפה, ושנלחץ כפתור הרשמה (עם מחיר האתגר), יחד עם כתובת הדף, כתובת IP, פרטי הדפדפן והמכשיר ומזהי עוגיות של מטא. אם אתם מחוברים לפייסבוק או לאינסטגרם באותו דפדפן, מטא יכולה לקשר את המידע לחשבון שלכם שם. |
+| `legal.privacy.sections.5.body.1.list.1` | מה לא נשלח: שם, אימייל, טלפון, סיסמה, פרטי תשלום או התקדמות באתגר. איסוף אוטומטי של טקסט מהדף כבוי. |
+| `legal.privacy.sections.5.body.1.list.2` | עוגיות: הפיקסל שומר בדפדפן עוגיות של מטא (למשל _fbp) לפי המדיניות של מטא. מטא מעבדת את המידע גם מחוץ לישראל, ובכלל זה בארצות הברית. |
+| `legal.privacy.sections.5.body.1.list.3` | הבחירה שלכם: בדף המכירה מופיעה הודעה עם ״אישור״ ו־״לא, תודה״. ״לא, תודה״ עוצר את הפיקסל, והוא לא ייטען שוב בדפדפן הזה. ההחלטה נשמרת באחסון המקומי של הדפדפן; מחיקת נתוני האתר מחזירה את ההודעה. אפשר גם לחסום עוגיות של צד שלישי בהגדרות הדפדפן, ולנהל את העדפות הפרסום בהגדרות החשבון במטא. |
+| `legal.privacy.sections.5.body.2` | מטא מטפלת במידע לפי מדיניות הפרטיות שלה: facebook.com/privacy/policy. |
+| `legal.privacy.sections.6.id` | p-abroad |
+| `legal.privacy.sections.6.heading` | העברת מידע אל מחוץ לישראל |
+| `legal.privacy.sections.6.body.0` | חלק מהשירותים שמפורטים למעלה פועלים מחוץ לישראל. מסד הנתונים נמצא באירופה (גרמניה). אנחנו מעבירות מידע אל מחוץ לישראל רק לשירותים הדרושים להפעלת האפליקציה, ולמטא דרך הפיקסל בדף המכירה (כשהוא פועל), ובהתאם לדין. |
+| `legal.privacy.sections.7.id` | p-retention |
+| `legal.privacy.sections.7.heading` | לכמה זמן שומרים |
+| `legal.privacy.sections.7.body.0.list.0` | חשבון והתקדמות: נשמרים עד שמוחקים את החשבון. אפשר למחוק בכל זמן (ראו ״הזכויות שלכם״). |
+| `legal.privacy.sections.7.body.0.list.1` | התחברות: עד {sessionAbsoluteDays} ימים מרגע הכניסה, או עד {sessionIdleDays} ימים בלי שימוש. אחר כך היא נמחקת. |
+| `legal.privacy.sections.7.body.0.list.2` | קישורי הפעלה ואיפוס: נמחקים 7 ימים אחרי שפג תוקפם או שנעשה בהם שימוש. |
+| `legal.privacy.sections.7.body.0.list.3` | ניסיונות כניסה והגבלת קצב: נמחקים אחרי יום. |
+| `legal.privacy.sections.7.body.0.list.4` | מזהים טכניים של אירועי הרשמה: {webhookEventsDays} ימים. |
+| `legal.privacy.sections.7.body.0.list.5` | עדכונים לתור הסנכרון: שנשלחו, {syncSentDays} ימים. שנכשלו סופית, {syncDeadDays} ימים לצורך בדיקה. |
+| `legal.privacy.sections.7.body.0.list.6` | יומן תזכורות: {reminderLogDays} ימים. |
+| `legal.privacy.sections.7.body.1` | מחיקת חשבון מוחקת את כל המידע שמפורט כאן, חוץ ממה שמוחזק במערכות חיצוניות (ראו ״מחיקת חשבון״), ומזהים טכניים מגובבים (של ניסיונות כניסה ושל אירועי הרשמה) שאינם כוללים שם או פרטי קשר ונמחקים במועדים שלמעלה. |
+| `legal.privacy.sections.8.id` | p-cookies |
+| `legal.privacy.sections.8.heading` | עוגיות ואחסון בדפדפן |
+| `legal.privacy.sections.8.body.0` | האפליקציה משתמשת בעוגייה אחת בלבד: עוגיית התחברות חיונית. היא מוגדרת כ־HttpOnly, Secure ו־SameSite=Lax, ונמחקת ביציאה מהחשבון. במסכי האפליקציה אין עוגיות פרסום, מעקב או ניתוח. ספירות השימוש המצטברות נשמרות בשרת בלבד, בלי עוגיות ובלי כלי ניתוח של צד שלישי. |
+| `legal.privacy.sections.8.body.1` | בדף המכירה הציבורי בלבד, הפיקסל של מטא (כשהוא פועל) שומר עוגיות של מטא. ראו ״פיקסל של מטא בדף המכירה״. |
+| `legal.privacy.sections.8.body.2` | בדפדפן נשמרות גם ההעדפה ״עצירת אנימציה״ וההחלטה לגבי הפיקסל של מטא (אחסון מקומי, רק במכשיר שלכם), ומטמון של קבצים סטטיים ושל עמוד ״אין חיבור״, בלי מידע אישי. |
+| `legal.privacy.sections.8.body.3` | נגן הסרטונים של Bunny פועל בדומיין שלו, ועשוי לשמור מידע בדפדפן לפי המדיניות של Bunny. |
+| `legal.privacy.sections.9.id` | p-rights |
+| `legal.privacy.sections.9.heading` | הזכויות שלכם |
+| `legal.privacy.sections.9.body.0` | לפי חוק הגנת הפרטיות אפשר לבקש לעיין במידע שנשמר עליכם, לבקש לתקן מידע שגוי ולבקש למחוק אותו. |
+| `legal.privacy.sections.9.body.1.list.0` | מחיקה: בדף ״החשבון שלי״ באפליקציה אפשר למחוק את החשבון בעצמכם. הסיסמה נדרשת כדי לוודא שזו בקשה שלכם. |
+| `legal.privacy.sections.9.body.1.list.1` | עיון ותיקון: בפנייה אל [PRIVACY_CONTACT]. |
+| `legal.privacy.sections.9.body.1.list.2` | התראות: אפשר לכבות בכל זמן בדף ״תזכורות״ או בהגדרות הדפדפן והמכשיר. תזכורת בוואטסאפ: אפשר לכבות בכל זמן בדף ״תזכורות״. |
+| `legal.privacy.sections.9.body.2` | אם נראה לכם שנפגעה הפרטיות שלכם, אפשר גם לפנות אל הרשות להגנת הפרטיות. |
+| `legal.privacy.sections.10.id` | p-delete |
+| `legal.privacy.sections.10.heading` | מחיקת חשבון |
+| `legal.privacy.sections.10.body.0` | מחיקת חשבון מוחקת מהאפליקציה את פרטי החשבון, ההתקדמות, ההתחברויות, ההתראות והתור, ומתנתקת מכל המכשירים. אי אפשר לשחזר. |
+| `legal.privacy.sections.10.body.1` | פרטי הקשר שלכם נשמרים גם במערכת ההרשמה של YOGIT, מחוץ לאפליקציה. מחיקה משם נעשית בפנייה אל YOGIT: [PRIVACY_CONTACT]. |
+| `legal.privacy.sections.11.id` | p-security |
+| `legal.privacy.sections.11.heading` | אבטחה |
+| `legal.privacy.sections.11.body.0` | אנחנו נוקטות אמצעים סבירים להגנה על המידע: חיבור מוצפן, סיסמאות מוצפנות חד־כיוונית, גיבוב של אסימונים, הגבלת ניסיונות כניסה וגישה מוגבלת למידע. אין מערכת שאפשר להבטיח עליה אבטחה מוחלטת. |
+| `legal.privacy.sections.12.id` | p-changes |
+| `legal.privacy.sections.12.heading` | שינויים במדיניות |
+| `legal.privacy.sections.12.body.0` | אם המדיניות תשתנה, העמוד הזה יתעדכן, והתאריך שבראשו ישתנה. |
 | `legal.terms.title` | תנאי שימוש |
 | `legal.terms.metaDescription` | תנאי השימוש באפליקציה צעד קטן ביום: השירות, החשבון, שימוש מותר, זמינות, קניין רוחני ואחריות. |
 | `legal.terms.lead` | התנאים האלה חלים על השימוש באפליקציה ״צעד קטן ביום״ של YOGIT, אביטל פלס. השימוש באפליקציה מהווה הסכמה להם. |
@@ -1014,4 +1029,4 @@
 - התקנה באנדרואיד (install.android, בנוסח מותנה).
 - קישור הלייב מופיע שעה לפני המפגש (live).
 
-סך הכול 849 מחרוזות.
+סך הכול 864 מחרוזות.

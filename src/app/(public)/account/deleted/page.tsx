@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SalesPageLink } from "@/components/SalesPageLink";
 import { redirect } from "next/navigation";
 import { verifySession } from "@/lib/auth/dal";
 import { Logo } from "@/components/Logo";
@@ -31,9 +32,9 @@ export default async function AccountDeleted() {
         <p>{D.body}</p>
         <p>{D.outside}</p>
         <ReleasePush />
-        <Link href="/tsaad" className="cta">
+        <SalesPageLink className="cta">
           {D.toLanding}
-        </Link>
+        </SalesPageLink>
         <p>
           <Link href="/legal/privacy" className="doc-back">
             {D.toPrivacy}

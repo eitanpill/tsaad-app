@@ -183,6 +183,13 @@ export const envSchema = z.object({
   MORNING_URL_YESODOT_1265: optional(httpsUrl),
   /** אופציונלי: קישור (https) לעדכון על המחזור הבא, מוצג בדף הנחיתה רק אחרי שההרשמה נסגרה. לא הוגדר = לא מוצג כלום. */
   NEXT_COHORT_URL: optional(httpsUrl),
+  /**
+   * פיקסל מטא בדף המכירה (/tsaad) בלבד: מזהה הפיקסל (ספרות). לא הוגדר, או ערך לא תקין = הפיקסל לא נטען (בלי להפיל את האפליקציה;
+   * הבדיקה ב־metaPixelId, src/lib/meta/pixel.ts, שמשמשת גם את ה־CSP).
+   */
+  META_PIXEL_ID: optional(z.string().max(64)),
+  /** "notice" (ברירת מחדל, וגם לכל ערך אחר): נטען עם באנר שמאפשר לסרב. "optin": נטען רק אחרי "אישור". */
+  META_PIXEL_CONSENT: optional(z.string().max(16)),
   /** ערך utm_campaign לכל הצעה (מצייני המקום [UTM_SESSION] ו־[UTM_YESODOT]). */
   OFFER_UTM_SESSION: optional(utmValue),
   OFFER_UTM_BUNDLE: optional(utmValue),

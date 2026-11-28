@@ -113,7 +113,7 @@ export const UTM = Object.freeze({
 /** תאריכים בדפים המשפטיים (טיוטה, ממתינה לבדיקה משפטית). תאריך הבדיקה האחרונה של הנגישות: בדיקת המוכנות להשקה, אחרי עיצוב Soft flow (axe ב־e2e של PR #7 ובדיקה ידנית בפרודקשן). */
 export const LEGAL = Object.freeze({
   accessibilityLastChecked: "2026-11-20",
-  draftDate: "2026-11-10",
+  draftDate: "2026-11-28",
 });
 
 /** התראות דחיפה (שלב 9). תקרת המנויים למשתמש (מכשירים) היא REMINDERS.maxSubscriptionsPerUser: המנוי הוותיק ביותר נמחק בהוספת חדש מעבר לה. */

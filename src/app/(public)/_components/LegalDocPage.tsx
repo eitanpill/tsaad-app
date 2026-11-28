@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SalesPageLink } from "@/components/SalesPageLink";
 import { Fragment, type ReactNode } from "react";
 import { Logo } from "@/components/Logo";
 import { getConfig } from "@/config";
@@ -71,9 +72,9 @@ export function LegalDocPage({ doc }: { doc: LegalKey }) {
   return (
     <>
       <header className="doc-bar">
-        <Link href="/tsaad" className="logo" aria-label={`${copy.a11y.logo}, ${copy.legal.home}`}>
+        <SalesPageLink className="logo" ariaLabel={`${copy.a11y.logo}, ${copy.legal.home}`}>
           <Logo labelled={false} height={22} />
-        </Link>
+        </SalesPageLink>
       </header>
       <main id="main" className="doc-main">
         <h1>{d.title}</h1>

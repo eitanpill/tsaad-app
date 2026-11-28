@@ -10,6 +10,9 @@
  * - frame-src: נגן Bunny. כתובת ההטמעה שנחתמת ב־lib/bunny/token.ts היא iframe.mediadelivery.net בלבד,
  *   ולכן player.mediadelivery.net לא נוסף. מה שהנגן עצמו טוען נקבע ב־CSP של ה־iframe, לא כאן.
  */
+// יחסי ולא "@/": הקובץ נטען גם מ־next.config.ts, שם הכינוי לא קיים.
+import { META_EVENTS_ORIGIN, META_SCRIPT_ORIGIN } from "../meta/pixel";
+
 export const BUNNY_EMBED_ORIGIN = "https://iframe.mediadelivery.net";
 
 /** יעד דיווחי ההפרה (src/app/api/csp-report). report-uri לדפדפנים ישנים, report-to (עם Reporting-Endpoints ב־proxy) לחדשים. */
@@ -21,18 +24,23 @@ const CDN_HOST_RE = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.b-cdn\.net$/;
 
 /**
  * @param opts.thumbHost מארח ה־CDN של Bunny (BUNNY_CDN_HOST), רק לתמונות הממוזערות של הסרטונים: נוסף ל־img-src ולא לשום הנחיה אחרת.
+ * @param opts.metaPixel רק בדף המכירה ורק כשהוגדר META_PIXEL_ID (src/lib/meta/pixel.ts): מתיר את הסקריפט של מטא
+ *   (connect.facebook.net; עם 'strict-dynamic' הוא נטען ממילא מהקוד שלנו, והמארח נשאר לדפדפנים ישנים) ואת שליחת האירועים
+ *   ל־www.facebook.com (img-src ו־connect-src). שאר הדפים לא מקבלים שום מקור של מטא.
  */
-export function buildCsp(nonce: string, opts: { dev?: boolean; thumbHost?: string } = {}): string {
+export function buildCsp(nonce: string, opts: { dev?: boolean; thumbHost?: string; metaPixel?: boolean } = {}): string {
   const dev = opts.dev ?? false;
   const thumb = opts.thumbHost && CDN_HOST_RE.test(opts.thumbHost) ? ` https://${opts.thumbHost}` : "";
+  const metaScript = opts.metaPixel ? ` ${META_SCRIPT_ORIGIN}` : "";
+  const metaEvents = opts.metaPixel ? ` ${META_EVENTS_ORIGIN}` : "";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${metaScript}${dev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'`,
     "style-src-attr 'unsafe-inline'",
-    `img-src 'self' data: blob:${thumb}`,
+    `img-src 'self' data: blob:${thumb}${metaEvents}`,
     "font-src 'self' data:",
-    `connect-src 'self'${dev ? " ws: wss:" : ""}`,
+    `connect-src 'self'${metaEvents}${dev ? " ws: wss:" : ""}`,
     "media-src 'self' blob:",
     // רישום ה־service worker (/sw.js) וה־manifest. worker-src מפורש: עם 'strict-dynamic' ב־script-src, 'self' לא נספר שם.
     "worker-src 'self'",

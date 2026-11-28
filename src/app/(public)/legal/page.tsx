@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SalesPageLink } from "@/components/SalesPageLink";
 import { Logo } from "@/components/Logo";
 import { copy } from "@/content/copy.he";
 import { legal } from "@/content/legal.he";
@@ -20,9 +21,9 @@ export default function LegalIndex() {
   return (
     <>
       <header className="doc-bar">
-        <Link href="/tsaad" className="logo" aria-label={`${copy.a11y.logo}, ${copy.legal.home}`}>
+        <SalesPageLink className="logo" ariaLabel={`${copy.a11y.logo}, ${copy.legal.home}`}>
           <Logo labelled={false} height={22} />
-        </Link>
+        </SalesPageLink>
       </header>
       <main id="main" className="doc-main">
         <h1>{copy.legal.indexTitle}</h1>

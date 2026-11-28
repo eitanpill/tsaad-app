@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAdminPath, SESSION_COOKIE_NAMES } from "@/lib/path/admin-path";
 import { isInvalidDayPath } from "@/lib/path/day-param";
+import { isMetaPixelPath, metaPixelId } from "@/lib/meta/pixel";
 import { CSP_REPORT_GROUP, CSP_REPORT_PATH, buildCsp, newNonce } from "@/lib/security/csp";
 
 /** נתיב שאין לו דף: שכתוב אליו נותן את דף ה־404 של האפליקציה (src/app/not-found.tsx) עם סטטוס 404 אמיתי. */
@@ -16,7 +17,13 @@ const NOT_FOUND_PATH = "/__not-found";
  */
 export async function proxy(request: NextRequest) {
   const nonce = newNonce();
-  const csp = buildCsp(nonce, { dev: process.env.NODE_ENV === "development", thumbHost: process.env.BUNNY_CDN_HOST });
+  // מקורות מטא נפתחים רק בדף המכירה ורק כשהוגדר מזהה פיקסל תקין (שאר הדפים נשארים בלי צד שלישי).
+  const metaPixel = isMetaPixelPath(request.nextUrl.pathname) && metaPixelId(process.env.META_PIXEL_ID) !== null;
+  const csp = buildCsp(nonce, {
+    dev: process.env.NODE_ENV === "development",
+    thumbHost: process.env.BUNNY_CDN_HOST,
+    metaPixel,
+  });
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);

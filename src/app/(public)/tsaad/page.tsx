@@ -21,6 +21,8 @@ import { getAppOrigin } from "@/lib/auth/config";
 import { dayDate, registrationClosed, REGISTRATION_LAST_DAY, type Schedule } from "@/lib/days";
 import { LandingCta, LandingClosed } from "../_components/LandingCta";
 import { FloatingCta } from "../_components/FloatingCta";
+import { MetaPixel } from "../_components/MetaPixel";
+import { metaConsentMode, metaPixelId } from "@/lib/meta/pixel";
 // צילום מסך אמיתי מהאפליקציה (משתמשת בדיקה "נועה", יום 4), מקומי (CSP img-src self).
 import appToday from "./app-today.jpg";
 
@@ -86,6 +88,8 @@ export default async function LandingPage() {
   const lives = [L.lives.day0, L.lives.day7, L.lives.day14] as const;
   const links = socialLinks();
   const times = timeTokens();
+  // פיקסל מטא: רק כשהוגדר META_PIXEL_ID תקין (ה־CSP של הדף הזה נפתח למטא באותו תנאי, ב־src/proxy.ts).
+  const pixelId = metaPixelId(cfg.env.META_PIXEL_ID);
 
   /** בלוק הרשמה: המחיר בגדול, הכפתור, ושורת התאריכים. מופיע שלוש פעמים בדף; אחרי סגירת ההרשמה: שורת "נסגרה". */
   const signup = (where: "hero" | "mid" | "close", dates = true) =>
@@ -227,6 +231,9 @@ export default async function LandingPage() {
       ) : null}
 
       {!closed && ctaHref ? <FloatingCta href={ctaHref} label={L.floating} /> : null}
+      {pixelId ? (
+        <MetaPixel pixelId={pixelId} mode={metaConsentMode(cfg.env.META_PIXEL_CONSENT)} value={Number(L.price.amount)} />
+      ) : null}
     </main>
   );
 }
