@@ -3,7 +3,7 @@ import { isMetaPixelPath, metaConsentMode, metaPixelId } from "./pixel";
 
 describe("meta pixel config", () => {
   it("accepts only a numeric pixel id", () => {
-    expect(metaPixelId("1234567890123456")).toBe("1234567890123456");
+    expect(metaPixelId("1102227115079573")).toBe("1102227115079573"); // the YOGIT pixel
     expect(metaPixelId(" 1234567890 ")).toBe("1234567890");
     for (const bad of [undefined, null, "", "abc", "12345", "123456789'); alert(1);//", "1234567 89", "１２３４５６７"]) {
       expect(metaPixelId(bad)).toBeNull();
