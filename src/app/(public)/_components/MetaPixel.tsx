@@ -65,8 +65,9 @@ function loadPixel(pixelId: string): Fbq {
 }
 
 /**
- * פיקסל מטא בדף המכירה: PageView בטעינה, ו־InitiateCheckout בלחיצה על כל כפתור הרשמה (הקישורים ל־/go/challenge, כולל הכפתור הצף).
- * הרכישה עצמה מתבצעת בדף התשלום החיצוני, ולכן אין כאן Purchase.
+ * פיקסל מטא בדף המכירה: PageView בטעינה, ViewContent כשמגיעים לחלק "מה מקבלים" ([data-meta-viewcontent]),
+ * ו־InitiateCheckout בלחיצה על כל כפתור הרשמה (הקישורים ל־/go/challenge, כולל הכפתור הצף).
+ * הרכישה עצמה מתבצעת בדף התשלום החיצוני, ולכן Purchase נשלח מהשרת (lib/meta/capi.ts), לא מכאן.
  * באנר קטן (לא חוסם, בלי מלכודת פוקוס) מודיע ומאפשר לסרב; ההחלטה נשמרת במכשיר. בלי JavaScript: אין פיקסל ואין באנר.
  */
 export function MetaPixel({ pixelId, mode, value }: { pixelId: string; mode: MetaConsentMode; value: number }) {
@@ -95,7 +96,28 @@ export function MetaPixel({ pixelId, mode, value }: { pixelId: string; mode: Met
       fbqRef.current("track", "InitiateCheckout", { value, currency: "ILS" });
     };
     document.addEventListener("click", onClick);
+
+    // ViewContent: פעם אחת, כשהמבקר/ת גולל/ת עד "מה מקבלים" (מעבר לכותרת). אות טוב יותר למטא מ־PageView בלבד.
+    let viewed = false;
+    const target = document.querySelector("[data-meta-viewcontent]");
+    const io =
+      target && typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver((entries) => {
+            if (viewed || !fbqRef.current || !entries.some((e) => e.isIntersecting)) return;
+            viewed = true;
+            fbqRef.current("track", "ViewContent", {
+              content_name: "tsaad-challenge",
+              content_type: "product",
+              value,
+              currency: "ILS",
+            });
+            io?.disconnect();
+          })
+        : null;
+    if (target) io?.observe(target);
+
     return () => {
+      io?.disconnect();
       document.removeEventListener("click", onClick);
       // יציאה מדף המכירה בתוך האפליקציה: הפיקסל נשאר בזיכרון, אבל לא שולח יותר כלום.
       fbqRef.current?.("consent", "revoke");

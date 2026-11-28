@@ -88,8 +88,14 @@ describe("parseSignupPayload", () => {
     const r = parseSignupPayload({ ...base, full_name: "Dana Levi" });
     expect(r).toEqual({
       ok: true,
-      data: { ghlContactId: "abc123", displayName: "Dana Levi", email: "dana@example.com", phoneE164: "+972521234567", marker: null },
+      data: { ghlContactId: "abc123", displayName: "Dana Levi", email: "dana@example.com", phoneE164: "+972521234567", marker: null, metaOptOut: false },
     });
+  });
+  it("reads the Meta opt-out tag from GHL tags (string or array, any case)", () => {
+    expect(parseSignupPayload({ ...base, tags: "vip, TSAAD_NO_META" })).toMatchObject({ data: { metaOptOut: true } });
+    expect(parseSignupPayload({ ...base, tags: ["tsaad_no_meta"] })).toMatchObject({ data: { metaOptOut: true } });
+    expect(parseSignupPayload({ ...base, tags: "tsaad_registered" })).toMatchObject({ data: { metaOptOut: false } });
+    expect(parseSignupPayload({ ...base, tags: { x: 1 } })).toMatchObject({ ok: true, data: { metaOptOut: false } });
   });
   it("accepts alternative names (id, firstName, lastName) and builds the display name", () => {
     const r = parseSignupPayload({ id: "z9", firstName: "דנה", lastName: "לוי", email: "d@x.co" });

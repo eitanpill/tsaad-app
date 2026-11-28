@@ -190,6 +190,13 @@ export const envSchema = z.object({
   META_PIXEL_ID: optional(z.string().max(64)),
   /** "notice" (ברירת מחדל, וגם לכל ערך אחר): נטען עם באנר שמאפשר לסרב. "optin": נטען רק אחרי "אישור". */
   META_PIXEL_CONSENT: optional(z.string().max(16)),
+  /**
+   * Conversions API (Purchase מהשרת על הרשמה חדשה, src/lib/meta/capi.ts). סוד: רק ב־Vercel, לעולם לא בקוד.
+   * META_CAPI_MODE: off (ברירת מחדל) | test (עם META_CAPI_TEST_CODE, רק ב־Test events) | live. ערך לא תקין = כבוי, בלי להפיל.
+   */
+  META_CAPI_TOKEN: optional(z.string().max(600)),
+  META_CAPI_MODE: optional(z.string().max(16)),
+  META_CAPI_TEST_CODE: optional(z.string().max(64)),
   /** ערך utm_campaign לכל הצעה (מצייני המקום [UTM_SESSION] ו־[UTM_YESODOT]). */
   OFFER_UTM_SESSION: optional(utmValue),
   OFFER_UTM_BUNDLE: optional(utmValue),

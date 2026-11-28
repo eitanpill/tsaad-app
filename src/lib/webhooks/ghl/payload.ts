@@ -41,7 +41,15 @@ const rawSchema = z.object({
   event_id: loose,
   signup_id: loose,
   customData,
+  /** תגי איש הקשר (GHL שולח מחרוזת מופרדת בפסיקים, לפעמים מערך). משמש רק לבדיקת META_OPTOUT_TAG. */
+  tags: z
+    .union([z.string().max(4000), z.array(z.string().max(200)).max(200)])
+    .optional()
+    .catch(undefined),
 });
+
+/** תג ב־GHL שמבקש לא לשלוח עליו/ה אירוע רכישה למטא (בקשה לפי מדיניות הפרטיות). */
+export const META_OPTOUT_TAG = "tsaad_no_meta";
 
 export type SignupPayload = {
   ghlContactId: string;
@@ -50,6 +58,8 @@ export type SignupPayload = {
   phoneE164: string | null;
   /** סמן אירוע מהגוף (אם נשלח), לגזירת מזהה אירוע דטרמיניסטי. */
   marker: string | null;
+  /** איש הקשר מתויג META_OPTOUT_TAG: לא שולחים עליו/ה Purchase למטא. */
+  metaOptOut?: boolean;
 };
 
 export type ParseResult =
@@ -80,5 +90,8 @@ export function parseSignupPayload(json: unknown): ParseResult {
   const rawMarker = r.event_id ?? r.signup_id ?? r.customData?.event_id ?? r.customData?.signup_id;
   const marker = rawMarker && EVENT_ID_RE.test(rawMarker.trim()) ? rawMarker.trim() : null;
 
-  return { ok: true, data: { ghlContactId: contactId, displayName, email, phoneE164, marker } };
+  const tagList = typeof r.tags === "string" ? r.tags.split(",") : (r.tags ?? []);
+  const metaOptOut = tagList.some((t) => t.trim().toLowerCase() === META_OPTOUT_TAG);
+
+  return { ok: true, data: { ghlContactId: contactId, displayName, email, phoneE164, marker, metaOptOut } };
 }

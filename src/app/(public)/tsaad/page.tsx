@@ -156,7 +156,7 @@ export default async function LandingPage() {
         <p className="strong">{L.pain.answer}</p>
       </section>
 
-      <section className="pt pt--sand pt-incl" aria-labelledby="land-incl-h">
+      <section className="pt pt--sand pt-incl" aria-labelledby="land-incl-h" data-meta-viewcontent="">
         <div className="pt-stack">
           <h2 id="land-incl-h">{L.includes.heading}</h2>
           <p className="pt-lead">{L.includes.lead}</p>

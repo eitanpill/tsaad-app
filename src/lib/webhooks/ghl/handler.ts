@@ -13,6 +13,7 @@ import {
   isWebhookSecretConfigured,
   verifyWebhookAuth,
 } from "./auth";
+import type { PurchaseEvent } from "@/lib/meta/capi";
 import { composeSignupMessages, type SignupDelivery } from "./delivery";
 import { EVENT_ID_RE, parseSignupPayload } from "./payload";
 import { processSignup, type IssuedLink } from "./signup";
@@ -32,6 +33,10 @@ export type HandlerDeps = {
   now?: () => Date;
   env?: Record<string, string | undefined>;
   startDate?: () => string | undefined;
+  /** אירוע Purchase למטא (Conversions API) על הרשמה חדשה בלבד. לא הוזרק = לא נשלח. רץ ב־after ולא משפיע על התשובה. */
+  conversions?: (ev: PurchaseEvent) => Promise<unknown>;
+  /** מחיר האתגר (ש"ח) לאירוע הרכישה. */
+  purchaseValue?: number;
 };
 
 /** קורא את הגוף (בתים גולמיים) ועוצר ברגע שעבר את התקרה (גם בלי Content-Length). null = גדול מדי. */
@@ -182,6 +187,28 @@ export async function handleGhlSignup(req: Request, deps: HandlerDeps): Promise<
     } catch {
       /* START_DATE לא תקין: אין אזהרה, והחשבון כבר נוצר */
     }
+  }
+
+  // רכישה למטא: רק כשנוצר חשבון חדש (הרשמה = תשלום). ניסיון חוזר של GHL מקבל "duplicate" ולא שולח שוב.
+  const conversions = deps.conversions;
+  if (outcome.status === "created" && conversions && !parsed.data.metaOptOut && deps.purchaseValue && deps.purchaseValue > 0) {
+    const ev: PurchaseEvent = {
+      eventId,
+      email: parsed.data.email,
+      phoneE164: parsed.data.phoneE164,
+      ghlContactId: parsed.data.ghlContactId,
+      value: deps.purchaseValue,
+      currency: "ILS",
+      eventTime: now(),
+      sourceUrl: `${origin}/tsaad`,
+    };
+    deps.after(async () => {
+      try {
+        await conversions(ev);
+      } catch (e) {
+        log.error("ghl signup: meta purchase event failed", { error: e });
+      }
+    });
   }
 
   if (outcome.issued) {
